@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const indexController = require('../controllers/index');
-
-// GET /api
-router.get('/', indexController.index);
-
+//const apiController = require('../controllers/index');
+router.get('/', require('../controllers/index').index);
+router.post('/saju/fortune', require('../controllers/saju_fortune').getSajuFortune);
 
 module.exports = router;

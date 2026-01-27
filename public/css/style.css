@@ -1,0 +1,236 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header .logo {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+.header .logo a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.header .logo a:hover {
+  color: var(--color-primary-dark);
+}
+.header .nav {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+.header .nav a {
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+.header .nav a:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-light);
+}
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+  .header .nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-sm);
+  }
+  .header .nav a {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #3b82f6;
+  --color-secondary: #64748b;
+  --color-secondary-dark: #475569;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-text: #1e293b;
+  --color-text-light: #64748b;
+  --color-text-white: #ffffff;
+  --color-bg: #ffffff;
+  --color-bg-light: #f8fafc;
+  --color-bg-dark: #0f172a;
+  --color-border: #e2e8f0;
+  --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.saju-form-section {
+  max-width: 480px;
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.saju-form-section h2 {
+  text-align: center;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+.saju-form-section .section-desc {
+  text-align: center;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xl);
+}
+
+#sajuForm .form-group {
+  margin-bottom: var(--spacing-lg);
+}
+#sajuForm .form-group > label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+#sajuForm .date-select-group {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+#sajuForm .date-select-group select {
+  flex: 1;
+}
+#sajuForm select {
+  width: 100%;
+  padding: var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#sajuForm select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+#sajuForm select:hover {
+  border-color: var(--color-primary-light);
+}
+#sajuForm .radio-group {
+  display: flex;
+  gap: var(--spacing-md);
+}
+#sajuForm .radio-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#sajuForm .radio-label:hover {
+  border-color: var(--color-primary-light);
+}
+#sajuForm .radio-label:has(input:checked) {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.05);
+}
+#sajuForm .radio-label input {
+  accent-color: var(--color-primary);
+}
+#sajuForm .radio-label span {
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+#sajuForm .btn-submit {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  font-family: var(--font-family);
+  color: var(--color-text-white);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#sajuForm .btn-submit:hover {
+  background: var(--color-primary-dark);
+}
+#sajuForm .btn-submit:active {
+  transform: scale(0.98);
+}
+@media (max-width: 768px) {
+  #sajuForm .date-select-group {
+    flex-direction: column;
+  }
+  #sajuForm .radio-group {
+    flex-direction: column;
+  }
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

@@ -1,0 +1,32 @@
+// Breakpoints
+$breakpoint-mobile: 768px;
+
+@mixin mobile-screen {
+	@media (max-width: #{$breakpoint-mobile}) {
+		@content;
+	}
+}
+
+@mixin pc-screen {
+	@media (min-width: #{$breakpoint-mobile + 1}) {
+		@content;
+	}
+}
+
+// Flexbox
+@mixin flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@mixin flex-between {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+// Transition
+@mixin transition($property: all, $duration: 0.3s) {
+	transition: $property $duration ease;
+}
