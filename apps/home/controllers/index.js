@@ -6,6 +6,9 @@ const path = require('path');
 const index = (req, res) => {
     res.render(path.join(__dirname, '../pages/index.ejs'));
 };
+const ping = (req, res) => {
+    res.render(path.join(__dirname, '../pages/ping.ejs'));
+};
 
 module.exports = {
     index
