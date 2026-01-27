@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><%= typeof title !== 'undefined' ? title : '사주 상담 서비스' %></title>
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+	<div class="container">
+		<%- include('header') %>
+		
+		<main class="main">
+			<%- body %>
+		</main>
+		
+		<%- include('footer') %>
+	</div>
+</body>
+</html>
