@@ -1,3 +1,5 @@
+import GlobalLoading from './global_loading.js';
+
 export function initSajuFormContainer() {
 	console.log('initSajuFormContainer called');
 	const form = document.getElementById('sajuForm');
@@ -51,42 +53,20 @@ export function initSajuFormContainer() {
 	updateDays();
 	
 	// 폼 제출 처리
-	form.addEventListener('submit', async function(e) {
-		e.preventDefault();
-		
+	form.addEventListener('submit', function(e) {
 		if (!validateForm()) {
+			e.preventDefault();
 			return;
 		}
 		
-		const formData = {
-			birthYear: yearSelect.value,
-			birthMonth: monthSelect.value,
-			birthDay: daySelect.value,
-			birthTime: document.getElementById('birthTime').value,
-			gender: document.querySelector('input[name="gender"]:checked').value
-		};
-		
-		try {
-			const response = await fetch('/api/saju/fortune', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(formData)
-			});
-			
-			const result = await response.json();
-			console.log('응답:', result);
-			
-		} catch (error) {
-			console.error('요청 실패:', error);
-			alert('요청 중 오류가 발생했습니다.');
-		}
+		// 유효성 통과하면 로딩 표시 후 폼 submit 진행
+		GlobalLoading.show();
 	});
 	
 	function validateForm() {
 		const errors = [];
 		
+		if (!document.getElementById('name').value.trim()) errors.push('이름을 입력해주세요.');
 		if (!yearSelect.value) errors.push('년도를 선택해주세요.');
 		if (!monthSelect.value) errors.push('월을 선택해주세요.');
 		if (!daySelect.value) errors.push('일을 선택해주세요.');

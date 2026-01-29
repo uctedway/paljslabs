@@ -1,0 +1,18 @@
+<div class="result-container">
+	<div class="result-header">
+		<h1><%= name %>님의 사주 상담 결과</h1>
+		<p class="birth-info"><%= birthInfo %></p>
+	</div>
+	
+	<div id="result-content" class="result-content"></div>
+	
+	<div class="result-actions">
+		<a href="/" class="btn-home">다시 보기</a>
+	</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+	const markdown = <%- JSON.stringify(claudeResult) %>;
+	document.getElementById('result-content').innerHTML = marked.parse(markdown);
+</script>
