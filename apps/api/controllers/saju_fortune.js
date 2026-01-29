@@ -191,7 +191,7 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 			{
 				headers: {
 					'Content-Type': 'application/json',
-					'x-api-key': process.env.CLAUDE_API_KEY,
+					'x-api-key': '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',
 					'anthropic-version': '2023-06-01'
 				}
 			}
