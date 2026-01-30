@@ -179,7 +179,7 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 			'https://api.anthropic.com/v1/messages',
 			{
 				model: 'claude-3-haiku-20240307',
-				max_tokens: 8192,
+				max_tokens: 4096,
 				system: SYSTEM_PROMPT,
 				messages: [
 					{
