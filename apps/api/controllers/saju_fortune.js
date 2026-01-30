@@ -178,7 +178,7 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 		const claudeResponse = await axios.post(
 			'https://api.anthropic.com/v1/messages',
 			{
-				model: 'claude-sonnet-4-20250514',
+				model: 'claude-3-haiku-20240307',
 				max_tokens: 8192,
 				system: SYSTEM_PROMPT,
 				messages: [
@@ -191,7 +191,7 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 			{
 				headers: {
 					'Content-Type': 'application/json',
-					'x-api-key': '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',
+					'x-api-key': process.env.CLAUDE_API_KEY,
 					'anthropic-version': '2023-06-01'
 				}
 			}
@@ -213,5 +213,47 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 			status: 'error',
 			message: 'API 호출 중 오류가 발생했습니다.'
 		});
+	}
+};
+
+exports.claudeTest = async (req, res) => {
+	const apiKey = process.env.CLAUDE_API_KEY;
+	
+	console.log('========================================');
+	console.log('Claude API 테스트');
+	console.log('API Key 앞 20자:', apiKey?.substring(0, 20));
+	console.log('API Key 길이:', apiKey?.length);
+	console.log('========================================');
+	
+	try {
+		const claudeResponse = await axios.post(
+			'https://api.anthropic.com/v1/messages',
+			{
+				model: 'claude-3-haiku-20240307',
+				max_tokens: 100,
+				messages: [
+					{
+						role: 'user',
+						content: '안녕? 간단하게 인사해줘.'
+					}
+				]
+			},
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': process.env.CLAUDE_API_KEY,
+					'anthropic-version': '2023-06-01'
+				}
+			}
+		);
+		
+		const result = claudeResponse.data.content[0].text;
+		console.log('Claude 응답:', result);
+		
+		res.send(result);
+		
+	} catch (error) {
+		console.error('Claude 테스트 실패:', error.response?.data || error.message);
+		res.status(500).send('에러: ' + JSON.stringify(error.response?.data || error.message));
 	}
 };
