@@ -178,8 +178,8 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 		const claudeResponse = await axios.post(
 			'https://api.anthropic.com/v1/messages',
 			{
-				model: 'claude-3-haiku-20240307',
-				max_tokens: 4096,
+				model: 'claude-sonnet-4-20250514',
+				max_tokens: 8192,
 				system: SYSTEM_PROMPT,
 				messages: [
 					{
@@ -229,7 +229,7 @@ exports.claudeTest = async (req, res) => {
 		const claudeResponse = await axios.post(
 			'https://api.anthropic.com/v1/messages',
 			{
-				model: 'claude-3-haiku-20240307',
+				model: 'claude-sonnet-4-20250514',
 				max_tokens: 100,
 				messages: [
 					{
