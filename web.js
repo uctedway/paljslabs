@@ -2,10 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
-const sass = require('sass');
 const fs = require('fs');
 const session = require('express-session');
 const { createClient } = require('redis');
+let sass = null;
+try {
+  // Render production 배포에서는 devDependencies가 설치되지 않을 수 있습니다.
+  sass = require('sass');
+} catch (err) {
+  sass = null;
+}
 //const RedisStore = require('connect-redis').default;
 // const ConnectRedis = require('connect-redis');
 // const RedisStore = ConnectRedis.default ?? ConnectRedis;
@@ -27,6 +33,10 @@ const PORT = process.env.PORT || 3000;
 // SASS 컴파일 함수
 // ============================================
 const compileSass = () => {
+    if (!sass) {
+        console.log('SASS module not found, skip compile and use prebuilt CSS');
+        return;
+    }
     const scssPath = path.join(__dirname, 'public', 'scss', 'style.scss');
     const cssPath = path.join(__dirname, 'public', 'css', 'style.css');
     
