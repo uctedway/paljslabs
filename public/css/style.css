@@ -1,8 +1,10 @@
+@charset "UTF-8";
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   padding: var(--spacing-md) var(--spacing-xl);
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
@@ -34,6 +36,30 @@
 }
 .header .mobile-appbar-actions {
   display: none;
+}
+.header .desktop-shortcuts {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.header .desktop-shortcuts .desktop-user-name,
+.header .desktop-shortcuts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid #dbe5f3;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.header .desktop-shortcuts .token-shortcut strong {
+  margin-left: 4px;
 }
 .header .analysis-status-badge {
   display: inline-flex;
@@ -73,16 +99,72 @@
 .header .nav {
   display: flex;
   gap: var(--spacing-lg);
+  flex: 1 1 auto;
+  margin-left: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.header .nav::-webkit-scrollbar {
+  display: none;
+  height: 0;
+}
+.header .nav::before, .header .nav::after {
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #d1d5db;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  z-index: 2;
+}
+.header .nav::before {
+  content: "‹";
+  left: 0;
+  margin-right: -8px;
+}
+.header .nav::after {
+  content: "›";
+  right: 0;
+  margin-left: -8px;
+}
+.header .nav.can-scroll-left::before {
+  opacity: 1;
+}
+.header .nav.can-scroll-right::after {
+  opacity: 1;
 }
 .header .nav .nav-item.has-submenu {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
 }
 .header .nav .user-greeting {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
@@ -100,10 +182,15 @@
 .header .nav .mobile-nav-head {
   display: none;
 }
+.header .nav .mobile-only-nav {
+  display: none;
+}
 .header .nav a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
   color: var(--color-text);
   text-decoration: none;
   font-size: var(--font-size-sm);
@@ -151,6 +238,9 @@
     padding: 8px 9px;
     font-size: 11px;
   }
+  .header .desktop-shortcuts {
+    display: none;
+  }
   .header .mobile-appbar-actions {
     display: inline-flex;
     margin-left: 0;
@@ -184,6 +274,7 @@
     gap: 2px;
     padding: 12px var(--spacing-md) var(--spacing-md);
     overflow-y: auto;
+    overflow-x: hidden;
   }
   .header .nav .mobile-nav-head {
     display: flex;
@@ -195,6 +286,12 @@
     border: 1px solid #dbe5f3;
     border-radius: 12px;
     background: #f8fbff;
+  }
+  .header .nav .mobile-only-nav {
+    display: inline-flex;
+  }
+  .header .nav .mobile-only-nav.nav-item.has-submenu {
+    display: grid;
   }
   .header .nav .mobile-nav-user {
     display: inline-flex;
@@ -302,6 +399,9 @@
     transform: rotate(90deg);
     border-color: #bfdbfe;
     background: #eff6ff;
+  }
+  .header .nav::before, .header .nav::after {
+    content: none;
   }
 }
 

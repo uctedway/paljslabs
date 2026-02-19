@@ -1,7 +1,10 @@
 @use '../../core/mixins' as *;
 
 .header {
-	@include flex-between;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 10px;
 	padding: var(--spacing-md) var(--spacing-xl);
 	background: var(--color-bg);
 	border-bottom: 1px solid var(--color-border);
@@ -38,6 +41,33 @@
 
 	.mobile-appbar-actions {
 		display: none;
+	}
+
+	.desktop-shortcuts {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin-left: auto;
+		flex: 0 0 auto;
+
+		.desktop-user-name,
+		a {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 8px 10px;
+			border: 1px solid #dbe5f3;
+			border-radius: 10px;
+			background: #f8fbff;
+			color: #0f172a;
+			font-size: 12px;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.token-shortcut strong {
+			margin-left: 4px;
+		}
 	}
 
 	.analysis-status-badge {
@@ -84,17 +114,80 @@
 		.nav {
 			display: flex;
 			gap: var(--spacing-lg);
+			flex: 1 1 auto;
+			margin-left: 12px;
+			align-items: center;
+			flex-wrap: nowrap;
+			white-space: nowrap;
+			min-width: 0;
+			max-width: 100%;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scrollbar-width: none;
+			-webkit-overflow-scrolling: touch;
+			position: relative;
+
+			&::-webkit-scrollbar {
+				display: none;
+				height: 0;
+			}
+
+			&::before,
+			&::after {
+				position: sticky;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 26px;
+				height: 26px;
+				border-radius: 999px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 16px;
+				font-weight: 700;
+				color: #111827;
+				background: rgba(255, 255, 255, 0.95);
+				border: 1px solid #d1d5db;
+				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.18s ease;
+				z-index: 2;
+			}
+
+			&::before {
+				content: '‹';
+				left: 0;
+				margin-right: -8px;
+			}
+
+			&::after {
+				content: '›';
+				right: 0;
+				margin-left: -8px;
+			}
+
+			&.can-scroll-left::before {
+				opacity: 1;
+			}
+
+			&.can-scroll-right::after {
+				opacity: 1;
+			}
 			
 			.nav-item.has-submenu {
 				display: flex;
 				align-items: center;
 				gap: 6px;
+				flex: 0 0 auto;
 			}
 
 			.user-greeting {
 				display: inline-flex;
 				align-items: center;
 				gap: 6px;
+				white-space: nowrap;
+				flex: 0 0 auto;
 				padding: var(--spacing-sm) var(--spacing-md);
 				border: 1px solid #e2e8f0;
 				border-radius: var(--radius-md);
@@ -116,10 +209,16 @@
 				display: none;
 			}
 
+			.mobile-only-nav {
+				display: none;
+			}
+
 			a {
 				display: inline-flex;
 				align-items: center;
 				gap: 6px;
+				white-space: nowrap;
+				flex: 0 0 auto;
 				color: var(--color-text);
 				text-decoration: none;
 				font-size: var(--font-size-sm);
@@ -175,6 +274,10 @@
 			font-size: 11px;
 		}
 
+		.desktop-shortcuts {
+			display: none;
+		}
+
 		.mobile-appbar-actions {
 			display: inline-flex;
 			margin-left: 0;
@@ -210,6 +313,7 @@
 			gap: 2px;
 			padding: 12px var(--spacing-md) var(--spacing-md);
 				overflow-y: auto;
+				overflow-x: hidden;
 
 				.mobile-nav-head {
 					display: flex;
@@ -221,6 +325,14 @@
 					border: 1px solid #dbe5f3;
 					border-radius: 12px;
 					background: #f8fbff;
+				}
+
+				.mobile-only-nav {
+					display: inline-flex;
+				}
+
+				.mobile-only-nav.nav-item.has-submenu {
+					display: grid;
 				}
 
 				.mobile-nav-user {
@@ -344,6 +456,11 @@
 					transform: rotate(90deg);
 					border-color: #bfdbfe;
 					background: #eff6ff;
+				}
+
+				&::before,
+				&::after {
+					content: none;
 				}
 			}
 		}

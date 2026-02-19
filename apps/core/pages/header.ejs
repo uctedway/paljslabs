@@ -66,8 +66,8 @@
 		<a href="/fortune/naming"><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">작명/개명</a>
 		<a href="/fortune/date-selection"><img class="mi-icon" src="/images/icons/material/date_range.svg" alt="">택일</a>
 		<% if (user) { %>
-		<span class="user-greeting"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</span>
-		<div class="nav-item has-submenu">
+		<span class="user-greeting mobile-only-nav"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</span>
+		<div class="nav-item has-submenu mobile-only-nav">
 			<a href="/user/mypage"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">마이페이지</a>
 			<button
 				type="button"
@@ -87,14 +87,26 @@
 				<a href="/user/token-usage-history"><img class="mi-icon" src="/images/icons/material/timeline.svg" alt="">토큰사용내역</a>
 			</div>
 		</div>
-			<a class="token-nav-link" href="/user/billing">
+			<a class="token-nav-link mobile-only-nav" href="/user/billing">
+				<img class="mi-icon" src="/images/icons/material/attach_money.svg" alt="">토큰 <strong><%= Number(user.token_balance || 0).toLocaleString('ko-KR') %></strong>
+			</a>
+			<a class="mobile-only-nav" href="/user/logout"><img class="mi-icon" src="/images/icons/material/logout.svg" alt="">로그아웃</a>
+		<% } else { %>
+			<a class="mobile-only-nav" href="/user/login"><img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인</a>
+		<% } %>
+	</nav>
+	<div class="desktop-shortcuts">
+		<% if (user) { %>
+			<span class="desktop-user-name"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</span>
+			<a href="/user/mypage"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">마이페이지</a>
+			<a class="token-shortcut" href="/user/billing">
 				<img class="mi-icon" src="/images/icons/material/attach_money.svg" alt="">토큰 <strong id="headerTokenBalance"><%= Number(user.token_balance || 0).toLocaleString('ko-KR') %></strong>
 			</a>
 			<a href="/user/logout"><img class="mi-icon" src="/images/icons/material/logout.svg" alt="">로그아웃</a>
 		<% } else { %>
 			<a href="/user/login"><img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인</a>
 		<% } %>
-	</nav>
+	</div>
 </header>
 <button type="button" class="mobile-nav-backdrop" id="mobileNavBackdrop" aria-label="메뉴 닫기"></button>
 
@@ -120,6 +132,24 @@
 		document.body.classList.toggle('mobile-nav-open', open);
 		menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 		if (!open) closeSubmenu();
+	};
+
+	const updateDesktopNavHint = () => {
+		if (!nav) return;
+		if (window.innerWidth <= 768) {
+			nav.classList.remove('can-scroll-left', 'can-scroll-right');
+			return;
+		}
+		const maxLeft = Math.max(0, nav.scrollWidth - nav.clientWidth);
+		const canScroll = maxLeft > 2;
+		if (!canScroll) {
+			nav.classList.remove('can-scroll-left', 'can-scroll-right');
+			return;
+		}
+		if (nav.scrollLeft > 2) nav.classList.add('can-scroll-left');
+		else nav.classList.remove('can-scroll-left');
+		if (nav.scrollLeft < maxLeft - 2) nav.classList.add('can-scroll-right');
+		else nav.classList.remove('can-scroll-right');
 	};
 
 	menuToggle.addEventListener('click', () => {
@@ -157,7 +187,11 @@
 			setOpen(false);
 			closeSubmenu();
 		}
+		updateDesktopNavHint();
 	});
+	nav.addEventListener('scroll', updateDesktopNavHint, { passive: true });
+	window.addEventListener('load', updateDesktopNavHint);
+	window.setTimeout(updateDesktopNavHint, 200);
 })();
 </script>
 
