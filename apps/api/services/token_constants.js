@@ -1,0 +1,16 @@
+const TOKENS_PER_1000_KRW = 10;
+const TOKENS_PER_SAJU_REQUEST = 10;
+
+const TOKEN_PACKAGES = {
+  1000: 10,
+  3000: 30,
+  5000: 50,
+  10000: 110,
+  100000: 1200,
+};
+
+module.exports = {
+  TOKENS_PER_1000_KRW,
+  TOKENS_PER_SAJU_REQUEST,
+  TOKEN_PACKAGES,
+};

@@ -1,0 +1,53 @@
+<section class="mypage-shell">
+  <%- include('./partials/mypage_sidebar', {
+    currentMenu: 'token-usage-history',
+    consultationHistory: (typeof consultationHistory !== 'undefined' ? consultationHistory : []),
+    relatives: (typeof relatives !== 'undefined' ? relatives : [])
+  }) %>
+
+  <div class="mypage-content">
+    <article class="mypage-card">
+      <div class="history-head">
+        <h2>토큰 사용내역</h2>
+        <a href="/user/billing">토큰 충전으로 이동</a>
+      </div>
+
+      <% if (!usages || usages.length === 0) { %>
+        <div class="history-empty">토큰 내역이 없습니다.</div>
+      <% } else { %>
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>유형</th>
+                <th>변동</th>
+                <th>잔액</th>
+                <th>usage_code</th>
+                <th>event_code</th>
+                <th>reference</th>
+                <th>메모</th>
+                <th>일시</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% usages.forEach(function (u) { %>
+                <tr>
+                  <td><%= u.ledger_id %></td>
+                  <td><%= u.entry_type || '-' %></td>
+                  <td><%= Number(u.change_tokens || 0) > 0 ? '+' : '' %><%= Number(u.change_tokens || 0) %></td>
+                  <td><%= Number(u.balance_after || 0).toLocaleString('ko-KR') %></td>
+                  <td><%= u.usage_code || '-' %></td>
+                  <td><%= u.event_code || '-' %></td>
+                  <td><%= (u.reference_type || '-') %>/<%= (u.reference_id || '-') %></td>
+                  <td><%= u.memo || '-' %></td>
+                  <td><%= u.created_at || '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+  </div>
+</section>

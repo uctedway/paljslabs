@@ -1,0 +1,42 @@
+<%
+  const map = {
+    success: {
+      title: '결제가 완료되었습니다',
+      desc: '토큰 충전이 정상 반영되었습니다.',
+      tone: 'success',
+    },
+    canceled: {
+      title: '결제가 취소되었습니다',
+      desc: '결제가 취소되어 토큰이 충전되지 않았습니다.',
+      tone: 'canceled',
+    },
+    failed: {
+      title: '결제에 실패했습니다',
+      desc: '결제를 다시 시도해주세요.',
+      tone: 'failed',
+    },
+  };
+  const view = map[resultType] || map.failed;
+%>
+
+<section class="billing-result-shell">
+  <article class="billing-result-card <%= view.tone %>">
+    <p class="billing-result-badge"><%= resultType.toUpperCase() %></p>
+    <h2><%= view.title %></h2>
+    <p class="billing-result-desc"><%= view.desc %></p>
+
+    <% if (paymentId) { %>
+      <p class="billing-result-meta">결제 ID: <strong><%= paymentId %></strong></p>
+    <% } %>
+
+    <% if (typeof currentTokens === 'number' && currentTokens >= 0) { %>
+      <p class="billing-result-meta">현재 토큰: <strong><%= Number(currentTokens).toLocaleString('ko-KR') %></strong></p>
+    <% } %>
+
+    <div class="billing-result-actions">
+      <a class="billing-result-btn primary" href="/saju">사주 보러가기</a>
+      <a class="billing-result-btn" href="/user/billing">토큰 충전</a>
+      <a class="billing-result-btn" href="/user/purchase-history">결제 내역</a>
+    </div>
+  </article>
+</section>

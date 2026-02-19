@@ -3,8 +3,9 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><%= typeof title !== 'undefined' ? title : '사주 상담 서비스' %></title>
+	<title><%= typeof title !== 'undefined' ? title : '48LAB' %></title>
 	<link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
 <body>
 	<div class="container">
@@ -16,6 +17,7 @@
 		
 		<%- include('footer') %>
 	</div>
+	<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 	<%- script %>
 </body>
 </html>

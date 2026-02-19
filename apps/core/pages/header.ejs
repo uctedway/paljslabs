@@ -1,11 +1,341 @@
 <header class="header">
-	<h1 class="logo"><a href="/">이상담 ver 1.0.0 오픈베타</a></h1>
-	<nav class="nav">
-		<a href="#">사주풀이</a>
-		<a href="#">오늘의 운세</a>
-		<a href="#">올해 운세</a>
-		<a href="#">애정운</a>
-		<a href="#">재물운</a>
-		<a href="#">궁합</a>
+	<button
+		type="button"
+		class="menu-toggle"
+		id="mobileMenuToggle"
+		aria-label="메인 메뉴 열기"
+		aria-controls="headerNav"
+		aria-expanded="false"
+	>
+		<span></span>
+		<span></span>
+		<span></span>
+	</button>
+	<h1 class="logo">
+		<a href="/" aria-label="48LAB 홈">
+			<img src="/images/main_logo.png" alt="48LAB 로고">
+		</a>
+	</h1>
+	<% if (user) { %>
+	<a
+		href="/user/mypage/history"
+		id="analysisStatusBadge"
+		class="analysis-status-badge is-hidden"
+		aria-live="polite"
+	>
+		<span class="analysis-status-dot" aria-hidden="true"></span>
+		<strong id="analysisStatusText">분석 진행중</strong>
+	</a>
+	<% } %>
+	<div class="mobile-appbar-actions">
+		<% if (user) { %>
+			<a href="/user/mypage" aria-label="마이페이지 이동">
+				<img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">마이페이지
+			</a>
+		<% } else { %>
+			<a href="/user/login" aria-label="로그인 이동">
+				<img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인
+			</a>
+		<% } %>
+	</div>
+	<nav class="nav" id="headerNav">
+		<div class="mobile-nav-head">
+			<% if (user) { %>
+			<div class="mobile-nav-user">
+				<img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">
+				<strong><%= `${String(user.user_name || '회원')}님` %></strong>
+			</div>
+			<% } else { %>
+			<a class="mobile-nav-login-btn" href="/user/login">
+				<img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인
+			</a>
+			<% } %>
+			<div class="mobile-nav-head-actions">
+				<% if (user) { %>
+				<a class="mobile-nav-settings" href="/user/mypage/profile" aria-label="개인정보수정 이동">
+					<img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">
+				</a>
+				<% } %>
+				<button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="메뉴 닫기">×</button>
+			</div>
+		</div>
+		<a href="/saju"><img class="mi-icon" src="/images/icons/material/auto_awesome.svg" alt="">사주풀이</a>
+		<a href="/fortune/compatibility"><img class="mi-icon" src="/images/icons/material/favorite.svg" alt="">궁합</a>
+		<a href="/fortune/today"><img class="mi-icon" src="/images/icons/material/today.svg" alt="">오늘의 운세</a>
+		<a href="/fortune/flow"><img class="mi-icon" src="/images/icons/material/timeline.svg" alt="">대운·세운</a>
+		<a href="/fortune/naming"><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">작명/개명</a>
+		<a href="/fortune/date-selection"><img class="mi-icon" src="/images/icons/material/date_range.svg" alt="">택일</a>
+		<% if (user) { %>
+		<span class="user-greeting"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</span>
+		<div class="nav-item has-submenu">
+			<a href="/user/mypage"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">마이페이지</a>
+			<button
+				type="button"
+				class="submenu-toggle"
+				data-submenu-target="mypageSubmenu"
+				aria-label="마이페이지 서브메뉴 열기"
+				aria-controls="mypageSubmenu"
+				aria-expanded="false"
+			>›</button>
+			<div class="nav-submenu" id="mypageSubmenu">
+				<a href="/user/mypage"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">요약 대시보드</a>
+				<a href="/user/mypage/profile"><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">내 정보수정</a>
+				<a href="/user/mypage/relatives"><img class="mi-icon" src="/images/icons/material/groups.svg" alt="">지인관리</a>
+				<a href="/user/mypage/history"><img class="mi-icon" src="/images/icons/material/history.svg" alt="">내 상담내역</a>
+				<a href="/user/billing"><img class="mi-icon" src="/images/icons/material/attach_money.svg" alt="">토큰충전</a>
+				<a href="/user/purchase-history"><img class="mi-icon" src="/images/icons/material/receipt_long.svg" alt="">결제내역</a>
+				<a href="/user/token-usage-history"><img class="mi-icon" src="/images/icons/material/timeline.svg" alt="">토큰사용내역</a>
+			</div>
+		</div>
+			<a class="token-nav-link" href="/user/billing">
+				<img class="mi-icon" src="/images/icons/material/attach_money.svg" alt="">토큰 <strong id="headerTokenBalance"><%= Number(user.token_balance || 0).toLocaleString('ko-KR') %></strong>
+			</a>
+			<a href="/user/logout"><img class="mi-icon" src="/images/icons/material/logout.svg" alt="">로그아웃</a>
+		<% } else { %>
+			<a href="/user/login"><img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인</a>
+		<% } %>
 	</nav>
 </header>
+<button type="button" class="mobile-nav-backdrop" id="mobileNavBackdrop" aria-label="메뉴 닫기"></button>
+
+<script>
+(function () {
+	const menuToggle = document.getElementById('mobileMenuToggle');
+	const nav = document.getElementById('headerNav');
+	const backdrop = document.getElementById('mobileNavBackdrop');
+	const navCloseBtn = document.getElementById('mobileNavClose');
+	const submenuToggles = Array.from(document.querySelectorAll('.submenu-toggle[data-submenu-target]'));
+	if (!menuToggle || !nav || !backdrop) return;
+
+	const closeSubmenu = () => {
+		submenuToggles.forEach((btn) => {
+			const targetId = btn.dataset.submenuTarget;
+			const panel = targetId ? document.getElementById(targetId) : null;
+			btn.setAttribute('aria-expanded', 'false');
+			if (panel) panel.classList.remove('is-open');
+		});
+	};
+
+	const setOpen = (open) => {
+		document.body.classList.toggle('mobile-nav-open', open);
+		menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		if (!open) closeSubmenu();
+	};
+
+	menuToggle.addEventListener('click', () => {
+		const next = !document.body.classList.contains('mobile-nav-open');
+		setOpen(next);
+	});
+
+	backdrop.addEventListener('click', () => setOpen(false));
+	if (navCloseBtn) {
+		navCloseBtn.addEventListener('click', () => setOpen(false));
+	}
+	nav.addEventListener('click', (e) => {
+		if (!e.target.closest('a')) return;
+		setOpen(false);
+	});
+	submenuToggles.forEach((btn) => {
+		btn.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setOpen(true);
+			const targetId = btn.dataset.submenuTarget;
+			const panel = targetId ? document.getElementById(targetId) : null;
+			if (!panel) return;
+			const isOpen = panel.classList.contains('is-open');
+			closeSubmenu();
+			if (!isOpen) {
+				panel.classList.add('is-open');
+				btn.setAttribute('aria-expanded', 'true');
+			}
+		});
+	});
+
+	window.addEventListener('resize', () => {
+		if (window.innerWidth > 768) {
+			setOpen(false);
+			closeSubmenu();
+		}
+	});
+})();
+</script>
+
+<% if (user) { %>
+<script>
+(function () {
+	const tokenEl = document.getElementById('headerTokenBalance');
+	const analysisBadgeEl = document.getElementById('analysisStatusBadge');
+	const analysisTextEl = document.getElementById('analysisStatusText');
+	const dismissedKey = 'analysisStatusDismissedResultId';
+	let lastStatus = '';
+	let lastResultId = '';
+
+	function showAnalysisToast(message) {
+		const text = String(message || '').trim();
+		if (!text) return;
+		const toast = document.createElement('div');
+		toast.className = 'analysis-toast';
+		toast.textContent = text;
+		document.body.appendChild(toast);
+		window.setTimeout(() => {
+			toast.classList.add('is-show');
+		}, 20);
+		window.setTimeout(() => {
+			toast.classList.remove('is-show');
+			window.setTimeout(() => toast.remove(), 220);
+		}, 2800);
+	}
+
+	function notifyBrowser(title, body, url) {
+		if (!('Notification' in window)) return;
+		if (Notification.permission !== 'granted') return;
+		try {
+			const n = new Notification(String(title || '48LAB'), {
+				body: String(body || ''),
+				icon: '/images/main_logo.png',
+				tag: '48lab-analysis-status',
+			});
+			n.onclick = () => {
+				window.focus();
+				if (url) window.location.href = url;
+			};
+		} catch (_) {}
+	}
+
+	function updateTokens() {
+		if (!tokenEl) return;
+		fetch(`/api/tokens/summary?t=${Date.now()}`, {
+			credentials: 'same-origin',
+			cache: 'no-store',
+		})
+			.then((res) => res.json())
+			.then((json) => {
+				if (!json || json.resp !== 'OK') return;
+				tokenEl.textContent = Number(json.current_tokens || 0).toLocaleString('ko-KR');
+			})
+			.catch(() => {});
+	}
+
+	function hideAnalysisBadge() {
+		if (!analysisBadgeEl) return;
+		analysisBadgeEl.classList.add('is-hidden');
+		analysisBadgeEl.classList.remove('is-processing', 'is-completed', 'is-failed');
+	}
+
+	function renderAnalysisStatus(data) {
+		if (!analysisBadgeEl || !analysisTextEl) return;
+		const status = String(data?.status || '').toLowerCase();
+		const resultId = String(data?.result_id || '');
+		const resultUrl = String(data?.result_url || '/user/mypage/history');
+		const etaSeconds = Number(data?.eta_seconds || 0);
+		const updatedAt = String(data?.updated_at || '');
+		const dismissedResultId = String(localStorage.getItem(dismissedKey) || '');
+		const updatedTs = Date.parse(updatedAt);
+		const isFresh = Number.isFinite(updatedTs) ? (Date.now() - updatedTs) < (1000 * 60 * 30) : true;
+		const prevStatus = lastStatus;
+		const prevResultId = lastResultId;
+		const hasChanged = prevStatus && (prevStatus !== status || prevResultId !== resultId);
+
+		if (!status || !resultId) {
+			hideAnalysisBadge();
+			return;
+		}
+
+		if ((status === 'completed' || status === 'failed') && (!isFresh || dismissedResultId === resultId)) {
+			hideAnalysisBadge();
+			return;
+		}
+
+		analysisBadgeEl.classList.remove('is-hidden', 'is-processing', 'is-completed', 'is-failed');
+		analysisBadgeEl.href = resultUrl;
+		analysisBadgeEl.dataset.resultId = resultId;
+
+		if (status === 'queued' || status === 'processing') {
+			analysisBadgeEl.classList.add('is-processing');
+			analysisTextEl.textContent = '분석 진행중';
+			const etaMinutes = Math.max(1, Math.ceil(etaSeconds / 60));
+			analysisBadgeEl.title = `예상 남은 시간 약 ${etaMinutes}분`;
+			localStorage.removeItem(dismissedKey);
+			lastStatus = status;
+			lastResultId = resultId;
+			return;
+		}
+
+		if (status === 'completed') {
+			analysisBadgeEl.classList.add('is-completed');
+			analysisTextEl.textContent = '분석 완료';
+			analysisBadgeEl.title = '분석이 완료되었습니다. 클릭해서 결과를 확인하세요.';
+			if (hasChanged) {
+				showAnalysisToast('분석이 완료되었습니다.');
+				notifyBrowser('48LAB 분석 완료', '요청하신 분석이 완료되었습니다.', resultUrl);
+			}
+			lastStatus = status;
+			lastResultId = resultId;
+			return;
+		}
+
+		if (status === 'failed') {
+			analysisBadgeEl.classList.add('is-failed');
+			analysisTextEl.textContent = '분석 실패';
+			const failMessage = String(data?.error_message_display || '분석 처리 중 오류가 발생했습니다.');
+			const failHint = String(data?.error_hint || '');
+			analysisBadgeEl.title = `${failMessage}${failHint ? ` ${failHint}` : ''}`.trim();
+			if (hasChanged) {
+				showAnalysisToast(`분석에 실패했습니다. ${analysisBadgeEl.title}`);
+				notifyBrowser('48LAB 분석 실패', analysisBadgeEl.title, resultUrl);
+			}
+			lastStatus = status;
+			lastResultId = resultId;
+			return;
+		}
+
+		hideAnalysisBadge();
+	}
+
+	async function pollAnalysisStatus() {
+		if (!analysisBadgeEl) return;
+		try {
+			const res = await fetch(`/api/analysis/current-status?t=${Date.now()}`, {
+				credentials: 'same-origin',
+				cache: 'no-store',
+			});
+			const json = await res.json();
+			if (!res.ok || !json || json.resp !== 'OK') return;
+			if (!json.has_job) {
+				hideAnalysisBadge();
+				lastStatus = '';
+				lastResultId = '';
+				return;
+			}
+			renderAnalysisStatus(json);
+		} catch (_) {}
+	}
+
+	analysisBadgeEl?.addEventListener('click', () => {
+		const resultId = String(analysisBadgeEl.dataset.resultId || '');
+		if (!resultId) return;
+		localStorage.setItem(dismissedKey, resultId);
+	});
+
+	window.addEventListener('analysis:started', () => {
+		if (!analysisBadgeEl || !analysisTextEl) return;
+		analysisBadgeEl.classList.remove('is-hidden', 'is-completed', 'is-failed');
+		analysisBadgeEl.classList.add('is-processing');
+		analysisTextEl.textContent = '분석 진행중';
+		analysisBadgeEl.title = '분석이 진행 중입니다.';
+		showAnalysisToast('분석을 시작했습니다. 완료되면 알려드리겠습니다.');
+	});
+
+	window.addEventListener('click', () => {
+		if (!('Notification' in window)) return;
+		if (Notification.permission !== 'default') return;
+		Notification.requestPermission().catch(() => {});
+	}, { once: true });
+
+	updateTokens();
+	pollAnalysisStatus();
+	window.setInterval(pollAnalysisStatus, 5000);
+})();
+</script>
+<% } %>

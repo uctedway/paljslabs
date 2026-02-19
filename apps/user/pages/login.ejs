@@ -1,0 +1,43 @@
+<main class="login-page">
+  <section class="login-hero">
+	<div class="login-card">
+	  <h1 class="login-title">48LAB 로그인</h1>
+	  <% if (loginErrorMessage) { %>
+		<p class="login-error"><%= loginErrorMessage %></p>
+	  <% } %>
+
+	  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+	  <div
+		id="g_id_onload"
+		data-client_id="<%= googleClientId %>"
+		data-callback="googleHandleCredentialResponse"
+		data-auto_prompt="false">
+	  </div>
+
+	  <div class="login-providers">
+		<div class="provider-row google-signin-wrap">
+		  <div
+			class="g_id_signin"
+			data-type="standard"
+			data-size="large"
+			data-theme="outline"
+			data-text="sign_in_with"
+			data-shape="rectangular"
+			data-logo_alignment="left">
+		  </div>
+		</div>
+
+		<a class="provider-row naver-signin-btn <%= naverLoginUrl ? '' : 'is-disabled' %>" href="<%= naverLoginUrl || '#' %>">네이버로 로그인</a>
+		<a class="provider-row kakao-signin-btn <%= kakaoLoginUrl ? '' : 'is-disabled' %>" href="<%= kakaoLoginUrl || '#' %>">카카오로 로그인</a>
+		<a class="provider-row apple-signin-btn <%= appleLoginUrl ? '' : 'is-disabled' %>" href="<%= appleLoginUrl || '#' %>">Apple로 로그인</a>
+	  </div>
+
+	  <script type="module">
+		import { googleHandleCredentialResponse } from '/js/modules/apps/user/google_auth.js';
+		// GSI는 반드시 window에서 콜백을 찾음
+		window.googleHandleCredentialResponse = googleHandleCredentialResponse;
+	  </script>
+	</div>
+  </section>
+</main>

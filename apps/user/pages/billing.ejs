@@ -1,0 +1,147 @@
+<section class="billing-shell">
+  <article class="billing-card billing-balance">
+    <p class="billing-label">보유 토큰</p>
+    <h2><span id="billingTokenBalance">0</span> TOKENS</h2>
+    <p class="billing-help">사주 1회 이용 시 10토큰이 사용됩니다.</p>
+  </article>
+
+  <article class="billing-card">
+    <div class="billing-head">
+      <h3>토큰 충전</h3>
+      <a href="/user/purchase-history">결제 내역 보기</a>
+    </div>
+
+    <fieldset class="billing-methods" id="paymentMethods">
+      <legend>결제 수단</legend>
+      <% const providers = Array.isArray(paymentProviders) ? paymentProviders : []; %>
+      <% providers.forEach(function (provider) { %>
+        <label
+          class="billing-method-card <%= provider.code === defaultPaymentProvider && provider.enabled ? 'active' : '' %> <%= provider.enabled ? '' : 'is-disabled' %>"
+          data-provider="<%= provider.code %>">
+          <input
+            type="radio"
+            name="paymentProvider"
+            value="<%= provider.code %>"
+            <%= provider.code === defaultPaymentProvider && provider.enabled ? 'checked' : '' %>
+            <%= provider.enabled ? '' : 'disabled' %>>
+          <img src="<%= provider.icon %>" alt="<%= provider.label %>">
+          <span><%= provider.label %><%= provider.enabled ? '' : ' (준비중)' %></span>
+        </label>
+      <% }); %>
+    </fieldset>
+
+    <div class="billing-packages" id="billingPackages">
+      <button type="button" class="billing-pack active" data-amount="1000" data-tokens="10">
+        <strong>₩1,000 · 10토큰</strong>
+        <span class="billing-pack-note">기본가</span>
+      </button>
+
+      <button type="button" class="billing-pack" data-amount="3000" data-tokens="30">
+        <strong>₩3,000 · 30토큰</strong>
+        <span class="billing-pack-note">기본가</span>
+      </button>
+
+      <button type="button" class="billing-pack" data-amount="5000" data-tokens="50">
+        <strong>₩5,000 · 50토큰</strong>
+        <span class="billing-pack-note">기본가</span>
+      </button>
+
+      <button type="button" class="billing-pack" data-amount="10000" data-tokens="110">
+        <strong>₩10,000 · 110토큰</strong>
+        <span class="billing-pack-note">기본 100토큰 +10보너스 (10% 보너스, 약 9.1% 할인효과)</span>
+      </button>
+
+      <button type="button" class="billing-pack best" data-amount="100000" data-tokens="1200">
+        <em class="billing-best-badge">BEST VALUE</em>
+        <strong>₩100,000 · 1200토큰</strong>
+        <span class="billing-pack-note">기본 1000토큰 +200보너스 (20% 보너스, 약 16.7% 할인효과)</span>
+      </button>
+    </div>
+
+    <button id="requestPaymentBtn" class="billing-submit">결제 진행</button>
+    <p class="billing-help">금액이 클수록 보너스 토큰이 커집니다. 큰 패키지가 더 유리합니다.</p>
+  </article>
+</section>
+
+<script>
+(function () {
+  const tokenEl = document.getElementById('billingTokenBalance');
+  const methodsWrap = document.getElementById('paymentMethods');
+  const packagesWrap = document.getElementById('billingPackages');
+  const button = document.getElementById('requestPaymentBtn');
+
+  let selectedAmount = 1000;
+
+  async function refreshToken() {
+    try {
+      const res = await fetch(`/api/tokens/summary?t=${Date.now()}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      const json = await res.json();
+      if (!res.ok || json.resp !== 'OK') return;
+      tokenEl.textContent = Number(json.current_tokens || 0).toLocaleString('ko-KR');
+    } catch (_) {}
+  }
+
+  methodsWrap.addEventListener('change', (e) => {
+    if (!e.target || e.target.name !== 'paymentProvider') return;
+    const selected = e.target.value;
+    methodsWrap.querySelectorAll('.billing-method-card').forEach((card) => {
+      card.classList.toggle('active', card.dataset.provider === selected);
+    });
+  });
+
+  packagesWrap.addEventListener('click', (e) => {
+    const target = e.target.closest('.billing-pack');
+    if (!target) return;
+
+    packagesWrap.querySelectorAll('.billing-pack').forEach((el) => el.classList.remove('active'));
+    target.classList.add('active');
+    selectedAmount = Number(target.dataset.amount || 1000);
+  });
+
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    const original = button.textContent;
+    button.textContent = '결제 준비 중...';
+
+    try {
+      const selectedProvider = (methodsWrap.querySelector('input[name="paymentProvider"]:checked') || {}).value;
+      if (!selectedProvider) {
+        alert('사용 가능한 결제수단이 없습니다. 관리자에게 문의해주세요.');
+        return;
+      }
+      const res = await fetch('/api/payments/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          provider: selectedProvider,
+          amount_krw: selectedAmount,
+        }),
+      });
+      const json = await res.json();
+
+      if (!res.ok || json.resp !== 'OK') {
+        alert(json.message || json.resp_message || '결제 요청에 실패했습니다.');
+        return;
+      }
+
+      if (!json.redirect_url) {
+        alert('결제 URL이 생성되지 않았습니다.');
+        return;
+      }
+
+      window.location.href = json.redirect_url;
+    } catch (err) {
+      alert('결제 요청 중 오류가 발생했습니다.');
+    } finally {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  });
+
+  refreshToken();
+})();
+</script>

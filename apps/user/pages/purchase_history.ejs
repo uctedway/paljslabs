@@ -1,0 +1,51 @@
+<section class="mypage-shell">
+  <%- include('./partials/mypage_sidebar', {
+    currentMenu: 'purchase-history',
+    consultationHistory: (typeof consultationHistory !== 'undefined' ? consultationHistory : []),
+    relatives: (typeof relatives !== 'undefined' ? relatives : [])
+  }) %>
+
+  <div class="mypage-content">
+    <article class="mypage-card">
+      <div class="history-head">
+        <h2>결제 내역</h2>
+        <a href="/user/token-usage-history">토큰 사용내역 보기</a>
+      </div>
+
+      <% if (!payments || payments.length === 0) { %>
+        <div class="history-empty">결제 내역이 없습니다.</div>
+      <% } else { %>
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>결제수단</th>
+                <th>상태</th>
+                <th>금액</th>
+                <th>토큰</th>
+                <th>요청일시</th>
+                <th>승인일시</th>
+                <th>실패/취소 사유</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% payments.forEach(function (p) { %>
+                <tr>
+                  <td><%= p.payment_id %></td>
+                  <td><%= p.provider || '-' %></td>
+                  <td><%= p.status || '-' %></td>
+                  <td><%= Number(p.amount_krw || 0).toLocaleString('ko-KR') %>원</td>
+                  <td><%= p.token_amount || 0 %></td>
+                  <td><%= p.requested_at || '-' %></td>
+                  <td><%= p.approved_at || '-' %></td>
+                  <td><%= p.error_message || '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+  </div>
+</section>

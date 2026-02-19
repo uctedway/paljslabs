@@ -1,0 +1,15 @@
+<section class="result-container shared-result-container">
+  <div class="result-header">
+    <h1><%= name %>님의 공유된 상담 결과</h1>
+    <p class="birth-info"><%= birthInfo %></p>
+  </div>
+
+  <div class="result-content">
+    <%- (claudeResult || '').replace(/\n/g, '<br>') %>
+  </div>
+
+  <div class="result-share-footnote">
+    <p>이 페이지는 공유 링크를 통해서만 확인할 수 있습니다.</p>
+    <a href="/">48LAB 홈으로 이동</a>
+  </div>
+</section>

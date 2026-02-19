@@ -1,66 +1,205 @@
-<section class="saju-form-section">
-	<h2>사주풀이</h2>
-	<p class="section-desc">생년월일과 시간을 입력하면 당신의 사주를 분석해드립니다.</p>
-	
-	<form id="sajuForm" method="POST" action="/api/saju/fortune">
-		<div class="form-group">
-			<label for="name">이름</label>
-			<input type="text" id="name" name="name" placeholder="이름을 입력하세요" required>
-		</div>
-		<div class="form-group">
-			<label for="birthYear">생년월일</label>
-			<div class="date-select-group">
-				<select id="birthYear" name="birthYear" required>
-					<option value="">년도</option>
-				</select>
-				<select id="birthMonth" name="birthMonth" required>
-					<option value="">월</option>
-				</select>
-				<select id="birthDay" name="birthDay" required>
-					<option value="">일</option>
-				</select>
-			</div>
-		</div>
-		
-		<div class="form-group">
-			<label for="birthTime">태어난 시간</label>
-			<select id="birthTime" name="birthTime" required>
-				<option value="">시간 선택</option>
-				<option value="00:30:00">자시 (23:30~01:30)</option>
-				<option value="02:30:00">축시 (01:30~03:30)</option>
-				<option value="04:30:00">인시 (03:30~05:30)</option>
-				<option value="06:30:00">묘시 (05:30~07:30)</option>
-				<option value="08:30:00">진시 (07:30~09:30)</option>
-				<option value="10:30:00">사시 (09:30~11:30)</option>
-				<option value="12:30:00">오시 (11:30~13:30)</option>
-				<option value="14:30:00">미시 (13:30~15:30)</option>
-				<option value="16:30:00">신시 (15:30~17:30)</option>
-				<option value="18:30:00">유시 (17:30~19:30)</option>
-				<option value="20:30:00">술시 (19:30~21:30)</option>
-				<option value="22:30:00">해시 (21:30~23:30)</option>
-				<option value="99:99:99">모름</option>
-			</select>
-		</div>
-		
-		<div class="form-group">
-			<label>성별</label>
-			<div class="radio-group">
-				<label class="radio-label">
-					<input type="radio" name="gender" value="male" required>
-					<span>남자</span>
-				</label>
-				<label class="radio-label">
-					<input type="radio" name="gender" value="female">
-					<span>여자</span>
-				</label>
-			</div>
-		</div>
-		
-		<button type="submit" class="btn-submit">사주 보기</button>
-	</form>
+<section class="home-hero" id="homeHero">
+  <div class="hero-slider swiper" id="heroSlider">
+    <div class="swiper-wrapper">
+      <article class="hero-slide swiper-slide" data-theme="saju">
+        <div class="hero-slide-bg"></div>
+        <div class="hero-slide-content">
+          <p class="hero-kicker">48LAB</p>
+          <h2>당신의 흐름을 읽는<br>프리미엄 사주 분석</h2>
+          <p>원국 데이터와 AI 리포트를 결합해 지금 필요한 해석을 제공합니다.</p>
+          <div class="hero-cta-row">
+            <a class="hero-cta-link" href="/saju">사주 분석 시작</a>
+            <a class="hero-cta-link" href="/user/mypage/history">상담내역 보기</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="hero-slide swiper-slide" data-theme="compatibility">
+        <div class="hero-slide-bg"></div>
+        <div class="hero-slide-content">
+          <p class="hero-kicker">Relationship Insight</p>
+          <h2>궁합, 감정이 아닌<br>데이터로 확인하세요</h2>
+          <p>연애·부부·가족·비즈니스 관계의 핵심 상호작용을 정확하게 분석합니다.</p>
+          <div class="hero-cta-row">
+            <a class="hero-cta-link" href="/fortune/compatibility">궁합 분석 시작</a>
+            <a class="hero-cta-link" href="/fortune">운세 메뉴 보기</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="hero-slide swiper-slide" data-theme="naming">
+        <div class="hero-slide-bg"></div>
+        <div class="hero-slide-content">
+          <p class="hero-kicker">Naming Assistant</p>
+          <h2>작명/개명 후보를<br>현실적으로 비교</h2>
+          <p>원국 보완 방향, 발음, 실사용성을 함께 검토해 선택 부담을 줄여드립니다.</p>
+          <div class="hero-cta-row">
+            <a class="hero-cta-link" href="/fortune/naming">작명 보조 시작</a>
+            <a class="hero-cta-link" href="/fortune/date-selection">택일 함께 보기</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="hero-swiper-pagination" id="heroSwiperPagination"></div>
 </section>
-<script type="module">
-	import { initSajuFormContainer } from '/js/modules/saju_form.js';
-	
-	initSajuFormContainer();
+
+<section class="home-band">
+  <div class="home-band-inner">
+    <article>
+      <strong><img class="mi-icon" src="/images/icons/material/verified_user.svg" alt="">정확한 대상 매칭</strong>
+      <p>본인/지인 정보를 분리 관리하고 입력 변경 여부를 자동 감지합니다.</p>
+    </article>
+    <article>
+      <strong><img class="mi-icon" src="/images/icons/material/fact_check.svg" alt="">분석 진행 상태 알림</strong>
+      <p>긴 분석은 백그라운드로 진행되고 헤더에서 진행중/완료 상태를 즉시 확인합니다.</p>
+    </article>
+    <article>
+      <strong><img class="mi-icon" src="/images/icons/material/receipt_long.svg" alt="">투명한 토큰/결제 이력</strong>
+      <p>사용/환불/충전 내역을 분리해 언제든 검증 가능한 구조로 제공합니다.</p>
+    </article>
+    <article>
+      <strong><img class="mi-icon" src="/images/icons/material/share.svg" alt="">안전한 결과 공유</strong>
+      <p>민감한 마이페이지와 분리된 전용 공유 링크로 필요한 결과만 전달할 수 있습니다.</p>
+    </article>
+  </div>
+</section>
+
+<section class="fortune-overview">
+  <div class="overview-head">
+    <p class="hub-eyebrow">Fortune Lineup</p>
+    <h3>상담 목적별 분석 메뉴</h3>
+    <p>하나의 계정으로 사주, 궁합, 운세, 작명, 택일까지 일관된 경험으로 이용하세요.</p>
+  </div>
+
+  <div class="overview-grid">
+    <a class="overview-card" href="/saju">
+      <div class="overview-image mock-saju"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/psychology.svg" alt="">사주 분석</h4>
+        <p>성향, 관계, 일, 금전 흐름을 종합적으로 정리한 핵심 리포트.</p>
+      </div>
+    </a>
+    <a class="overview-card" href="/fortune/compatibility">
+      <div class="overview-image mock-compatibility"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/groups.svg" alt="">궁합 분석</h4>
+        <p>두 사람의 장점/충돌 지점을 파악하고 현실적인 조정 포인트를 제공합니다.</p>
+      </div>
+    </a>
+    <a class="overview-card" href="/fortune/today">
+      <div class="overview-image mock-today"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/wb_sunny.svg" alt="">오늘의 운세</h4>
+        <p>하루 집중 영역과 주의 타이밍을 빠르게 확인하는 데일리 리포트.</p>
+      </div>
+    </a>
+    <a class="overview-card" href="/fortune/flow">
+      <div class="overview-image mock-flow"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/timeline.svg" alt="">대운·세운</h4>
+        <p>중장기 의사결정을 위한 시기별 변화와 우선순위 가이드.</p>
+      </div>
+    </a>
+    <a class="overview-card" href="/fortune/naming">
+      <div class="overview-image mock-naming"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">작명/개명</h4>
+        <p>이름 후보의 방향성과 보완 요소를 비교해 선택을 돕습니다.</p>
+      </div>
+    </a>
+    <a class="overview-card" href="/fortune/date-selection">
+      <div class="overview-image mock-date"></div>
+      <div class="overview-text">
+        <h4><img class="mi-icon" src="/images/icons/material/date_range.svg" alt="">택일 분석</h4>
+        <p>중요 일정에 맞는 날짜 후보를 목적별 기준으로 비교합니다.</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+<section class="home-showcase">
+  <div class="showcase-item">
+    <div class="showcase-image showcase-image-premium"></div>
+    <div class="showcase-content">
+      <p class="hub-eyebrow">Premium Experience</p>
+      <h3>분석이 오래 걸려도<br>서비스는 멈추지 않습니다</h3>
+      <p>요청 후 다른 페이지를 둘러보며 작업을 이어갈 수 있고, 완료 시 헤더/토스트/브라우저 알림으로 즉시 안내합니다.</p>
+      <a class="showcase-link" href="/saju">지금 분석 시작</a>
+    </div>
+  </div>
+  <div class="showcase-item reverse">
+    <div class="showcase-image showcase-image-global"></div>
+    <div class="showcase-content">
+      <p class="hub-eyebrow">Service Design</p>
+      <h3>기록, 관계, 결제까지<br>하나의 흐름으로 관리</h3>
+      <p>분석 결과는 히스토리에 자동 누적되며, 지인 관리와 결제/토큰 이력이 유기적으로 연결됩니다.</p>
+      <a class="showcase-link" href="/user/mypage">마이페이지 보기</a>
+    </div>
+  </div>
+</section>
+
+<section class="home-global-guide">
+  <div class="guide-inner">
+    <div class="guide-head">
+      <p class="hub-eyebrow">Simple Flow</p>
+      <h3>처음 시작해도 복잡하지 않은 48LAB</h3>
+    </div>
+    <ol class="guide-steps">
+      <li>
+        <strong><img class="mi-icon" src="/images/icons/material/touch_app.svg" alt="">1. 메뉴 선택</strong>
+        <p>사주, 궁합, 오늘의 운세 등 현재 고민에 맞는 분석을 선택합니다.</p>
+      </li>
+      <li>
+        <strong><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">2. 대상 정보 입력</strong>
+        <p>본인 또는 지인 정보를 불러오거나 직접 입력해 빠르게 요청합니다.</p>
+      </li>
+      <li>
+        <strong><img class="mi-icon" src="/images/icons/material/timeline.svg" alt="">3. 진행 상태 확인</strong>
+        <p>분석은 백그라운드로 진행되며 헤더에서 진행중/완료 상태를 즉시 확인합니다.</p>
+      </li>
+      <li>
+        <strong><img class="mi-icon" src="/images/icons/material/send.svg" alt="">4. 결과 저장/공유</strong>
+        <p>완료된 결과는 히스토리에 보관되고, 필요할 때 링크로 공유할 수 있습니다.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="home-final-cta">
+  <h3>지금 48LAB에서 나의 흐름을 확인해보세요</h3>
+  <p>실무형 해석과 명확한 UI 흐름으로 사주 서비스를 새롭게 경험할 수 있습니다.</p>
+  <div class="final-cta-row">
+    <a href="/saju">사주 분석 시작</a>
+    <a href="/fortune">운세 메뉴 보기</a>
+  </div>
+</section>
+
+<script>
+(() => {
+  const slider = document.getElementById('heroSlider');
+  const paginationEl = document.getElementById('heroSwiperPagination');
+  if (!slider || !paginationEl || typeof Swiper === 'undefined') return;
+
+  const heroSwiper = new Swiper(slider, {
+    loop: true,
+    speed: 650,
+    autoplay: {
+      delay: 4200,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    },
+    pagination: {
+      el: paginationEl,
+      clickable: true,
+    },
+  });
+
+  slider.addEventListener('mouseenter', () => {
+    if (heroSwiper.autoplay) heroSwiper.autoplay.stop();
+  });
+  slider.addEventListener('mouseleave', () => {
+    if (heroSwiper.autoplay) heroSwiper.autoplay.start();
+  });
+})();
 </script>

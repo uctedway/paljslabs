@@ -1,7 +1,7 @@
 {
-  "name": "saju-project",
+  "name": "48lab",
   "version": "1.0.0",
-  "description": "사주 상담 서비스",
+  "description": "48LAB 서비스",
   "main": "web.js",
   "scripts": {
     "dev": "nodemon web.js",
@@ -13,12 +13,16 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.13.4",
+    "connect-redis": "^9.0.0",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^4.22.1",
     "express-ejs-layouts": "^2.5.1",
-    "mssql": "^12.2.0"
+    "express-session": "^1.19.0",
+    "google-auth-library": "^8.9.0",
+    "mssql": "^12.2.0",
+    "redis": "^5.10.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11",

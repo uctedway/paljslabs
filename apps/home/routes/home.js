@@ -5,5 +5,7 @@ const indexController = require('../controllers/index');
 // GET /
 router.get('/', indexController.index);
 router.get('/ping', indexController.ping);
+router.get('/terms', indexController.terms);
+router.get('/privacy-policy', indexController.privacyPolicy);
 
 module.exports = router;

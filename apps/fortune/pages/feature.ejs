@@ -1,0 +1,135 @@
+<section class="saju-form-section">
+  <h2><%= feature.title %></h2>
+  <p class="section-desc"><%= feature.description %></p>
+
+  <%
+    const relationCodeToLabel = {
+      SPOUSE: '배우자',
+      PARENT: '부모',
+      GRANDPARENT: '조부모',
+      SON: '아들',
+      DAUGHTER: '딸',
+      SIBLING: '형제자매',
+      FAMILY: '가족',
+      FRIEND: '친구',
+      OTHER: '기타',
+    };
+    function normalizeTargetLabel(rawLabel) {
+      const raw = String(rawLabel || '').trim();
+      if (!raw) return raw;
+      const parts = raw.split('·');
+      if (parts.length < 2) {
+        return relationCodeToLabel[raw.toUpperCase()] || raw;
+      }
+      const code = String(parts[0] || '').trim().toUpperCase();
+      const name = String(parts.slice(1).join('·') || '').trim();
+      return `${relationCodeToLabel[code] || parts[0].trim()} · ${name}`;
+    }
+  %>
+
+  <form id="fortuneForm" method="POST" data-feature="<%= feature.key %>">
+    <% if (feature.key === 'compatibility') { %>
+      <div class="form-group">
+        <label for="relationship">관계</label>
+        <select id="relationship" name="relationship" required class="mustInput">
+          <option value="">선택</option>
+          <option value="SPOUSE">배우자</option>
+          <option value="PARENT">부모</option>
+          <option value="GRANDPARENT">조부모</option>
+          <option value="SON">아들</option>
+          <option value="DAUGHTER">딸</option>
+          <option value="SIBLING">형제자매</option>
+          <option value="FAMILY">가족</option>
+          <option value="FRIEND">친구</option>
+          <option value="OTHER">기타</option>
+        </select>
+        <p id="relationshipAutoHint" class="section-desc" style="margin-top:8px;font-size:13px;"></p>
+      </div>
+
+      <div class="form-group">
+        <label>입력 대상</label>
+        <div class="radio-group">
+          <button type="button" class="btn-manage-relative tab-btn active" data-tab-target="person1Panel">사람 1</button>
+          <button type="button" class="btn-manage-relative tab-btn" data-tab-target="person2Panel">사람 2</button>
+        </div>
+      </div>
+
+      <div id="person1Panel" class="compat-panel">
+        <h3>사람 1</h3>
+        <%- include('./partials/person_form_block', { prefix: 'person1', sajuTargets, normalizeTargetLabel }) %>
+      </div>
+
+      <div id="person2Panel" class="compat-panel" style="display:none;">
+        <h3>사람 2</h3>
+        <%- include('./partials/person_form_block', { prefix: 'person2', sajuTargets, normalizeTargetLabel }) %>
+      </div>
+    <% } else { %>
+      <div class="compat-panel">
+        <h3>대상 정보</h3>
+        <%- include('./partials/person_form_block', { prefix: 'single', sajuTargets, normalizeTargetLabel }) %>
+      </div>
+    <% } %>
+
+    <% if (feature.key === 'today') { %>
+      <div class="form-group">
+        <label for="focusArea">집중 영역</label>
+        <select id="focusArea" name="focusArea" required class="mustInput">
+          <option value="">선택</option>
+          <option value="종합">종합</option>
+          <option value="연애">연애</option>
+          <option value="일/사업">일/사업</option>
+          <option value="금전">금전</option>
+          <option value="건강">건강</option>
+        </select>
+      </div>
+    <% } %>
+
+    <% if (feature.key === 'flow') { %>
+      <div class="form-group">
+        <label for="targetPeriod">대상 기간</label>
+        <select id="targetPeriod" name="targetPeriod" required class="mustInput">
+          <option value="">선택</option>
+          <option value="3개월">3개월</option>
+          <option value="6개월">6개월</option>
+          <option value="12개월">12개월</option>
+        </select>
+      </div>
+    <% } %>
+
+    <% if (feature.key === 'naming') { %>
+      <div class="form-group">
+        <label for="candidateName">검토할 이름 후보</label>
+        <input type="text" id="candidateName" name="candidateName" required class="mustInput" placeholder="예: 이도윤">
+      </div>
+    <% } %>
+
+    <% if (feature.key === 'date-selection') { %>
+      <div class="form-group">
+        <label for="eventType">목적</label>
+        <select id="eventType" name="eventType" required class="mustInput">
+          <option value="">선택</option>
+          <option value="계약">계약</option>
+          <option value="이사">이사</option>
+          <option value="개업">개업</option>
+          <option value="결혼">결혼</option>
+          <option value="수술">수술</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="candidateDate">후보 일시</label>
+        <input type="text" id="candidateDate" name="candidateDate" required class="mustInput" placeholder="2026-03-15 10:00:00, 2026-03-20 14:00:00">
+      </div>
+    <% } %>
+
+    <button type="submit" class="btn-submit"><%= feature.cta %></button>
+  </form>
+</section>
+
+<script type="module">
+  import { initFortuneForm } from '/js/modules/fortune_form.js';
+  initFortuneForm({
+    sajuTargets: <%- JSON.stringify(sajuTargets || []) %>,
+  });
+</script>

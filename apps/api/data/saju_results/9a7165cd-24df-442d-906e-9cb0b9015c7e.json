@@ -1,0 +1,19 @@
+{
+  "resultId": "9a7165cd-24df-442d-906e-9cb0b9015c7e",
+  "status": "processing",
+  "step": "ABLECITY",
+  "progressMessage": "사주 원국 데이터를 계산하고 있습니다.",
+  "createdAt": "2026-02-13T03:10:54.661Z",
+  "updatedAt": "2026-02-13T03:10:54.842Z",
+  "loginId": "114072273017000765129",
+  "request": {
+    "name": "권동식",
+    "birthYear": "1975",
+    "birthMonth": "01",
+    "birthDay": "06",
+    "birthTime": "06:30:00",
+    "gender": "male",
+    "relative_id": 0,
+    "counselingType": "direct"
+  }
+}

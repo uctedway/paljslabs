@@ -1,8 +1,14 @@
 @import 'apps/core/header';
+@import 'apps/core/footer';
 @import 'core/variables';
 @import 'core/mixins';
 @import 'apps/home/saju_form';
 @import 'apps/home/result_container';
+@import 'apps/home/hub';
+@import 'apps/home/legal';
+@import 'apps/user/login';
+@import 'apps/user/mypage';
+@import 'apps/user/billing';
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -31,4 +37,94 @@ body {
 a {
     color: inherit;
     text-decoration: none;
+}
+
+.mi-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+:root {
+    --form-control-height: 48px;
+    --form-control-radius: 10px;
+    --form-control-border: #cbd5e1;
+    --form-control-bg: #ffffff;
+    --form-control-placeholder: #94a3b8;
+    --form-control-focus: #2563eb;
+}
+
+input,
+select,
+textarea,
+button {
+    font-family: var(--font-family);
+}
+
+:where(
+    input:not([type='radio']):not([type='checkbox']):not([type='hidden']):not([type='file']):not([type='range']):not([type='color']),
+    select,
+    textarea
+) {
+    width: 100%;
+    min-height: var(--form-control-height);
+    padding: 0 14px;
+    border: 1px solid var(--form-control-border);
+    border-radius: var(--form-control-radius);
+    background: var(--form-control-bg);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
+    line-height: 1.2;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+textarea {
+    min-height: 112px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    resize: vertical;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #64748b 50%),
+        linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) calc(50% - 2px),
+        calc(100% - 12px) calc(50% - 2px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 34px;
+}
+
+:where(
+    input:not([type='radio']):not([type='checkbox']):not([type='hidden']):not([type='file']):not([type='range']):not([type='color']),
+    select,
+    textarea
+)::placeholder {
+    color: var(--form-control-placeholder);
+}
+
+:where(
+    input:not([type='radio']):not([type='checkbox']):not([type='hidden']):not([type='file']):not([type='range']):not([type='color']),
+    select,
+    textarea
+):focus {
+    outline: none;
+    border-color: var(--form-control-focus);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+input[type='radio'],
+input[type='checkbox'] {
+    accent-color: var(--color-primary);
+}
+
+:where(.btn-manage-relative, .btn-submit, .billing-submit, .mypage-btn, .billing-result-btn) {
+    min-height: var(--form-control-height);
+    border-radius: var(--form-control-radius);
 }

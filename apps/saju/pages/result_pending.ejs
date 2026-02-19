@@ -1,0 +1,50 @@
+<section class="result-container">
+  <div class="result-header">
+    <h1>사주 해석을 준비하고 있습니다</h1>
+    <p class="birth-info">결과 ID: <%= resultId %></p>
+  </div>
+
+  <div id="pending-message" class="result-content">
+    분석 요청을 접수했습니다. 잠시만 기다려주세요.
+  </div>
+</section>
+
+<script>
+  (function() {
+    const resultId = <%- JSON.stringify(resultId) %>;
+    const messageEl = document.getElementById('pending-message');
+
+    async function poll() {
+      try {
+        const response = await fetch(`/api/saju/request/${resultId}/status`, {
+          credentials: 'same-origin'
+        });
+        const json = await response.json();
+
+        if (!response.ok) {
+          messageEl.textContent = json.resp_message || '상태 조회 중 오류가 발생했습니다.';
+          return;
+        }
+
+        messageEl.textContent = json.progress_message || '처리 상태를 확인 중입니다.';
+
+        if (json.status === 'completed') {
+          window.location.reload();
+          return;
+        }
+
+        if (json.status === 'failed') {
+          messageEl.textContent = json.error_message || '분석 처리 중 오류가 발생했습니다.';
+          return;
+        }
+
+        setTimeout(poll, 1500);
+      } catch (err) {
+        messageEl.textContent = '네트워크 상태를 확인 중입니다. 잠시 후 다시 시도합니다.';
+        setTimeout(poll, 2000);
+      }
+    }
+
+    poll();
+  })();
+</script>

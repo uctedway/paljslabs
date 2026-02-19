@@ -1,0 +1,50 @@
+<div class="form-group">
+  <label for="<%= prefix %>Target">나/지인 선택</label>
+  <select id="<%= prefix %>Target" name="<%= prefix %>Target">
+    <option value="">직접 입력</option>
+    <% (sajuTargets || []).forEach(function(target) { %>
+      <option value="<%= target.type %>:<%= String(target.id) %>"><%= normalizeTargetLabel(target.label) %></option>
+    <% }) %>
+  </select>
+</div>
+<input type="hidden" id="<%= prefix %>RelativeId" name="<%= prefix %>RelativeId" value="0">
+
+<div class="form-group">
+  <label for="<%= prefix %>Name">이름</label>
+  <input type="text" id="<%= prefix %>Name" name="<%= prefix %>Name" required class="mustInput" placeholder="이름">
+</div>
+<div class="form-group">
+  <label for="<%= prefix %>BirthYear">생년월일</label>
+  <div class="date-select-group">
+    <select id="<%= prefix %>BirthYear" name="<%= prefix %>BirthYear" required class="mustInput"><option value="">년도</option></select>
+    <select id="<%= prefix %>BirthMonth" name="<%= prefix %>BirthMonth" required class="mustInput"><option value="">월</option></select>
+    <select id="<%= prefix %>BirthDay" name="<%= prefix %>BirthDay" required class="mustInput"><option value="">일</option></select>
+  </div>
+</div>
+<div class="form-group">
+  <label for="<%= prefix %>BirthTime">태어난 시간</label>
+  <select id="<%= prefix %>BirthTime" name="<%= prefix %>BirthTime" required class="mustInput">
+    <option value="">시간 선택</option>
+    <option value="00:30:00">자시 (23:30~01:30)</option>
+    <option value="02:30:00">축시 (01:30~03:30)</option>
+    <option value="04:30:00">인시 (03:30~05:30)</option>
+    <option value="06:30:00">묘시 (05:30~07:30)</option>
+    <option value="08:30:00">진시 (07:30~09:30)</option>
+    <option value="10:30:00">사시 (09:30~11:30)</option>
+    <option value="12:30:00">오시 (11:30~13:30)</option>
+    <option value="14:30:00">미시 (13:30~15:30)</option>
+    <option value="16:30:00">신시 (15:30~17:30)</option>
+    <option value="18:30:00">유시 (17:30~19:30)</option>
+    <option value="20:30:00">술시 (19:30~21:30)</option>
+    <option value="22:30:00">해시 (21:30~23:30)</option>
+    <option value="99:99:99">모름</option>
+  </select>
+</div>
+<div class="form-group">
+  <label for="<%= prefix %>Gender">성별</label>
+  <select id="<%= prefix %>Gender" name="<%= prefix %>Gender" required class="mustInput">
+    <option value="">선택</option>
+    <option value="male">남성</option>
+    <option value="female">여성</option>
+  </select>
+</div>

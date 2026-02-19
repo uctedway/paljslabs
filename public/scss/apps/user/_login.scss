@@ -1,0 +1,93 @@
+.login-page {
+  min-height: calc(100vh - 170px);
+  padding: var(--spacing-2xl) var(--spacing-md);
+  background: linear-gradient(165deg, #f7fbff 0%, #edf4ff 100%);
+}
+
+.login-hero {
+  @include flex-center;
+}
+
+.login-card {
+  width: min(480px, 100%);
+  padding: var(--spacing-xl);
+  border: 1px solid #dbe5f3;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.login-title {
+  text-align: center;
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.2;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.login-providers {
+  margin-top: var(--spacing-lg);
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.provider-row {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.google-signin-wrap {
+  border: 1px solid #dbe5f3;
+  background: #fff;
+  padding: 8px;
+}
+
+.google-signin-wrap .g_id_signin {
+  @include flex-center;
+}
+
+.naver-signin-btn {
+  border: 1px solid #03c75a;
+  background: #03c75a;
+  color: #fff;
+}
+
+.kakao-signin-btn {
+  border: 1px solid #e5b400;
+  background: #fee500;
+  color: #111827;
+}
+
+.apple-signin-btn {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.provider-row.is-disabled {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.login-error {
+  margin-top: var(--spacing-sm);
+  text-align: center;
+  color: #b91c1c;
+  font-size: var(--font-size-sm);
+}
+
+@include mobile-screen {
+  .login-page {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+
+  .login-card {
+    padding: var(--spacing-lg);
+  }
+}

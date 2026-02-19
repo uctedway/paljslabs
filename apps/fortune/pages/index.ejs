@@ -1,0 +1,17 @@
+<section class="home-hub">
+  <div class="home-hub-head">
+    <p class="hub-eyebrow">48LAB</p>
+    <h2>운세 메뉴</h2>
+    <p>원하는 기능을 선택해서 바로 분석을 시작하세요.</p>
+  </div>
+
+  <div class="home-card-grid">
+    <% (features || []).forEach(function(feature) { %>
+      <a class="home-menu-card active" href="/fortune/<%= feature.key %>">
+        <h3><%= feature.title %></h3>
+        <p><%= feature.description %></p>
+        <span>시작하기</span>
+      </a>
+    <% }) %>
+  </div>
+</section>

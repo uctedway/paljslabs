@@ -1,0 +1,53 @@
+<section class="mypage-shell">
+  <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
+
+  <div class="mypage-content">
+    <article class="mypage-card">
+      <h3>내 상담내역</h3>
+      <p class="mypage-desc">요청 내역을 확인하고 상세보기에서 결과를 확인하세요.</p>
+
+      <% if (!consultationHistory || consultationHistory.length === 0) { %>
+        <p class="mypage-empty">상담 내역이 없습니다.</p>
+      <% } else { %>
+        <div class="mypage-history-list">
+          <%
+            function formatDateOnly(v) {
+              const s = String(v || '').trim();
+              if (!s) return '-';
+              if (s.includes('T')) return s.split('T')[0];
+              if (s.length >= 10) return s.slice(0, 10);
+              return s;
+            }
+
+            function buildHistoryTitle(item) {
+              const req = item && item.request ? item.request : {};
+              if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
+                const p1 = String(req.person1Name || '').trim() || '사람1';
+                const p2 = String(req.person2Name || '').trim() || '사람2';
+                return `${p1}, ${p2} 궁합`;
+              }
+              const name = String(req.name || '').trim() || '고객';
+              return `${name} 사주팔자`;
+            }
+          %>
+          <% consultationHistory.forEach(function(item) { %>
+            <article class="mypage-history-item">
+              <div class="mypage-history-main">
+                <p class="mypage-history-date"><%= formatDateOnly(item.createdAt) %></p>
+                <p class="mypage-history-title">
+                  <strong><%= buildHistoryTitle(item) %></strong>
+                </p>
+                <p class="mypage-history-status <%= item.status %>"><%= item.statusText %></p>
+              </div>
+
+              <div class="mypage-history-actions">
+                <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
+                <a class="mypage-btn primary" href="/user/mypage/history/<%= item.resultId %>">결과보기</a>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+      <% } %>
+    </article>
+  </div>
+</section>

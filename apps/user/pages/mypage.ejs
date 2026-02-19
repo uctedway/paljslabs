@@ -1,0 +1,146 @@
+<section class="mypage-shell">
+  <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
+
+  <div class="mypage-content">
+    <article class="mypage-card">
+      <h3>요약 대시보드</h3>
+      <p class="mypage-desc">마이페이지 주요 정보를 한눈에 확인하세요.</p>
+
+      <div class="mypage-dashboard-grid">
+        <div class="mypage-dashboard-item">
+          <p>보유 토큰</p>
+          <strong><%= Number(currentTokens || 0).toLocaleString('ko-KR') %></strong>
+        </div>
+        <div class="mypage-dashboard-item">
+          <p>등록된 지인</p>
+          <strong><%= (relatives || []).length %>명</strong>
+        </div>
+        <div class="mypage-dashboard-item">
+          <p>상담 내역</p>
+          <strong><%= (consultationHistory || []).length %>건</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="mypage-card">
+      <h3>빠른 이동</h3>
+      <div class="mypage-quick-links">
+        <a class="mypage-btn" href="/user/mypage/profile">내 정보수정</a>
+        <a class="mypage-btn" href="/user/mypage/relatives">지인관리</a>
+        <a class="mypage-btn" href="/user/mypage/history">내 상담내역</a>
+        <a class="mypage-btn" href="/user/billing">토큰충전</a>
+      </div>
+    </article>
+
+    <article class="mypage-card">
+      <h3>추천인 초대</h3>
+      <p class="mypage-desc">초대링크로 신규 가입이 완료되면 추천인에게 3토큰이 적립됩니다.</p>
+      <div class="mypage-share-link-wrap" style="display:flex;">
+        <input
+          type="text"
+          class="mypage-share-link-input"
+          id="referralLinkInput"
+          value="<%= referralLink || '' %>"
+          readonly>
+        <button type="button" class="mypage-btn" id="referralCopyBtn">링크 복사</button>
+        <button type="button" class="mypage-btn" id="referralShareBtn">공유하기</button>
+      </div>
+      <p class="mypage-desc">복사한 링크를 카카오톡/문자/메일에 붙여 보내면 됩니다.</p>
+    </article>
+
+    <article class="mypage-card">
+      <h3>최근 상담</h3>
+      <% if (!recentHistory || recentHistory.length === 0) { %>
+        <p class="mypage-empty">최근 상담 내역이 없습니다.</p>
+      <% } else { %>
+        <%
+          function formatDateOnly(v) {
+            const s = String(v || '').trim();
+            if (!s) return '-';
+            if (s.includes('T')) return s.split('T')[0];
+            if (s.length >= 10) return s.slice(0, 10);
+            return s;
+          }
+          function buildHistoryTitle(item) {
+            const req = item && item.request ? item.request : {};
+            if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
+              const p1 = String(req.person1Name || '').trim() || '사람1';
+              const p2 = String(req.person2Name || '').trim() || '사람2';
+              return `${p1}, ${p2} 궁합`;
+            }
+            const name = String(req.name || '').trim() || '고객';
+            return `${name} 사주팔자`;
+          }
+        %>
+        <div class="mypage-history-list">
+          <% recentHistory.forEach(function(item) { %>
+            <article class="mypage-history-item">
+              <div class="mypage-history-main">
+                <p class="mypage-history-date"><%= formatDateOnly(item.createdAt) %></p>
+                <p class="mypage-history-title"><strong><%= buildHistoryTitle(item) %></strong></p>
+                <p class="mypage-history-status <%= item.status %>"><%= item.statusText %></p>
+              </div>
+              <div class="mypage-history-actions">
+                <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+      <% } %>
+    </article>
+  </div>
+</section>
+
+<script>
+(() => {
+  const input = document.getElementById('referralLinkInput');
+  const button = document.getElementById('referralCopyBtn');
+  const shareButton = document.getElementById('referralShareBtn');
+  if (!input || !button || !shareButton) return;
+
+  button.addEventListener('click', async () => {
+    const value = String(input.value || '').trim();
+    if (!value) {
+      alert('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      alert('초대링크를 복사했습니다.');
+    } catch (_) {
+      input.focus();
+      input.select();
+      alert('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.');
+    }
+  });
+
+  shareButton.addEventListener('click', async () => {
+    const value = String(input.value || '').trim();
+    if (!value) {
+      alert('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '48LAB 초대링크',
+          text: '초대링크로 가입하면 추천인 보상이 적용됩니다.',
+          url: value,
+        });
+        return;
+      } catch (_) {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      alert('공유 기능을 지원하지 않아 링크를 복사했습니다.');
+    } catch (_) {
+      input.focus();
+      input.select();
+      alert('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.');
+    }
+  });
+})();
+</script>

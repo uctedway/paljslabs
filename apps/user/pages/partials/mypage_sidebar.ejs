@@ -1,0 +1,58 @@
+<aside class="mypage-shortcuts">
+  <h2>마이페이지</h2>
+
+  <a href="/user/mypage" class="<%= currentMenu === 'dashboard' ? 'is-active' : '' %>">요약 대시보드</a>
+  <a href="/user/mypage/profile" class="<%= currentMenu === 'profile' ? 'is-active' : '' %>">내 정보수정</a>
+  <a href="/user/mypage/relatives" class="<%= currentMenu === 'relatives' ? 'is-active' : '' %>">지인관리</a>
+  <div class="mypage-submenu">
+    <a href="/user/mypage/relatives#relative-create" class="mypage-add-link">+ 지인추가하기</a>
+    <% if (!relatives || relatives.length === 0) { %>
+      <p class="mypage-submenu-empty">등록된 지인이 없습니다.</p>
+    <% } else { %>
+      <% relatives.forEach(function(item) { %>
+        <a href="/user/mypage/relatives#relative-<%= item.localId %>">
+          <%= item.relationLabel || item.relationType %> · <%= item.name %>
+        </a>
+      <% }); %>
+    <% } %>
+  </div>
+  <a href="/user/mypage/history" class="<%= currentMenu === 'history' ? 'is-active' : '' %>">내 상담내역</a>
+
+  <div class="mypage-nav-group">
+    <a href="/user/billing" class="<%= currentMenu === 'billing' ? 'is-active' : '' %>">토큰충전</a>
+    <a href="/user/purchase-history" class="<%= currentMenu === 'purchase-history' ? 'is-active' : '' %>">결제내역</a>
+    <a href="/user/token-usage-history" class="<%= currentMenu === 'token-usage-history' ? 'is-active' : '' %>">토큰사용내역</a>
+  </div>
+
+  <% if (consultationHistory && consultationHistory.length > 0) { %>
+    <%
+      function formatDateOnly(v) {
+        const s = String(v || '').trim();
+        if (!s) return '-';
+        if (s.includes('T')) return s.split('T')[0];
+        if (s.length >= 10) return s.slice(0, 10);
+        return s;
+      }
+      function buildHistoryTitle(item) {
+        const req = item && item.request ? item.request : {};
+        if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
+          const p1 = String(req.person1Name || '').trim() || '사람1';
+          const p2 = String(req.person2Name || '').trim() || '사람2';
+          return `${p1}, ${p2} 궁합`;
+        }
+        const name = String(req.name || '').trim() || '고객';
+        return `${name} 사주팔자`;
+      }
+    %>
+    <div class="mypage-nav-group">
+      <a href="/user/mypage/history">최근 상담</a>
+      <div class="mypage-submenu">
+        <% consultationHistory.slice(0, 6).forEach(function(item) { %>
+          <a href="/user/mypage/history/<%= item.resultId %>">
+            <%= formatDateOnly(item.createdAt) %> · <%= buildHistoryTitle(item) %>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+</aside>

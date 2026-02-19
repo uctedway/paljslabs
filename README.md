@@ -1,4 +1,4 @@
-# 사주 상담 서비스
+# 48LAB
 
 ## 설치
 
@@ -22,6 +22,11 @@ npm run sass
 ```bash
 npm start
 ```
+
+## URL 환경변수
+
+- `APP_ORIGIN`: 서비스의 절대 루트 URL (예: `https://example.com`)
+- `APP_BASE_PATH`: 선택값. 서비스가 하위 경로에서 동작할 때만 설정 (예: `/service`)
 
 ## 구조
 

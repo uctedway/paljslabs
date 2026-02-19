@@ -1,0 +1,24 @@
+<section class="mypage-shell">
+  <div class="mypage-content" style="max-width:760px;margin:40px auto;">
+    <article class="mypage-card">
+      <h2>가입을 축하합니다, <%= userName %>!</h2>
+      <% if (referralApplied) { %>
+        <p class="mypage-desc">추천인 링크로 가입이 완료되었습니다. 추천인에게 3토큰이 적립되었습니다.</p>
+      <% } else { %>
+        <p class="mypage-desc">이제 마이페이지에서 토큰, 지인관리, 상담내역을 바로 확인할 수 있습니다.</p>
+      <% } %>
+
+      <div class="mypage-quick-links">
+        <a class="mypage-btn primary" href="/user/mypage">마이페이지로 이동</a>
+        <a class="mypage-btn" href="/saju">사주 보러가기</a>
+      </div>
+      <p class="mypage-desc">잠시 후 마이페이지로 자동 이동합니다.</p>
+    </article>
+  </div>
+</section>
+
+<script>
+setTimeout(() => {
+  window.location.href = '/user/mypage';
+}, 2500);
+</script>

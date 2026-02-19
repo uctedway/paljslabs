@@ -1,0 +1,84 @@
+<section class="mypage-shell">
+  <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
+  <% const currentYear = new Date().getFullYear(); %>
+  <% const birthParts = String(profile.birthDate || '').split('-'); %>
+  <% const selectedBirthYear = birthParts[0] || ''; %>
+  <% const selectedBirthMonth = birthParts[1] || ''; %>
+  <% const selectedBirthDay = birthParts[2] || ''; %>
+
+  <div class="mypage-content">
+    <article class="mypage-card">
+      <h3>내 정보수정</h3>
+      <p class="mypage-desc">생년월일시와 성별 정보를 저장합니다.</p>
+
+      <form method="POST" data-action="/user/mypage/profile/update">
+        <div class="mypage-grid">
+          <label>
+            <span>생년월일</span>
+            <div class="mypage-birth-selects">
+              <select name="birthYear" class="mustInput" data-alert="생년(연도)을 선택해주세요.">
+                <option value="">연도</option>
+                <% for (let y = currentYear; y >= 1900; y--) { %>
+                  <option value="<%= y %>" <%= String(y) === selectedBirthYear ? 'selected' : '' %>><%= y %>년</option>
+                <% } %>
+              </select>
+              <select name="birthMonth" class="mustInput" data-alert="생월(월)을 선택해주세요.">
+                <option value="">월</option>
+                <% for (let m = 1; m <= 12; m++) { %>
+                  <% const mv = String(m).padStart(2, '0'); %>
+                  <option value="<%= m %>" <%= mv === selectedBirthMonth ? 'selected' : '' %>><%= m %>월</option>
+                <% } %>
+              </select>
+              <select name="birthDay" class="mustInput" data-alert="생일(일)을 선택해주세요.">
+                <option value="">일</option>
+                <% for (let d = 1; d <= 31; d++) { %>
+                  <% const dv = String(d).padStart(2, '0'); %>
+                  <option value="<%= d %>" <%= dv === selectedBirthDay ? 'selected' : '' %>><%= d %>일</option>
+                <% } %>
+              </select>
+            </div>
+          </label>
+
+          <label>
+            <span>태어난 시간</span>
+            <select name="birthTime" class="mustInput" data-alert="태어난 시간을 선택해주세요.">
+              <option value="">시간 선택</option>
+              <option value="00:30:00" <%= profile.birthTime === '00:30:00' ? 'selected' : '' %>>자시 (23:30~01:30)</option>
+              <option value="02:30:00" <%= profile.birthTime === '02:30:00' ? 'selected' : '' %>>축시 (01:30~03:30)</option>
+              <option value="04:30:00" <%= profile.birthTime === '04:30:00' ? 'selected' : '' %>>인시 (03:30~05:30)</option>
+              <option value="06:30:00" <%= profile.birthTime === '06:30:00' ? 'selected' : '' %>>묘시 (05:30~07:30)</option>
+              <option value="08:30:00" <%= profile.birthTime === '08:30:00' ? 'selected' : '' %>>진시 (07:30~09:30)</option>
+              <option value="10:30:00" <%= profile.birthTime === '10:30:00' ? 'selected' : '' %>>사시 (09:30~11:30)</option>
+              <option value="12:30:00" <%= profile.birthTime === '12:30:00' ? 'selected' : '' %>>오시 (11:30~13:30)</option>
+              <option value="14:30:00" <%= profile.birthTime === '14:30:00' ? 'selected' : '' %>>미시 (13:30~15:30)</option>
+              <option value="16:30:00" <%= profile.birthTime === '16:30:00' ? 'selected' : '' %>>신시 (15:30~17:30)</option>
+              <option value="18:30:00" <%= profile.birthTime === '18:30:00' ? 'selected' : '' %>>유시 (17:30~19:30)</option>
+              <option value="20:30:00" <%= profile.birthTime === '20:30:00' ? 'selected' : '' %>>술시 (19:30~21:30)</option>
+              <option value="22:30:00" <%= profile.birthTime === '22:30:00' ? 'selected' : '' %>>해시 (21:30~23:30)</option>
+              <option value="99:99:99" <%= profile.birthTime === '99:99:99' ? 'selected' : '' %>>모름</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="mypage-radio-group">
+          <legend>성별</legend>
+          <label>
+            <input type="radio" name="gender" value="male" class="mustInput" data-alert="성별을 선택해주세요." <%= profile.gender === 'male' ? 'checked' : '' %>>
+            <span>남성</span>
+          </label>
+          <label>
+            <input type="radio" name="gender" value="female" class="mustInput" data-alert="성별을 선택해주세요." <%= profile.gender === 'female' ? 'checked' : '' %>>
+            <span>여성</span>
+          </label>
+        </fieldset>
+
+        <button type="submit" class="mypage-btn primary">내 정보 저장</button>
+      </form>
+    </article>
+  </div>
+</section>
+
+<script type="module">
+  import { initFormContainer } from '/js/modules/form.js';
+  initFormContainer();
+</script>
