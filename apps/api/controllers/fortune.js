@@ -153,7 +153,48 @@ ${JSON.stringify(payload || {}, null, 2)}
 
 # 출력 규칙
 - 서비스 정책에 맞게 실사용 가능한 한국어 결과를 작성한다.
-- 과장/단정 표현을 피하고 실행 가능한 조언을 포함한다.`;
+- 과장/단정 표현을 피하고 실행 가능한 조언을 포함한다.
+- 아래 JSON 객체 형식으로만 응답한다.
+\`\`\`json
+{
+  "summary": "핵심 요약 1~2문장 (plain text)",
+  "body": "상세 본문 (markdown 형식)"
+}
+\`\`\`
+- summary는 줄바꿈 최소화, 220자 이내 권장
+- body는 markdown으로 섹션/목록을 사용해 가독성 있게 작성한다.`;
+}
+
+function extractJsonBlock(rawText) {
+  const text = String(rawText || '').trim();
+  if (!text) return '';
+  const fenced = text.match(/```json\s*([\s\S]*?)```/i);
+  if (fenced && fenced[1]) return String(fenced[1]).trim();
+  if (text.startsWith('{') && text.endsWith('}')) return text;
+  return '';
+}
+
+function parseClaudeStructuredResult(rawText, fallbackSummary = '') {
+  const text = String(rawText || '').trim();
+  const jsonText = extractJsonBlock(text);
+  if (jsonText) {
+    try {
+      const parsed = JSON.parse(jsonText);
+      const summary = String(parsed?.summary || '').trim();
+      const body = String(parsed?.body || '').trim();
+      if (body) {
+        return {
+          summary: (summary || fallbackSummary || '').trim(),
+          body,
+        };
+      }
+    } catch (_) {}
+  }
+
+  return {
+    summary: String(fallbackSummary || '').trim(),
+    body: text,
+  };
 }
 
 async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
@@ -573,8 +614,10 @@ async function buildFeatureResult(featureKey, payload, loginId) {
       payload,
       featureRaw: { person1: p1.data, person2: p2.data },
     });
+    const parsedResult = parseClaudeStructuredResult(claudeText, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
     return {
-      resultText: claudeText,
+      resultText: parsedResult.body,
+      summary: parsedResult.summary,
       noticeMessage: (p1.targetInfoChanged || p2.targetInfoChanged) ? '지인정보가 변경되었습니다. 지인정보를 업데이트하고 진행합니다.' : '',
       ablecityMeta: {
         person1Source: p1.source,
@@ -606,8 +649,10 @@ async function buildFeatureResult(featureKey, payload, loginId) {
     payload,
     featureRaw: { person1: resolved.data },
   });
+  const parsedResult = parseClaudeStructuredResult(claudeText, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
   return {
-    resultText: claudeText,
+    resultText: parsedResult.body,
+    summary: parsedResult.summary,
     noticeMessage: resolved.targetInfoChanged
       ? (single.targetType === 'relative'
         ? '지인정보가 변경되었습니다. 지인정보를 업데이트하고 진행합니다.'
@@ -660,8 +705,8 @@ async function processFortuneJob(resultId) {
       step: 'COMPLETED',
       progressMessage: '운세 분석이 완료되었습니다.',
       result: {
+        summary: String(featureResult.summary || `${featureMeta.label} 핵심 요약`),
         claudeResult: featureResult.resultText,
-        summary: `${featureMeta.label} 분석 완료`,
       },
       debug: {
         aiMode: 'live',
@@ -687,7 +732,7 @@ async function processFortuneJob(resultId) {
       status: 'failed',
       step: 'FAILED',
       progressMessage: '운세 분석 중 오류가 발생했습니다.',
-      errorMessage: String(featureErr?.message || featureErr),
+      errorMessage: JSON.stringify(featureErr?.response?.data || featureErr?.message || featureErr),
     });
     await keepAliveUserAnalysisSlot({ loginId, resultId });
   } finally {
@@ -847,6 +892,7 @@ exports.getFortuneStatus = async (req, res) => {
       error_message_display: String(errorDisplay.message || ''),
       error_hint: String(errorDisplay.hint || ''),
       error_code: String(errorDisplay.code || ''),
+      maintenance_mode: !!errorDisplay.maintenanceMode,
     });
   } catch (err) {
     console.error('[FORTUNE STATUS API ERROR]', err);

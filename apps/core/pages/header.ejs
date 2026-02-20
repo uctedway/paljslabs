@@ -97,8 +97,7 @@
 	</nav>
 	<div class="desktop-shortcuts">
 		<% if (user) { %>
-			<span class="desktop-user-name"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</span>
-			<a href="/user/mypage"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">마이페이지</a>
+			<a class="desktop-user-name" href="/user/mypage" aria-label="마이페이지 이동"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || '회원') %>님</a>
 			<a class="token-shortcut" href="/user/billing">
 				<img class="mi-icon" src="/images/icons/material/attach_money.svg" alt="">토큰 <strong id="headerTokenBalance"><%= Number(user.token_balance || 0).toLocaleString('ko-KR') %></strong>
 			</a>
@@ -310,6 +309,16 @@
 		}
 
 		if (status === 'failed') {
+			const maintenanceMode = Boolean(data?.maintenance_mode);
+			const errorCode = String(data?.error_code || '').toUpperCase();
+			if (maintenanceMode || errorCode === 'CLAUDE_BILLING_UNAVAILABLE') {
+				const currentPath = String(window.location.pathname || '');
+				if (currentPath !== '/system-maintenance') {
+					window.location.href = '/system-maintenance';
+				}
+				return;
+			}
+
 			analysisBadgeEl.classList.add('is-failed');
 			analysisTextEl.textContent = '분석 실패';
 			const failMessage = String(data?.error_message_display || '분석 처리 중 오류가 발생했습니다.');

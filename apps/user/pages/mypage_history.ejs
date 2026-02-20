@@ -2,50 +2,69 @@
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
 
   <div class="mypage-content">
-    <article class="mypage-card">
-      <h3>내 상담내역</h3>
-      <p class="mypage-desc">요청 내역을 확인하고 상세보기에서 결과를 확인하세요.</p>
+    <article class="mypage-card data-grid-shell">
+      <div class="history-head data-grid-head">
+        <div>
+          <h2>내 상담내역</h2>
+          <p class="data-grid-desc">요청/완료/실패 상태를 확인하고 결과 화면으로 바로 이동할 수 있습니다.</p>
+        </div>
+      </div>
 
       <% if (!consultationHistory || consultationHistory.length === 0) { %>
-        <p class="mypage-empty">상담 내역이 없습니다.</p>
+        <div class="history-empty data-grid-empty">상담 내역이 없습니다.</div>
       <% } else { %>
-        <div class="mypage-history-list">
-          <%
-            function formatDateOnly(v) {
-              const s = String(v || '').trim();
-              if (!s) return '-';
-              if (s.includes('T')) return s.split('T')[0];
-              if (s.length >= 10) return s.slice(0, 10);
-              return s;
-            }
+        <%
+          function formatDateOnly(v) {
+            const s = String(v || '').trim();
+            if (!s) return '-';
+            if (s.includes('T')) return s.split('T')[0];
+            if (s.length >= 10) return s.slice(0, 10);
+            return s;
+          }
 
-            function buildHistoryTitle(item) {
-              const req = item && item.request ? item.request : {};
-              if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
-                const p1 = String(req.person1Name || '').trim() || '사람1';
-                const p2 = String(req.person2Name || '').trim() || '사람2';
-                return `${p1}, ${p2} 궁합`;
-              }
-              const name = String(req.name || '').trim() || '고객';
-              return `${name} 사주팔자`;
+          function buildHistoryTitle(item) {
+            const req = item && item.request ? item.request : {};
+            if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
+              const p1 = String(req.person1Name || '').trim() || '사람1';
+              const p2 = String(req.person2Name || '').trim() || '사람2';
+              return `${p1}, ${p2} 궁합`;
             }
-          %>
-          <% consultationHistory.forEach(function(item) { %>
-            <article class="mypage-history-item">
-              <div class="mypage-history-main">
-                <p class="mypage-history-date"><%= formatDateOnly(item.createdAt) %></p>
-                <p class="mypage-history-title">
-                  <strong><%= buildHistoryTitle(item) %></strong>
-                </p>
-                <p class="mypage-history-status <%= item.status %>"><%= item.statusText %></p>
-              </div>
-
-              <div class="mypage-history-actions">
-                <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
-                <a class="mypage-btn primary" href="/user/mypage/history/<%= item.resultId %>">결과보기</a>
-              </div>
-            </article>
-          <% }); %>
+            const name = String(req.name || '').trim() || '고객';
+            return `${name} 사주팔자`;
+          }
+        %>
+        <div class="history-table-wrap data-grid-wrap">
+          <table class="history-table data-grid-table">
+            <thead>
+              <tr>
+                <th>요청일</th>
+                <th>상담 제목</th>
+                <th>상태</th>
+                <th>결과 ID</th>
+                <th>이동</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% consultationHistory.forEach(function(item) { %>
+                <%
+                  const statusRaw = String(item.status || '').trim().toLowerCase();
+                  const statusLabel = String(item.statusText || item.status || '-');
+                %>
+                <tr>
+                  <td data-label="요청일"><%= formatDateOnly(item.createdAt) %></td>
+                  <td data-label="상담 제목"><strong><%= buildHistoryTitle(item) %></strong></td>
+                  <td data-label="상태"><span class="data-grid-badge status-<%= statusRaw || 'unknown' %>"><%= statusLabel %></span></td>
+                  <td data-label="결과 ID"><span class="data-grid-code"><%= item.resultId %></span></td>
+                  <td data-label="이동">
+                    <div class="data-grid-actions">
+                      <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
+                      <a class="mypage-btn primary" href="/user/mypage/history/<%= item.resultId %>">결과보기</a>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
         </div>
       <% } %>
     </article>

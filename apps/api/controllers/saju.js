@@ -399,7 +399,50 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 # 요청
 위 사주 데이터를 바탕으로 종합 상담 결과를 작성해줘.
 반드시 고객의 나이(${age}세)와 현재 생애주기를 고려하여
-모든 조언을 현실적이고 맥락에 맞게 작성할 것.`;
+모든 조언을 현실적이고 맥락에 맞게 작성할 것.
+
+# 출력 형식(필수)
+아래 JSON 객체 형식으로만 응답해.
+\`\`\`json
+{
+  "summary": "핵심 요약 1~2문장 (plain text)",
+  "body": "상세 본문 (markdown 형식)"
+}
+\`\`\`
+- summary는 줄바꿈 최소화, 220자 이내 권장
+- body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성`;
+}
+
+function extractJsonBlock(rawText) {
+  const text = String(rawText || '').trim();
+  if (!text) return '';
+  const fenced = text.match(/```json\s*([\s\S]*?)```/i);
+  if (fenced && fenced[1]) return String(fenced[1]).trim();
+  if (text.startsWith('{') && text.endsWith('}')) return text;
+  return '';
+}
+
+function parseClaudeStructuredResult(rawText, fallbackSummary = '') {
+  const text = String(rawText || '').trim();
+  const jsonText = extractJsonBlock(text);
+  if (jsonText) {
+    try {
+      const parsed = JSON.parse(jsonText);
+      const summary = String(parsed?.summary || '').trim();
+      const body = String(parsed?.body || '').trim();
+      if (body) {
+        return {
+          summary: (summary || fallbackSummary || '').trim(),
+          body,
+        };
+      }
+    } catch (_) {}
+  }
+
+  return {
+    summary: String(fallbackSummary || '').trim(),
+    body: text,
+  };
 }
 
 async function processSajuJob(resultId) {
@@ -621,13 +664,19 @@ async function processSajuJob(resultId) {
     );
     console.log(`[SAJU JOB] 클로드 호출완료 (${Date.now() - claudeStartedAt}ms)`);
 
-    const claudeResult = claudeResponse.data.content[0].text;
+    const claudeRawResult = String(claudeResponse.data.content[0].text || '');
+    const parsedResult = parseClaudeStructuredResult(
+      claudeRawResult,
+      `${payload.name || '고객'}님의 사주 핵심 흐름 요약`
+    );
+    const claudeResult = parsedResult.body;
 
     await updateSajuResultRecord(resultId, {
       status: 'completed',
       step: 'COMPLETED',
       progressMessage: '해석이 완료되었습니다. 결과 화면으로 이동합니다.',
       result: {
+        summary: parsedResult.summary,
         claudeResult,
         name: payload.name,
         birthInfo: `${payload.birthYear}년 ${payload.birthMonth}월 ${payload.birthDay}일`,
@@ -862,6 +911,7 @@ exports.getSajuFortuneStatus = async (req, res) => {
       error_message_display: String(errorDisplay.message || ''),
       error_hint: String(errorDisplay.hint || ''),
       error_code: String(errorDisplay.code || ''),
+      maintenance_mode: !!errorDisplay.maintenanceMode,
     });
   } catch (err) {
     console.error('[SAJU STATUS API ERROR]', err);

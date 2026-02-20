@@ -6,40 +6,57 @@
   }) %>
 
   <div class="mypage-content">
-    <article class="mypage-card">
-      <div class="history-head">
-        <h2>결제 내역</h2>
-        <a href="/user/token-usage-history">토큰 사용내역 보기</a>
+    <article class="mypage-card data-grid-shell">
+      <div class="history-head data-grid-head">
+        <div>
+          <h2>결제 내역</h2>
+          <p class="data-grid-desc">최근 결제 상태와 승인 여부를 한눈에 확인할 수 있습니다.</p>
+        </div>
+        <a class="data-grid-link" href="/user/token-usage-history">토큰 사용내역 보기</a>
       </div>
 
       <% if (!payments || payments.length === 0) { %>
-        <div class="history-empty">결제 내역이 없습니다.</div>
+        <div class="history-empty data-grid-empty">결제 내역이 없습니다.</div>
       <% } else { %>
-        <div class="history-table-wrap">
-          <table class="history-table">
+        <div class="history-table-wrap data-grid-wrap">
+          <table class="history-table data-grid-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>결제번호</th>
                 <th>결제수단</th>
                 <th>상태</th>
                 <th>금액</th>
                 <th>토큰</th>
                 <th>요청일시</th>
                 <th>승인일시</th>
-                <th>실패/취소 사유</th>
+                <th>사유</th>
               </tr>
             </thead>
             <tbody>
               <% payments.forEach(function (p) { %>
+                <%
+                  const statusRaw = String(p.status || '').trim().toLowerCase();
+                  const statusLabelMap = {
+                    ready: '요청',
+                    pending: '대기',
+                    approved: '승인',
+                    canceled: '취소',
+                    failed: '실패',
+                  };
+                  const statusLabel = statusLabelMap[statusRaw] || (p.status || '-');
+                  const reasonText = p.error_message || '-';
+                %>
                 <tr>
-                  <td><%= p.payment_id %></td>
-                  <td><%= p.provider || '-' %></td>
-                  <td><%= p.status || '-' %></td>
-                  <td><%= Number(p.amount_krw || 0).toLocaleString('ko-KR') %>원</td>
-                  <td><%= p.token_amount || 0 %></td>
-                  <td><%= p.requested_at || '-' %></td>
-                  <td><%= p.approved_at || '-' %></td>
-                  <td><%= p.error_message || '-' %></td>
+                  <td data-label="결제번호"><span class="data-grid-code">#<%= p.payment_id %></span></td>
+                  <td data-label="결제수단"><%= p.provider || '-' %></td>
+                  <td data-label="상태">
+                    <span class="data-grid-badge status-<%= statusRaw || 'unknown' %>"><%= statusLabel %></span>
+                  </td>
+                  <td data-label="금액"><strong><%= Number(p.amount_krw || 0).toLocaleString('ko-KR') %>원</strong></td>
+                  <td data-label="토큰"><%= Number(p.token_amount || 0).toLocaleString('ko-KR') %></td>
+                  <td data-label="요청일시"><%= p.requested_at || '-' %></td>
+                  <td data-label="승인일시"><%= p.approved_at || '-' %></td>
+                  <td data-label="사유"><span class="data-grid-muted"><%= reasonText %></span></td>
                 </tr>
               <% }) %>
             </tbody>

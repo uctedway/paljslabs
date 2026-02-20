@@ -6,20 +6,23 @@
   }) %>
 
   <div class="mypage-content">
-    <article class="mypage-card">
-      <div class="history-head">
-        <h2>토큰 사용내역</h2>
-        <a href="/user/billing">토큰 충전으로 이동</a>
+    <article class="mypage-card data-grid-shell">
+      <div class="history-head data-grid-head">
+        <div>
+          <h2>토큰 사용내역</h2>
+          <p class="data-grid-desc">충전/차감/환불 흐름과 잔액 변동을 추적할 수 있습니다.</p>
+        </div>
+        <a class="data-grid-link" href="/user/billing">토큰 충전으로 이동</a>
       </div>
 
       <% if (!usages || usages.length === 0) { %>
-        <div class="history-empty">토큰 내역이 없습니다.</div>
+        <div class="history-empty data-grid-empty">토큰 내역이 없습니다.</div>
       <% } else { %>
-        <div class="history-table-wrap">
-          <table class="history-table">
+        <div class="history-table-wrap data-grid-wrap">
+          <table class="history-table data-grid-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>원장번호</th>
                 <th>유형</th>
                 <th>변동</th>
                 <th>잔액</th>
@@ -32,16 +35,31 @@
             </thead>
             <tbody>
               <% usages.forEach(function (u) { %>
+                <%
+                  const changeTokens = Number(u.change_tokens || 0);
+                  const entryTypeRaw = String(u.entry_type || '').trim().toLowerCase();
+                  const entryLabelMap = {
+                    charge: '충전',
+                    consume: '사용',
+                    refund: '환불',
+                    adjust: '조정',
+                  };
+                  const entryLabel = entryLabelMap[entryTypeRaw] || (u.entry_type || '-');
+                %>
                 <tr>
-                  <td><%= u.ledger_id %></td>
-                  <td><%= u.entry_type || '-' %></td>
-                  <td><%= Number(u.change_tokens || 0) > 0 ? '+' : '' %><%= Number(u.change_tokens || 0) %></td>
-                  <td><%= Number(u.balance_after || 0).toLocaleString('ko-KR') %></td>
-                  <td><%= u.usage_code || '-' %></td>
-                  <td><%= u.event_code || '-' %></td>
-                  <td><%= (u.reference_type || '-') %>/<%= (u.reference_id || '-') %></td>
-                  <td><%= u.memo || '-' %></td>
-                  <td><%= u.created_at || '-' %></td>
+                  <td data-label="원장번호"><span class="data-grid-code">#<%= u.ledger_id %></span></td>
+                  <td data-label="유형"><span class="data-grid-badge entry-<%= entryTypeRaw || 'unknown' %>"><%= entryLabel %></span></td>
+                  <td data-label="변동">
+                    <span class="data-grid-change <%= changeTokens >= 0 ? 'is-plus' : 'is-minus' %>">
+                      <%= changeTokens > 0 ? '+' : '' %><%= changeTokens %>
+                    </span>
+                  </td>
+                  <td data-label="잔액"><strong><%= Number(u.balance_after || 0).toLocaleString('ko-KR') %></strong></td>
+                  <td data-label="usage_code"><span class="data-grid-code"><%= u.usage_code || '-' %></span></td>
+                  <td data-label="event_code"><span class="data-grid-code"><%= u.event_code || '-' %></span></td>
+                  <td data-label="reference"><%= (u.reference_type || '-') %>/<%= (u.reference_id || '-') %></td>
+                  <td data-label="메모"><span class="data-grid-muted"><%= u.memo || '-' %></span></td>
+                  <td data-label="일시"><%= u.created_at || '-' %></td>
                 </tr>
               <% }) %>
             </tbody>

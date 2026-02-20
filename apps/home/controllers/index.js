@@ -21,10 +21,16 @@ const privacyPolicy = (req, res) => {
         effectiveDate: '2026-02-19',
     });
 };
+const systemMaintenance = (req, res) => {
+    res.render(path.join(__dirname, '../pages/system_maintenance.ejs'), {
+        title: '48LAB 시스템 점검 안내',
+    });
+};
 
 module.exports = {
     index,
     ping,
     terms,
-    privacyPolicy
+    privacyPolicy,
+    systemMaintenance
 };

@@ -53,10 +53,9 @@ function keysToLowerCase(data) {
 
 // 공용 DB 메서드 (연결 + 쿼리 실행)
 async function query(sqlText, params = {}) {
-  let pool;
   try {
-	pool = await sql.connect(dbConfig);
-	const request = pool.request();
+	await sessionPoolConnect;
+	const request = sessionPool.request();
 	
 	// 파라미터 바인딩 (예: { id: 1, name: 'test' })
 	for (const [key, value] of Object.entries(params)) {
@@ -71,17 +70,14 @@ async function query(sqlText, params = {}) {
   } catch (err) {
 	console.error('❌ DB Query Error:', err.message);
 	throw err;
-  } finally {
-	if (pool) await pool.close();
   }
 }
 
 // 여러 레코드셋 조회 (프로시저/쿼리 공용)
 async function queryMulti(sqlText, params = {}) {
-  let pool;
   try {
-	pool = await sql.connect(dbConfig);
-	const request = pool.request();
+	await sessionPoolConnect;
+	const request = sessionPool.request();
 	request.multiple = true; // ✅ 다중 recordset 허용
 
 	// 파라미터 바인딩
@@ -97,8 +93,6 @@ async function queryMulti(sqlText, params = {}) {
   } catch (err) {
 	console.error('❌ DB QueryMulti Error:', err.message);
 	throw err;
-  } finally {
-	if (pool) await pool.close();
   }
 }
 

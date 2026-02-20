@@ -1,3 +1,35 @@
+<% if (pageMode !== 'form') { %>
+<section class="fortune-intro service-intro-<%= feature.key %>">
+  <div class="fortune-intro-hero">
+    <p class="fortune-intro-eyebrow">Fortune Guide</p>
+    <h1><%= feature.title %></h1>
+    <p class="fortune-intro-subtitle"><%= feature.introTitle || feature.description %></p>
+    <p class="fortune-intro-description"><%= feature.introDescription || '' %></p>
+    <div class="fortune-intro-cta-row">
+      <a class="btn-service-primary" href="/fortune/<%= feature.key %>?view=form"><%= feature.cta %></a>
+      <a class="btn-service-secondary" href="/fortune">다른 운세 메뉴 보기</a>
+    </div>
+  </div>
+
+  <div class="fortune-intro-grid">
+    <% (feature.introHighlights || []).forEach(function(item) { %>
+      <article class="fortune-intro-card">
+        <h3><%= item.title %></h3>
+        <p><%= item.text %></p>
+      </article>
+    <% }) %>
+  </div>
+
+  <aside class="fortune-intro-note">
+    <h4>이 서비스는 이런 분께 추천합니다</h4>
+    <ul>
+      <li>운세 용어를 모르는 상태에서도 이해 가능한 설명형 리포트를 원하는 분</li>
+      <li>결정의 정답보다 상황별 선택 기준과 타이밍 가이드를 원하는 분</li>
+      <li>관계, 일정, 이름, 하루 계획을 실제 행동으로 연결하고 싶은 분</li>
+    </ul>
+  </aside>
+</section>
+<% } else { %>
 <section class="saju-form-section">
   <h2><%= feature.title %></h2>
   <p class="section-desc"><%= feature.description %></p>
@@ -133,3 +165,4 @@
     sajuTargets: <%- JSON.stringify(sajuTargets || []) %>,
   });
 </script>
+<% } %>

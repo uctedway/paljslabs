@@ -1,0 +1,227 @@
+.fortune-hub-page {
+  width: min(1220px, calc(100% - 28px));
+  margin: 40px auto 70px;
+}
+
+.fortune-hub-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  padding: clamp(26px, 4.5vw, 48px);
+  border: 1px solid #cdd9ef;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(30, 64, 175, 0.28), transparent 42%),
+    radial-gradient(circle at 84% 16%, rgba(14, 165, 233, 0.18), transparent 46%),
+    linear-gradient(140deg, #0f172a 0%, #1e3a8a 44%, #1d4ed8 100%);
+  color: #f8fafc;
+  box-shadow: 0 26px 42px rgba(15, 23, 42, 0.22);
+  animation: fortuneHeroReveal 0.72s ease both;
+
+  h1 {
+    margin-top: 8px;
+    font-size: clamp(30px, 5.6vw, 58px);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+
+  p {
+    margin-top: 14px;
+    max-width: 760px;
+    font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.55;
+    color: rgba(241, 245, 249, 0.94);
+  }
+}
+
+.fortune-hub-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(241, 245, 249, 0.14);
+  border: 1px solid rgba(226, 232, 240, 0.46);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fortune-hub-board {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fortune-hub-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+  border-radius: 20px;
+  border: 1px solid #dbe4f2;
+  background: #0f172a;
+  box-shadow: 0 16px 28px rgba(15, 23, 42, 0.12);
+  animation: riseFade 0.62s ease both;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 32px rgba(15, 23, 42, 0.18);
+  }
+}
+
+.fortune-hub-card-bg,
+.fortune-hub-card-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.fortune-hub-card-bg {
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.03);
+  transition: transform 0.42s ease;
+}
+
+.fortune-hub-card:hover .fortune-hub-card-bg {
+  transform: scale(1.08);
+}
+
+.fortune-hub-card-overlay {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0.22) 54%, rgba(15, 23, 42, 0.66));
+}
+
+.fortune-hub-card-body {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  color: #f8fafc;
+
+  h2 {
+    margin-top: 8px;
+    font-size: clamp(28px, 4.2vw, 40px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+}
+
+.fortune-hub-card-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.15);
+  border: 1px solid rgba(226, 232, 240, 0.36);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fortune-hub-card-desc {
+  margin-top: 12px;
+  max-width: 92%;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.fortune-hub-card-actions {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fortune-hub-btn-primary,
+.fortune-hub-btn-ghost {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.fortune-hub-btn-primary {
+  background: #f8fafc;
+  color: #0f172a;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.fortune-hub-btn-ghost {
+  border: 1px solid rgba(226, 232, 240, 0.44);
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.3);
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.5);
+  }
+}
+
+.fortune-hub-card.theme-compatibility .fortune-hub-card-bg { background-image: url('/images/hero/hero-compatibility.jpg'); }
+.fortune-hub-card.theme-today .fortune-hub-card-bg { background-image: url('/images/home/card-today.jpg'); }
+.fortune-hub-card.theme-flow .fortune-hub-card-bg { background-image: url('/images/home/card-flow.jpg'); }
+.fortune-hub-card.theme-naming .fortune-hub-card-bg { background-image: url('/images/hero/hero-naming.jpg'); }
+.fortune-hub-card.theme-date-selection .fortune-hub-card-bg { background-image: url('/images/home/card-date.jpg'); }
+
+@keyframes fortuneHeroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@include mobile-screen {
+  .fortune-hub-page {
+    margin: 24px auto 44px;
+  }
+
+  .fortune-hub-hero {
+    border-radius: 18px;
+    padding: 22px 18px;
+
+    p {
+      max-width: 100%;
+    }
+  }
+
+  .fortune-hub-board {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .fortune-hub-card {
+    min-height: 236px;
+    border-radius: 16px;
+  }
+
+  .fortune-hub-card-desc {
+    max-width: 100%;
+  }
+
+  .fortune-hub-card-actions {
+    display: grid;
+    width: 100%;
+  }
+
+  .fortune-hub-btn-primary,
+  .fortune-hub-btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -47,6 +47,7 @@ function normalizeStatusPayload(record) {
     error_message_display: String(errorDisplay.message || ''),
     error_hint: String(errorDisplay.hint || ''),
     error_code: String(errorDisplay.code || ''),
+    maintenance_mode: !!errorDisplay.maintenanceMode,
     elapsed_seconds: elapsedSeconds,
     eta_seconds: etaSeconds,
     updated_at: String(record.updatedAt || ''),

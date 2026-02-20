@@ -2132,6 +2132,123 @@ return_label:
 END
 GO
 
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_PAYMENT_HISTORY_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = '',
+	@top_n    INT          = 100
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @safe_top INT = 100;
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	SET @safe_top = CASE
+		WHEN ISNULL(@top_n, 0) <= 0 THEN 100
+		WHEN @top_n > 500 THEN 500
+		ELSE @top_n
+	END;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'PAYMENT HISTORY SELECTED';
+
+	SELECT TOP (@safe_top)
+		@resp AS resp,
+		@resp_message AS resp_message,
+		p.payment_id,
+		p.provider,
+		p.status,
+		p.amount_krw,
+		p.token_amount,
+		p.provider_txn_id,
+		p.requested_at,
+		p.approved_at,
+		p.canceled_at,
+		p.failed_at,
+		p.error_message
+	FROM dbo.PJ_TB_PAYMENTS p WITH (NOLOCK)
+	WHERE p.login_id = @login_id
+	ORDER BY p.payment_id DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_TOKEN_LEDGER_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = '',
+	@top_n    INT          = 200
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @safe_top INT = 200;
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	SET @safe_top = CASE
+		WHEN ISNULL(@top_n, 0) <= 0 THEN 200
+		WHEN @top_n > 1000 THEN 1000
+		ELSE @top_n
+	END;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'TOKEN LEDGER SELECTED';
+
+	SELECT TOP (@safe_top)
+		@resp AS resp,
+		@resp_message AS resp_message,
+		l.ledger_id,
+		l.entry_type,
+		l.change_tokens,
+		l.balance_after,
+		l.usage_code,
+		l.reference_type,
+		l.reference_id,
+		l.event_code,
+		l.memo,
+		l.created_at
+	FROM dbo.PJ_TB_TOKEN_LEDGER l WITH (NOLOCK)
+	WHERE l.login_id = @login_id
+	ORDER BY l.ledger_id DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
 
 SET ANSI_NULLS ON
 GO
@@ -2278,5 +2395,869 @@ return_label:
 		@resp_message AS resp_message,
 		@payment_id AS payment_id,
 		@login_id AS login_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_CREATE_ANALYSIS_RESULT]
+(
+	@result_id    VARCHAR(64)   = '',
+	@payload_json NVARCHAR(MAX) = N''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '' OR ISNULL(@payload_json, N'') = N'')
+	BEGIN
+		SET @resp_message = N'RESULT_ID AND PAYLOAD_JSON REQUIRED';
+		GOTO return_label;
+	END
+
+	IF EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT_ID ALREADY EXISTS';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		INSERT INTO dbo.PJ_ANALYSIS_RESULT_STORE
+		(
+			result_id,
+			payload_json,
+			created_at,
+			updated_at
+		)
+		VALUES
+		(
+			@result_id,
+			@payload_json,
+			SYSUTCDATETIME(),
+			SYSUTCDATETIME()
+		);
+
+		SET @resp = 'OK';
+		SET @resp_message = N'ANALYSIS RESULT CREATED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@result_id AS result_id;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT]
+(
+	@result_id VARCHAR(64) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '')
+	BEGIN
+		SET @resp_message = N'RESULT_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE result_id = @result_id;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_UPDATE_ANALYSIS_RESULT]
+(
+	@result_id    VARCHAR(64)   = '',
+	@payload_json NVARCHAR(MAX) = N''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '' OR ISNULL(@payload_json, N'') = N'')
+	BEGIN
+		SET @resp_message = N'RESULT_ID AND PAYLOAD_JSON REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		UPDATE dbo.PJ_ANALYSIS_RESULT_STORE
+		SET
+			payload_json = @payload_json,
+			updated_at = SYSUTCDATETIME()
+		WHERE result_id = @result_id;
+
+		SET @resp = 'OK';
+		SET @resp_message = N'ANALYSIS RESULT UPDATED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@result_id AS result_id;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULTS_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = '',
+	@top_n    INT          = 20
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @safe_top INT = 20;
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	SET @safe_top = CASE
+		WHEN ISNULL(@top_n, 0) <= 0 THEN 20
+		WHEN @top_n > 100 THEN 100
+		ELSE @top_n
+	END;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULTS SELECTED';
+
+	SELECT TOP (@safe_top)
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_login_id = @login_id
+	ORDER BY created_at DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT_BY_LOGIN_ID]
+(
+	@login_id  VARCHAR(200) = '',
+	@result_id VARCHAR(64)  = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@login_id, '') = '' OR ISNULL(@result_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID AND RESULT_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+		  AND payload_login_id = @login_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE result_id = @result_id
+	  AND payload_login_id = @login_id;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT_BY_SHARE_TOKEN]
+(
+	@share_token VARCHAR(128) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@share_token, '') = '')
+	BEGIN
+		SET @resp_message = N'SHARE_TOKEN REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE payload_share_token = @share_token
+		  AND payload_share_enabled = 'true'
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_share_token = @share_token
+	  AND payload_share_enabled = 'true';
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_LATEST_ANALYSIS_RESULT_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE payload_login_id = @login_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'LATEST ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_login_id = @login_id
+	ORDER BY updated_at DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_GET_USER_SESSION]
+(
+	@provider   VARCHAR(20)   = '',
+	@login_id   VARCHAR(200)  = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp         VARCHAR(10)    = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200)  = N'';
+
+	IF (ISNULL(@provider, '') = '' OR ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'OK';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		u.id,
+		u.provider,
+		u.login_id,
+		u.email,
+		u.user_name,
+		u.user_gender,
+		u.user_birth_date,
+		u.user_birth_time,
+		u.birth_time_unknown,
+		u.created_at,
+		u.updated_at
+	FROM dbo.PJ_TB_USERS u WITH (NOLOCK)
+	WHERE u.provider = @provider
+	  AND u.login_id = @login_id;
+
+	IF (@@ROWCOUNT = 0)
+	BEGIN
+		SET @resp = 'ERROR';
+		SET @resp_message = N'USER NOT FOUND';
+		GOTO return_label;
+	END
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		CAST(0 AS BIGINT)           AS id,
+		CAST('' AS VARCHAR(20))     AS provider,
+		CAST('' AS VARCHAR(200))    AS login_id,
+		CAST('' AS VARCHAR(320))    AS email,
+		CAST(NULL AS NVARCHAR(50))  AS user_name,
+		CAST(NULL AS CHAR(1))       AS user_gender,
+		CAST(NULL AS DATE)          AS user_birth_date,
+		CAST(NULL AS TIME(0))       AS user_birth_time,
+		CAST(NULL AS BIT)           AS birth_time_unknown,
+		CAST(NULL AS DATETIME2(0))  AS created_at,
+		CAST(NULL AS DATETIME2(0))  AS updated_at;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_CREATE_ANALYSIS_RESULT]
+(
+	@result_id    VARCHAR(64)   = '',
+	@payload_json NVARCHAR(MAX) = N'',
+	@summary_text NVARCHAR(1000)= N''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '' OR ISNULL(@payload_json, N'') = N'')
+	BEGIN
+		SET @resp_message = N'RESULT_ID AND PAYLOAD_JSON REQUIRED';
+		GOTO return_label;
+	END
+
+	IF EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT_ID ALREADY EXISTS';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		INSERT INTO dbo.PJ_ANALYSIS_RESULT_STORE
+		(
+			result_id,
+			payload_json,
+			summary_text,
+			created_at,
+			updated_at
+		)
+		VALUES
+		(
+			@result_id,
+			@payload_json,
+			NULLIF(@summary_text, N''),
+			SYSUTCDATETIME(),
+			SYSUTCDATETIME()
+		);
+
+		SET @resp = 'OK';
+		SET @resp_message = N'ANALYSIS RESULT CREATED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@result_id AS result_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT]
+(
+	@result_id VARCHAR(64) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '')
+	BEGIN
+		SET @resp_message = N'RESULT_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		summary_text,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE result_id = @result_id;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_UPDATE_ANALYSIS_RESULT]
+(
+	@result_id    VARCHAR(64)   = '',
+	@payload_json NVARCHAR(MAX) = N'',
+	@summary_text NVARCHAR(1000)= N''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@result_id, '') = '' OR ISNULL(@payload_json, N'') = N'')
+	BEGIN
+		SET @resp_message = N'RESULT_ID AND PAYLOAD_JSON REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		UPDATE dbo.PJ_ANALYSIS_RESULT_STORE
+		SET
+			payload_json = @payload_json,
+			summary_text = NULLIF(@summary_text, N''),
+			updated_at = SYSUTCDATETIME()
+		WHERE result_id = @result_id;
+
+		SET @resp = 'OK';
+		SET @resp_message = N'ANALYSIS RESULT UPDATED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@result_id AS result_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULTS_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = '',
+	@top_n    INT          = 20
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @safe_top INT = 20;
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	SET @safe_top = CASE
+		WHEN ISNULL(@top_n, 0) <= 0 THEN 20
+		WHEN @top_n > 100 THEN 100
+		ELSE @top_n
+	END;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULTS SELECTED';
+
+	SELECT TOP (@safe_top)
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		summary_text,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_login_id = @login_id
+	ORDER BY created_at DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT_BY_LOGIN_ID]
+(
+	@login_id  VARCHAR(200) = '',
+	@result_id VARCHAR(64)  = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@login_id, '') = '' OR ISNULL(@result_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID AND RESULT_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE result_id = @result_id
+		  AND payload_login_id = @login_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		summary_text,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE result_id = @result_id
+	  AND payload_login_id = @login_id;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_ANALYSIS_RESULT_BY_SHARE_TOKEN]
+(
+	@share_token VARCHAR(128) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@share_token, '') = '')
+	BEGIN
+		SET @resp_message = N'SHARE_TOKEN REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE payload_share_token = @share_token
+		  AND payload_share_enabled = 'true'
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		summary_text,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_share_token = @share_token
+	  AND payload_share_enabled = 'true';
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_LATEST_ANALYSIS_RESULT_BY_LOGIN_ID]
+(
+	@login_id VARCHAR(200) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+		WHERE payload_login_id = @login_id
+	)
+	BEGIN
+		SET @resp_message = N'RESULT NOT FOUND';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'LATEST ANALYSIS RESULT SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		result_id,
+		payload_json,
+		summary_text,
+		created_at,
+		updated_at
+	FROM dbo.PJ_ANALYSIS_RESULT_STORE WITH (NOLOCK)
+	WHERE payload_login_id = @login_id
+	ORDER BY updated_at DESC;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
 END
 GO

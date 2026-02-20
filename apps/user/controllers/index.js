@@ -199,21 +199,9 @@ const purchaseHistory = async (req, res) => {
   let payments = [];
   try {
     const query = `
-      SELECT TOP 100
-        payment_id,
-        provider,
-        status,
-        amount_krw,
-        token_amount,
-        provider_txn_id,
-        requested_at,
-        approved_at,
-        canceled_at,
-        failed_at,
-        error_message
-      FROM dbo.PJ_TB_PAYMENTS WITH (NOLOCK)
-      WHERE login_id = '${qLoginId}'
-      ORDER BY payment_id DESC
+      EXEC dbo.PJ_USP_SELECT_PAYMENT_HISTORY_BY_LOGIN_ID
+        @login_id = '${qLoginId}',
+        @top_n = 100
     `;
 
     payments = await db.query(query);
@@ -239,20 +227,9 @@ const tokenUsageHistory = async (req, res) => {
   let usages = [];
   try {
     const query = `
-      SELECT TOP 200
-        ledger_id,
-        entry_type,
-        change_tokens,
-        balance_after,
-        usage_code,
-        reference_type,
-        reference_id,
-        event_code,
-        memo,
-        created_at
-      FROM dbo.PJ_TB_TOKEN_LEDGER WITH (NOLOCK)
-      WHERE login_id = '${qLoginId}'
-      ORDER BY ledger_id DESC
+      EXEC dbo.PJ_USP_SELECT_TOKEN_LEDGER_BY_LOGIN_ID
+        @login_id = '${qLoginId}',
+        @top_n = 200
     `;
     usages = await db.query(query);
   } catch (err) {

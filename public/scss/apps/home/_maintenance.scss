@@ -1,0 +1,123 @@
+.system-maintenance-page {
+  width: min(960px, calc(100% - 28px));
+  margin: 54px auto 74px;
+}
+
+.system-maintenance-card {
+  border: 1px solid #dbe4f2;
+  border-radius: 22px;
+  padding: clamp(24px, 4vw, 42px);
+  background:
+    radial-gradient(circle at 15% 12%, rgba(37, 99, 235, 0.14), transparent 36%),
+    linear-gradient(150deg, #f8fbff 0%, #f3f7ff 50%, #ffffff 100%);
+  box-shadow: 0 20px 34px rgba(15, 23, 42, 0.1);
+
+  h1 {
+    margin-top: 8px;
+    font-size: clamp(30px, 5.2vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+  }
+
+  > p {
+    margin-top: 14px;
+    max-width: 760px;
+    color: #475569;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+}
+
+.maintenance-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+}
+
+.maintenance-info {
+  margin-top: 18px;
+  border: 1px solid #dbe4f2;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px 14px;
+
+  p {
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.55;
+  }
+
+  p + p {
+    margin-top: 4px;
+  }
+}
+
+.maintenance-actions {
+  margin-top: 18px;
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.maintenance-btn-primary,
+.maintenance-btn-secondary {
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.maintenance-btn-primary {
+  color: #fff;
+  background: #1d4ed8;
+
+  &:hover {
+    background: #1e40af;
+  }
+}
+
+.maintenance-btn-secondary {
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
+@include mobile-screen {
+  .system-maintenance-page {
+    margin: 24px auto 44px;
+  }
+
+  .system-maintenance-card {
+    border-radius: 16px;
+    padding: 20px 16px;
+  }
+
+  .maintenance-actions {
+    display: grid;
+    width: 100%;
+  }
+
+  .maintenance-btn-primary,
+  .maintenance-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

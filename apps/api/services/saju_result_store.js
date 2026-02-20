@@ -1,8 +1,15 @@
 const { randomUUID } = require('crypto');
 const db = require('../../core/utils/db');
 
-const RESULT_TABLE = 'dbo.PJ_SAJU_RESULT_STORE';
+const RESULT_TABLE = 'dbo.PJ_ANALYSIS_RESULT_STORE';
+const LEGACY_RESULT_TABLE = 'dbo.PJ_SAJU_RESULT_STORE';
 let ensureTablePromise = null;
+
+function extractSummaryText(payload = {}) {
+  const summary = String(payload?.result?.summary || '').trim();
+  if (!summary) return '';
+  return summary.slice(0, 1000);
+}
 
 async function ensureResultTable() {
   if (ensureTablePromise) return ensureTablePromise;
@@ -10,12 +17,26 @@ async function ensureResultTable() {
   ensureTablePromise = db.query(`
     IF OBJECT_ID('${RESULT_TABLE}', 'U') IS NULL
     BEGIN
-      CREATE TABLE ${RESULT_TABLE} (
-        result_id NVARCHAR(64) NOT NULL PRIMARY KEY,
-        payload_json NVARCHAR(MAX) NOT NULL,
-        created_at DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
-        updated_at DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME()
-      );
+      IF OBJECT_ID('${LEGACY_RESULT_TABLE}', 'U') IS NOT NULL
+      BEGIN
+        EXEC sp_rename '${LEGACY_RESULT_TABLE}', 'PJ_ANALYSIS_RESULT_STORE';
+      END
+      ELSE
+      BEGIN
+        CREATE TABLE ${RESULT_TABLE} (
+          result_id NVARCHAR(64) NOT NULL PRIMARY KEY,
+          payload_json NVARCHAR(MAX) NOT NULL,
+          summary_text NVARCHAR(1000) NULL,
+          created_at DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+          updated_at DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME()
+        );
+      END
+    END
+
+    IF COL_LENGTH('${RESULT_TABLE}', 'summary_text') IS NULL
+    BEGIN
+      ALTER TABLE ${RESULT_TABLE}
+      ADD summary_text NVARCHAR(1000) NULL;
     END
   `);
 
@@ -46,11 +67,18 @@ async function createSajuResultRecord(initialData = {}) {
 
   const qResultId = db.convertQ(resultId);
   const qPayload = db.convertQ(JSON.stringify(record));
+  const qSummary = db.convertQ(extractSummaryText(record));
   const query = `
-    INSERT INTO ${RESULT_TABLE} (result_id, payload_json, created_at, updated_at)
-    VALUES (N'${qResultId}', N'${qPayload}', SYSUTCDATETIME(), SYSUTCDATETIME())
+    EXEC dbo.PJ_USP_CREATE_ANALYSIS_RESULT
+      @result_id = N'${qResultId}',
+      @payload_json = N'${qPayload}',
+      @summary_text = N'${qSummary}'
   `;
-  await db.query(query);
+  const rs = await db.query(query);
+  const row = rs && rs[0] ? rs[0] : {};
+  if (String(row.resp || 'ERROR').toUpperCase() !== 'OK') {
+    throw new Error(String(row.resp_message || 'CREATE_ANALYSIS_RESULT_FAILED'));
+  }
 
   return record;
 }
@@ -63,9 +91,8 @@ async function getSajuResultRecord(resultId) {
 
   const qResultId = db.convertQ(normalizedResultId);
   const query = `
-    SELECT TOP 1 payload_json
-    FROM ${RESULT_TABLE}
-    WHERE result_id = N'${qResultId}'
+    EXEC dbo.PJ_USP_SELECT_ANALYSIS_RESULT
+      @result_id = N'${qResultId}'
   `;
   const rs = await db.query(query);
   const row = rs && rs[0] ? rs[0] : null;
@@ -93,13 +120,18 @@ async function updateSajuResultRecord(resultId, patch = {}) {
 
   const qResultId = db.convertQ(String(resultId || ''));
   const qPayload = db.convertQ(JSON.stringify(next));
+  const qSummary = db.convertQ(extractSummaryText(next));
   const query = `
-    UPDATE ${RESULT_TABLE}
-    SET payload_json = N'${qPayload}',
-        updated_at = SYSUTCDATETIME()
-    WHERE result_id = N'${qResultId}'
+    EXEC dbo.PJ_USP_UPDATE_ANALYSIS_RESULT
+      @result_id = N'${qResultId}',
+      @payload_json = N'${qPayload}',
+      @summary_text = N'${qSummary}'
   `;
-  await db.query(query);
+  const rs = await db.query(query);
+  const row = rs && rs[0] ? rs[0] : {};
+  if (String(row.resp || 'ERROR').toUpperCase() !== 'OK') {
+    return null;
+  }
 
   return next;
 }
@@ -138,6 +170,7 @@ function mapHistoryItem(row = {}) {
     updatedAt: String(payload.updatedAt || row.updated_at || ''),
     request: req,
     result,
+    summary: String(result.summary || row.summary_text || ''),
     share: {
       enabled: !!share.enabled,
       token: String(share.token || ''),
@@ -163,17 +196,15 @@ async function listSajuResultRecordsByLoginId(loginId, limit = 20) {
   const safeTopN = Math.min(topN, 100);
   const qLoginId = db.convertQ(normalizedLoginId);
   const query = `
-    SELECT TOP ${safeTopN}
-      result_id,
-      payload_json,
-      created_at,
-      updated_at
-    FROM ${RESULT_TABLE}
-    WHERE JSON_VALUE(payload_json, '$.loginId') = '${qLoginId}'
-    ORDER BY created_at DESC
+    EXEC dbo.PJ_USP_SELECT_ANALYSIS_RESULTS_BY_LOGIN_ID
+      @login_id = '${qLoginId}',
+      @top_n = ${safeTopN}
   `;
 
   const rs = await db.query(query);
+  if (rs.length === 1 && !rs[0].result_id && String(rs[0].resp || '').toUpperCase() !== 'OK') {
+    return [];
+  }
   return (rs || []).map(mapHistoryItem).filter((item) => !!item.resultId);
 }
 
@@ -187,14 +218,9 @@ async function getSajuResultRecordByLoginId(loginId, resultId) {
   const qLoginId = db.convertQ(normalizedLoginId);
   const qResultId = db.convertQ(normalizedResultId);
   const query = `
-    SELECT TOP 1
-      result_id,
-      payload_json,
-      created_at,
-      updated_at
-    FROM ${RESULT_TABLE}
-    WHERE result_id = N'${qResultId}'
-      AND JSON_VALUE(payload_json, '$.loginId') = '${qLoginId}'
+    EXEC dbo.PJ_USP_SELECT_ANALYSIS_RESULT_BY_LOGIN_ID
+      @login_id = '${qLoginId}',
+      @result_id = N'${qResultId}'
   `;
 
   const rs = await db.query(query);
@@ -235,14 +261,8 @@ async function getSajuResultRecordByShareToken(shareToken) {
 
   const qToken = db.convertQ(normalizedToken);
   const query = `
-    SELECT TOP 1
-      result_id,
-      payload_json,
-      created_at,
-      updated_at
-    FROM ${RESULT_TABLE}
-    WHERE JSON_VALUE(payload_json, '$.share.token') = '${qToken}'
-      AND JSON_VALUE(payload_json, '$.share.enabled') = 'true'
+    EXEC dbo.PJ_USP_SELECT_ANALYSIS_RESULT_BY_SHARE_TOKEN
+      @share_token = '${qToken}'
   `;
 
   const rs = await db.query(query);
@@ -259,10 +279,8 @@ async function getLatestSajuResultRecordByLoginId(loginId) {
 
   const qLoginId = db.convertQ(normalizedLoginId);
   const query = `
-    SELECT TOP 1 payload_json
-    FROM ${RESULT_TABLE}
-    WHERE JSON_VALUE(payload_json, '$.loginId') = '${qLoginId}'
-    ORDER BY updated_at DESC
+    EXEC dbo.PJ_USP_SELECT_LATEST_ANALYSIS_RESULT_BY_LOGIN_ID
+      @login_id = '${qLoginId}'
   `;
   const rs = await db.query(query);
   const row = rs && rs[0] ? rs[0] : null;

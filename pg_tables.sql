@@ -2,9 +2,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[PJ_SAJU_RESULT_STORE](
+CREATE TABLE [dbo].[PJ_ANALYSIS_RESULT_STORE](
 	[result_id] [nvarchar](64) NOT NULL,
 	[payload_json] [nvarchar](max) NOT NULL,
+	[summary_text] [nvarchar](1000) NULL,
 	[created_at] [datetime2](3) NOT NULL,
 	[updated_at] [datetime2](3) NOT NULL,
 PRIMARY KEY CLUSTERED 
@@ -13,9 +14,9 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[PJ_SAJU_RESULT_STORE] ADD  DEFAULT (sysutcdatetime()) FOR [created_at]
+ALTER TABLE [dbo].[PJ_ANALYSIS_RESULT_STORE] ADD  DEFAULT (sysutcdatetime()) FOR [created_at]
 GO
-ALTER TABLE [dbo].[PJ_SAJU_RESULT_STORE] ADD  DEFAULT (sysutcdatetime()) FOR [updated_at]
+ALTER TABLE [dbo].[PJ_ANALYSIS_RESULT_STORE] ADD  DEFAULT (sysutcdatetime()) FOR [updated_at]
 GO
 
 
@@ -254,4 +255,98 @@ REFERENCES [dbo].[PJ_TB_USERS] ([login_id])
 GO
 ALTER TABLE [dbo].[PJ_TB_TOKEN_LEDGER]  WITH CHECK ADD  CONSTRAINT [FK_PJ_TB_TOKEN_LEDGER_PAYMENTS] FOREIGN KEY([payment_id])
 REFERENCES [dbo].[PJ_TB_PAYMENTS] ([payment_id])
+GO
+
+IF COL_LENGTH('dbo.PJ_ANALYSIS_RESULT_STORE', 'payload_login_id') IS NULL
+BEGIN
+	ALTER TABLE dbo.PJ_ANALYSIS_RESULT_STORE
+	ADD payload_login_id AS CONVERT(VARCHAR(200), JSON_VALUE(payload_json, '$.loginId')) PERSISTED;
+END
+GO
+
+IF COL_LENGTH('dbo.PJ_ANALYSIS_RESULT_STORE', 'payload_share_token') IS NULL
+BEGIN
+	ALTER TABLE dbo.PJ_ANALYSIS_RESULT_STORE
+	ADD payload_share_token AS CONVERT(VARCHAR(128), JSON_VALUE(payload_json, '$.share.token')) PERSISTED;
+END
+GO
+
+IF COL_LENGTH('dbo.PJ_ANALYSIS_RESULT_STORE', 'payload_share_enabled') IS NULL
+BEGIN
+	ALTER TABLE dbo.PJ_ANALYSIS_RESULT_STORE
+	ADD payload_share_enabled AS CONVERT(VARCHAR(10), JSON_VALUE(payload_json, '$.share.enabled')) PERSISTED;
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_ANALYSIS_RESULT_STORE')
+	  AND name = 'IX_PJ_ANALYSIS_RESULT_STORE_LOGIN_ID_CREATED_AT'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_ANALYSIS_RESULT_STORE_LOGIN_ID_CREATED_AT]
+	ON [dbo].[PJ_ANALYSIS_RESULT_STORE] ([payload_login_id] ASC, [created_at] DESC)
+	INCLUDE ([result_id], [updated_at], [summary_text]);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_ANALYSIS_RESULT_STORE')
+	  AND name = 'IX_PJ_ANALYSIS_RESULT_STORE_SHARE_TOKEN'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_ANALYSIS_RESULT_STORE_SHARE_TOKEN]
+	ON [dbo].[PJ_ANALYSIS_RESULT_STORE] ([payload_share_token] ASC, [payload_share_enabled] ASC)
+	INCLUDE ([result_id], [created_at], [updated_at], [summary_text]);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_PAYMENTS')
+	  AND name = 'IX_PJ_TB_PAYMENTS_LOGIN_ID_PAYMENT_ID'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_PAYMENTS_LOGIN_ID_PAYMENT_ID]
+	ON [dbo].[PJ_TB_PAYMENTS] ([login_id] ASC, [payment_id] DESC)
+	INCLUDE (
+		[provider],
+		[status],
+		[amount_krw],
+		[token_amount],
+		[provider_txn_id],
+		[requested_at],
+		[approved_at],
+		[canceled_at],
+		[failed_at],
+		[error_message]
+	);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_TOKEN_LEDGER')
+	  AND name = 'IX_PJ_TB_TOKEN_LEDGER_LOGIN_ID_LEDGER_ID'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_TOKEN_LEDGER_LOGIN_ID_LEDGER_ID]
+	ON [dbo].[PJ_TB_TOKEN_LEDGER] ([login_id] ASC, [ledger_id] DESC)
+	INCLUDE (
+		[entry_type],
+		[change_tokens],
+		[balance_after],
+		[usage_code],
+		[reference_type],
+		[reference_id],
+		[event_code],
+		[memo],
+		[created_at]
+	);
+END
 GO

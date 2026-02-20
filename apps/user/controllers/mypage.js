@@ -110,6 +110,11 @@ async function getOrCreateReferralLink(req, loginId) {
   }
 }
 
+function toBoolOption(value, fallback) {
+  if (typeof value === 'boolean') return value;
+  return fallback;
+}
+
 function mapGenderToDb(rawGender) {
   const v = String(rawGender || '').trim().toLowerCase();
   if (v === 'male' || v === 'm' || v === '남' || v === '남성') return 'M';
@@ -187,89 +192,123 @@ function normalizeRelationInput(rawRelation) {
   return foundCode || '';
 }
 
-async function loadMypageCommon(req) {
+async function loadMypageCommon(req, options = {}) {
   ensureMypageState(req);
 
   const loginId = String(req.session.user.login_id || '');
   const qLoginId = db.convertQ(loginId);
+  const includeHistory = toBoolOption(options.includeHistory, true);
+  const includeTokens = toBoolOption(options.includeTokens, true);
+  const includeProfile = toBoolOption(options.includeProfile, true);
+  const includeRelatives = toBoolOption(options.includeRelatives, true);
+  const includeReferral = toBoolOption(options.includeReferral, false);
 
   let consultationHistory = [];
-  try {
-    consultationHistory = await listSajuResultRecordsByLoginId(loginId, 30);
-  } catch (err) {
-    console.error('[MYPAGE HISTORY LIST ERROR]', err.message);
-    consultationHistory = [];
-  }
-
   let currentTokens = 0;
-  try {
-    const summaryQuery = `
-      EXEC dbo.PJ_USP_GET_TOKEN_SUMMARY
-        @login_id = '${qLoginId}'
-    `;
-    const rs = await db.query(summaryQuery);
-    const row = rs && rs[0] ? rs[0] : {};
-    if (String(row.resp || '').toUpperCase() === 'OK') {
-      currentTokens = Number(row.current_tokens || 0);
-    }
-  } catch (err) {
-    console.error('[MYPAGE TOKEN SUMMARY ERROR]', err.message);
-  }
-
   let profileFromDb = req.session.mypageProfile;
-  try {
-    const userQuery = `
-      SELECT TOP 1
-        user_gender,
-        user_birth_date,
-        user_birth_time,
-        birth_time_unknown
-      FROM dbo.PJ_TB_USERS WITH (NOLOCK)
-      WHERE login_id = '${qLoginId}'
-    `;
-    const userRs = await db.query(userQuery);
-    const userRow = userRs && userRs[0] ? userRs[0] : null;
-    if (userRow) {
-      profileFromDb = {
-        birthDate: normalizeDateForInput(userRow.user_birth_date),
-        birthTime: normalizeTimeForInput(userRow.user_birth_time, userRow.birth_time_unknown),
-        gender: normalizeGenderForForm(userRow.user_gender),
-      };
-      req.session.mypageProfile = profileFromDb;
+  let relativesFromDb = Array.isArray(req.session.mypageRelatives) ? req.session.mypageRelatives : [];
+  let referralLink = String(req.session.mypageReferralLink || '');
+
+  const tasks = [];
+
+  if (includeHistory) {
+    tasks.push((async () => {
+      try {
+        consultationHistory = await listSajuResultRecordsByLoginId(loginId, 30);
+      } catch (err) {
+        console.error('[MYPAGE HISTORY LIST ERROR]', err.message);
+        consultationHistory = [];
+      }
+    })());
+  }
+
+  if (includeTokens) {
+    tasks.push((async () => {
+      try {
+        const summaryQuery = `
+          EXEC dbo.PJ_USP_GET_TOKEN_SUMMARY
+            @login_id = '${qLoginId}'
+        `;
+        const rs = await db.query(summaryQuery);
+        const row = rs && rs[0] ? rs[0] : {};
+        if (String(row.resp || '').toUpperCase() === 'OK') {
+          currentTokens = Number(row.current_tokens || 0);
+        }
+      } catch (err) {
+        console.error('[MYPAGE TOKEN SUMMARY ERROR]', err.message);
+      }
+    })());
+  }
+
+  if (includeProfile) {
+    tasks.push((async () => {
+      try {
+        const userQuery = `
+          SELECT TOP 1
+            user_gender,
+            user_birth_date,
+            user_birth_time,
+            birth_time_unknown
+          FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+          WHERE login_id = '${qLoginId}'
+        `;
+        const userRs = await db.query(userQuery);
+        const userRow = userRs && userRs[0] ? userRs[0] : null;
+        if (userRow) {
+          profileFromDb = {
+            birthDate: normalizeDateForInput(userRow.user_birth_date),
+            birthTime: normalizeTimeForInput(userRow.user_birth_time, userRow.birth_time_unknown),
+            gender: normalizeGenderForForm(userRow.user_gender),
+          };
+          req.session.mypageProfile = profileFromDb;
+        }
+      } catch (err) {
+        console.error('[MYPAGE PROFILE LOAD ERROR]', err.message);
+      }
+    })());
+  }
+
+  if (includeRelatives) {
+    tasks.push((async () => {
+      try {
+        const relQuery = `
+          EXEC dbo.PJ_USP_SELECT_RELATIVES
+            @login_id = '${qLoginId}'
+        `;
+        const relRs = await db.query(relQuery);
+        relativesFromDb = (relRs || [])
+          .filter((row) => Number(row.relative_id || 0) > 0)
+          .map((row) => {
+            const relationCode = normalizeRelationInput(row.relation) || 'OTHER';
+            return {
+              localId: Number(row.relative_id || 0),
+              relationType: relationCode,
+              relationLabel: getRelationLabel(relationCode, 'ko'),
+              name: String(row.relative_name || '').trim(),
+              birthDate: normalizeDateForInput(row.relative_birth_date),
+              birthTime: normalizeTimeForInput(row.relative_birth_time, row.birth_time_unknown),
+              gender: normalizeGenderForForm(row.relative_gender),
+              memo: '',
+            };
+          });
+        req.session.mypageRelatives = relativesFromDb;
+      } catch (err) {
+        console.error('[MYPAGE RELATIVES LOAD ERROR]', err.message);
+        relativesFromDb = Array.isArray(req.session.mypageRelatives) ? req.session.mypageRelatives : [];
+      }
+    })());
+  }
+
+  await Promise.all(tasks);
+
+  if (includeReferral) {
+    if (!referralLink) {
+      referralLink = await getOrCreateReferralLink(req, loginId);
+      req.session.mypageReferralLink = referralLink;
     }
-  } catch (err) {
-    console.error('[MYPAGE PROFILE LOAD ERROR]', err.message);
+  } else {
+    referralLink = '';
   }
-
-  let relativesFromDb = [];
-  try {
-    const relQuery = `
-      EXEC dbo.PJ_USP_SELECT_RELATIVES
-        @login_id = '${qLoginId}'
-    `;
-    const relRs = await db.query(relQuery);
-    relativesFromDb = (relRs || [])
-      .filter((row) => Number(row.relative_id || 0) > 0)
-      .map((row) => {
-        const relationCode = normalizeRelationInput(row.relation) || 'OTHER';
-        return {
-          localId: Number(row.relative_id || 0),
-          relationType: relationCode,
-          relationLabel: getRelationLabel(relationCode, 'ko'),
-          name: String(row.relative_name || '').trim(),
-          birthDate: normalizeDateForInput(row.relative_birth_date),
-          birthTime: normalizeTimeForInput(row.relative_birth_time, row.birth_time_unknown),
-          gender: normalizeGenderForForm(row.relative_gender),
-          memo: '',
-        };
-      });
-    req.session.mypageRelatives = relativesFromDb;
-  } catch (err) {
-    console.error('[MYPAGE RELATIVES LOAD ERROR]', err.message);
-    relativesFromDb = Array.isArray(req.session.mypageRelatives) ? req.session.mypageRelatives : [];
-  }
-
-  const referralLink = await getOrCreateReferralLink(req, loginId);
 
   return {
     profile: profileFromDb,
@@ -284,7 +323,7 @@ async function loadMypageCommon(req) {
 const index = async (req, res) => {
   if (!requireLoginOrRedirect(req, res)) return;
 
-  const common = await loadMypageCommon(req);
+  const common = await loadMypageCommon(req, { includeReferral: true });
   const recentHistory = (common.consultationHistory || []).slice(0, 5);
 
   res.render('user/pages/mypage', {
@@ -297,7 +336,10 @@ const index = async (req, res) => {
 const profilePage = async (req, res) => {
   if (!requireLoginOrRedirect(req, res)) return;
 
-  const common = await loadMypageCommon(req);
+  const common = await loadMypageCommon(req, {
+    includeTokens: false,
+    includeReferral: false,
+  });
   res.render('user/pages/mypage_profile', {
     ...common,
     currentMenu: 'profile',
@@ -307,7 +349,11 @@ const profilePage = async (req, res) => {
 const relativesPage = async (req, res) => {
   if (!requireLoginOrRedirect(req, res)) return;
 
-  const common = await loadMypageCommon(req);
+  const common = await loadMypageCommon(req, {
+    includeTokens: false,
+    includeProfile: false,
+    includeReferral: false,
+  });
   res.render('user/pages/mypage_relatives', {
     ...common,
     currentMenu: 'relatives',
@@ -317,7 +363,11 @@ const relativesPage = async (req, res) => {
 const historyPage = async (req, res) => {
   if (!requireLoginOrRedirect(req, res)) return;
 
-  const common = await loadMypageCommon(req);
+  const common = await loadMypageCommon(req, {
+    includeTokens: false,
+    includeProfile: false,
+    includeReferral: false,
+  });
   res.render('user/pages/mypage_history', {
     ...common,
     currentMenu: 'history',
@@ -333,7 +383,11 @@ const historyDetail = async (req, res) => {
     return res.status(400).send('잘못된 상담 내역 ID입니다.');
   }
 
-  const common = await loadMypageCommon(req);
+  const common = await loadMypageCommon(req, {
+    includeTokens: false,
+    includeProfile: false,
+    includeReferral: false,
+  });
   let record = null;
   try {
     record = await getSajuResultRecordByLoginId(loginId, resultId);
@@ -516,7 +570,13 @@ const createRelative = async (req, res) => {
       });
     }
 
-    const common = await loadMypageCommon(req);
+    const common = await loadMypageCommon(req, {
+      includeHistory: false,
+      includeTokens: false,
+      includeProfile: false,
+      includeRelatives: true,
+      includeReferral: false,
+    });
     req.session.mypageRelatives = common.relatives;
     await saveSession(req);
 
@@ -616,7 +676,13 @@ const updateRelative = async (req, res) => {
       });
     }
 
-    const common = await loadMypageCommon(req);
+    const common = await loadMypageCommon(req, {
+      includeHistory: false,
+      includeTokens: false,
+      includeProfile: false,
+      includeRelatives: true,
+      includeReferral: false,
+    });
     req.session.mypageRelatives = common.relatives;
     await saveSession(req);
 
@@ -685,7 +751,13 @@ const deleteRelative = async (req, res) => {
       }
     }
 
-    const common = await loadMypageCommon(req);
+    const common = await loadMypageCommon(req, {
+      includeHistory: false,
+      includeTokens: false,
+      includeProfile: false,
+      includeRelatives: true,
+      includeReferral: false,
+    });
     req.session.mypageRelatives = common.relatives;
     if ((common.relatives || []).some((item) => Number(item.localId) === localId)) {
       return res.status(404).json({

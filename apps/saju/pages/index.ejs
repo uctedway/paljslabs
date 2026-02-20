@@ -1,3 +1,35 @@
+<% if (pageMode !== 'form') { %>
+<section class="fortune-intro service-intro-saju">
+	<div class="fortune-intro-hero">
+		<p class="fortune-intro-eyebrow">Saju Guide</p>
+		<h1><%= serviceOverview?.title || '사주팔자' %></h1>
+		<p class="fortune-intro-subtitle"><%= serviceOverview?.subtitle || '' %></p>
+		<p class="fortune-intro-description"><%= serviceOverview?.description || '' %></p>
+		<div class="fortune-intro-cta-row">
+			<a class="btn-service-primary" href="/saju?view=form"><%= serviceOverview?.ctaLabel || '사주 보기' %></a>
+			<a class="btn-service-secondary" href="/fortune">다른 운세 서비스 보기</a>
+		</div>
+	</div>
+
+	<div class="fortune-intro-grid">
+		<% (serviceOverview?.highlights || []).forEach(function(item) { %>
+			<article class="fortune-intro-card">
+				<h3><%= item.title %></h3>
+				<p><%= item.text %></p>
+			</article>
+		<% }) %>
+	</div>
+
+	<aside class="fortune-intro-note">
+		<h4>이렇게 이해하면 쉬워요</h4>
+		<ul>
+			<% (serviceOverview?.notes || []).forEach(function(note) { %>
+				<li><%= note %></li>
+			<% }) %>
+		</ul>
+	</aside>
+</section>
+<% } else { %>
 <section class="saju-form-section">
 	<h2>사주풀이</h2>
 	<p class="section-desc">생년월일과 시간을 입력하면 당신의 사주를 분석해드립니다.</p>
@@ -118,3 +150,4 @@
 	const sajuTargets = <%- JSON.stringify(sajuTargets || []) %>;
 	initSajuFormContainer({ sajuTargets });
 </script>
+<% } %>

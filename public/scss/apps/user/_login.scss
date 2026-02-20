@@ -33,7 +33,7 @@
 
 .provider-row {
   width: 100%;
-  min-height: 50px;
+  height: 52px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
@@ -45,11 +45,19 @@
 .google-signin-wrap {
   border: 1px solid #dbe5f3;
   background: #fff;
-  padding: 8px;
+  padding: 0;
+  overflow: hidden;
 }
 
 .google-signin-wrap .g_id_signin {
+  width: 100%;
   @include flex-center;
+}
+
+.google-signin-wrap .g_id_signin > div,
+.google-signin-wrap .g_id_signin iframe {
+  width: 100% !important;
+  min-height: 50px !important;
 }
 
 .naver-signin-btn {

@@ -10,26 +10,6 @@ const GOOGLE_CLIENT_ID =
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 /* =========================================
-   공용: 회원 체크
-   - 반환: row (resp/resp_message + (추후 확장 시 기본정보))
-========================================= */
-async function checkUser(provider, login_id) {
-  const q_provider = db.convertQ(provider || '');
-  const q_login_id = db.convertQ(login_id || '');
-
-  const query = `
-	EXEC dbo.PJ_USP_CHECK_USER
-	  @provider = '${q_provider}',
-	  @login_id = '${q_login_id}'
-  `;
-  console.log('check query '+query);
-  const rs = await db.query(query);
-  const row = rs && rs[0] ? rs[0] : {};
-  return String(row.resp || 'ERROR').toUpperCase();
-
-}
-
-/* =========================================
    공용: 회원가입
    - PJ_USP_CREATE_USERS 수정본: id + 기본정보 반환
    - 반환: row (resp/resp_message/id/provider/login_id/email/user_name...)
@@ -65,6 +45,58 @@ async function loadUserSessionRow(provider, login_id) {
   `;
   const rs = await db.query(query);
   return rs && rs[0] ? rs[0] : {};
+}
+
+async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '' }) {
+  const sessionRow = await loadUserSessionRow(provider, login_id);
+  const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
+  if (sessionResp === 'OK') {
+    return {
+      ok: true,
+      isNew: false,
+      row: sessionRow,
+    };
+  }
+
+  const sessionMessage = String(sessionRow.resp_message || '').toUpperCase();
+  if (sessionMessage !== 'USER NOT FOUND') {
+    return {
+      ok: false,
+      stage: 'session',
+      message: String(sessionRow.resp_message || 'USER SESSION LOAD ERROR'),
+    };
+  }
+
+  const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
+  const createResp = String(createdUser.resp || 'ERROR').toUpperCase();
+  if (createResp === 'OK') {
+    return {
+      ok: true,
+      isNew: true,
+      row: createdUser,
+      referralApplied: Number(createdUser.referral_applied || 0) === 1,
+    };
+  }
+
+  // 동시 요청 경합으로 이미 생성된 경우 세션 조회를 한 번 더 시도합니다.
+  const createMessage = String(createdUser.resp_message || '');
+  if (createMessage.toUpperCase().includes('ALREADY EXISTS')) {
+    const retryRow = await loadUserSessionRow(provider, login_id);
+    const retryResp = String(retryRow.resp || 'ERROR').toUpperCase();
+    if (retryResp === 'OK') {
+      return {
+        ok: true,
+        isNew: false,
+        row: retryRow,
+      };
+    }
+  }
+
+  return {
+    ok: false,
+    stage: 'signup',
+    message: createMessage || 'USER SIGNUP ERROR',
+  };
 }
 
 function normalizeReferralCode(rawCode) {
@@ -384,26 +416,27 @@ const googleAuth = async (req, res) => {
 	const user_name = payload.name || '';
 	const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
 
-	/* 1) 회원 체크 */
-	const resp = await checkUser(provider, login_id);
-	/* 2) 회원이면: (일단) 프린트만 */
-	if (resp === 'OK') {
-	  const row = await loadUserSessionRow(provider, login_id);
-	  const resp3 = String(row.resp || 'ERROR').toUpperCase();
-	
-	  if (resp3 !== 'OK') {
-		return res.status(400).json({
-		  resp: 'ERROR',
-		  resp_message: row.resp_message || 'USER SESSION LOAD ERROR',
-		  resp_action: [{ type: 'alert', value: row.resp_message || 'USER SESSION LOAD ERROR' }],
-		});
-	  }
-	
-	  delete req.session.pendingReferralCode;
+	const authResult = await resolveAuthUser({
+	  provider,
+	  login_id,
+	  email,
+	  user_name,
+	  referralCode,
+	});
+
+	if (!authResult.ok) {
+	  return res.status(400).json({
+		resp: 'ERROR',
+		resp_message: authResult.message || 'ERROR',
+		resp_action: [{ type: 'alert', value: authResult.message || 'ERROR' }],
+	  });
+	}
+
+	delete req.session.pendingReferralCode;
+	await setUserSession(req, authResult.row);
+
+	if (!authResult.isNew) {
 	  delete req.session.welcomeContext;
-	  await setUserSession(req, row);
-	
-	  console.log('회원로그인로직시작');
 	  return res.json({
 		resp: 'OK',
 		resp_message: 'OK',
@@ -411,24 +444,9 @@ const googleAuth = async (req, res) => {
 	  });
 	}
 
-	/* 3) 비회원이면: 가입 */
-	const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
-	const resp2 = String(createdUser.resp || 'ERROR').toUpperCase();
-
-	if (resp2 !== 'OK') {
-	  return res.status(400).json({
-		resp: 'ERROR',
-		resp_message: createdUser.resp_message || 'ERROR',
-		resp_action: [{ type: 'alert', value: createdUser.resp_message || 'ERROR' }],
-	  });
-	}
-
-	/* 4) 가입 완료 시: 세션 선언 후 초기화면 이동 */
-	delete req.session.pendingReferralCode;
-	await setUserSession(req, createdUser);
 	req.session.welcomeContext = {
 	  isNewSignup: true,
-	  referralApplied: Number(createdUser.referral_applied || 0) === 1,
+	  referralApplied: !!authResult.referralApplied,
 	};
 	await new Promise((resolve, reject) => {
 	  req.session.save((err) => {
@@ -436,8 +454,6 @@ const googleAuth = async (req, res) => {
 		resolve();
 	  });
 	});
-
-	console.log('가입완료');
 	return res.json({
 	  resp: 'OK',
 	  resp_message: 'OK',
@@ -470,32 +486,28 @@ const naverAuthCallback = async (req, res) => {
     const user_name = String(profile.name || profile.nickname || '').trim() || '회원';
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
 
-    const resp = await checkUser(provider, login_id);
-    if (resp === 'OK') {
-      const row = await loadUserSessionRow(provider, login_id);
-      const resp3 = String(row.resp || 'ERROR').toUpperCase();
-      if (resp3 !== 'OK') {
-        return res.redirect('/user/login?error=naver_session');
-      }
-      delete req.session.pendingReferralCode;
-      delete req.session.welcomeContext;
-      delete req.session.naverLoginState;
-      await setUserSession(req, row);
-      return res.redirect('/user/mypage');
-    }
-
-    const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
-    const resp2 = String(createdUser.resp || 'ERROR').toUpperCase();
-    if (resp2 !== 'OK') {
-      return res.redirect('/user/login?error=naver_signup');
+    const authResult = await resolveAuthUser({
+      provider,
+      login_id,
+      email,
+      user_name,
+      referralCode,
+    });
+    if (!authResult.ok) {
+      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'naver_session' : 'naver_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.naverLoginState;
-    await setUserSession(req, createdUser);
+    await setUserSession(req, authResult.row);
+    if (!authResult.isNew) {
+      delete req.session.welcomeContext;
+      return res.redirect('/user/mypage');
+    }
+
     req.session.welcomeContext = {
       isNewSignup: true,
-      referralApplied: Number(createdUser.referral_applied || 0) === 1,
+      referralApplied: !!authResult.referralApplied,
     };
     await new Promise((resolve, reject) => {
       req.session.save((err) => (err ? reject(err) : resolve()));
@@ -530,35 +542,28 @@ const kakaoAuthCallback = async (req, res) => {
     const user_name = String(profile?.kakao_account?.profile?.nickname || '').trim() || '회원';
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
 
-    const resp = await checkUser(provider, login_id);
-    console.log(`[KAKAO AUTH] checkUser resp=${resp}, login_id=${login_id}, has_email=${rawEmail ? 'Y' : 'N'}`);
-    if (resp === 'OK') {
-      const row = await loadUserSessionRow(provider, login_id);
-      const resp3 = String(row.resp || 'ERROR').toUpperCase();
-      console.log(`[KAKAO AUTH] loadUserSession resp=${resp3}`);
-      if (resp3 !== 'OK') {
-        return res.redirect('/user/login?error=kakao_session');
-      }
-      delete req.session.pendingReferralCode;
-      delete req.session.welcomeContext;
-      delete req.session.kakaoLoginState;
-      await setUserSession(req, row);
-      return res.redirect('/user/mypage');
-    }
-
-    const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
-    const resp2 = String(createdUser.resp || 'ERROR').toUpperCase();
-    console.log(`[KAKAO AUTH] signup resp=${resp2}, message=${String(createdUser.resp_message || '')}`);
-    if (resp2 !== 'OK') {
-      return res.redirect('/user/login?error=kakao_signup');
+    const authResult = await resolveAuthUser({
+      provider,
+      login_id,
+      email,
+      user_name,
+      referralCode,
+    });
+    if (!authResult.ok) {
+      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'kakao_session' : 'kakao_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.kakaoLoginState;
-    await setUserSession(req, createdUser);
+    await setUserSession(req, authResult.row);
+    if (!authResult.isNew) {
+      delete req.session.welcomeContext;
+      return res.redirect('/user/mypage');
+    }
+
     req.session.welcomeContext = {
       isNewSignup: true,
-      referralApplied: Number(createdUser.referral_applied || 0) === 1,
+      referralApplied: !!authResult.referralApplied,
     };
     await new Promise((resolve, reject) => {
       req.session.save((err) => (err ? reject(err) : resolve()));
@@ -598,32 +603,28 @@ const appleAuthCallback = async (req, res) => {
     const user_name = String(idTokenPayload?.email || '회원').trim();
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
 
-    const resp = await checkUser(provider, login_id);
-    if (resp === 'OK') {
-      const row = await loadUserSessionRow(provider, login_id);
-      const resp3 = String(row.resp || 'ERROR').toUpperCase();
-      if (resp3 !== 'OK') {
-        return res.redirect('/user/login?error=apple_session');
-      }
-      delete req.session.pendingReferralCode;
-      delete req.session.welcomeContext;
-      delete req.session.appleLoginState;
-      await setUserSession(req, row);
-      return res.redirect('/user/mypage');
-    }
-
-    const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
-    const resp2 = String(createdUser.resp || 'ERROR').toUpperCase();
-    if (resp2 !== 'OK') {
-      return res.redirect('/user/login?error=apple_signup');
+    const authResult = await resolveAuthUser({
+      provider,
+      login_id,
+      email,
+      user_name,
+      referralCode,
+    });
+    if (!authResult.ok) {
+      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'apple_session' : 'apple_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.appleLoginState;
-    await setUserSession(req, createdUser);
+    await setUserSession(req, authResult.row);
+    if (!authResult.isNew) {
+      delete req.session.welcomeContext;
+      return res.redirect('/user/mypage');
+    }
+
     req.session.welcomeContext = {
       isNewSignup: true,
-      referralApplied: Number(createdUser.referral_applied || 0) === 1,
+      referralApplied: !!authResult.referralApplied,
     };
     await new Promise((resolve, reject) => {
       req.session.save((err) => (err ? reject(err) : resolve()));

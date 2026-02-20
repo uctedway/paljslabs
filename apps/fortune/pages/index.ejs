@@ -1,17 +1,48 @@
-<section class="home-hub">
-  <div class="home-hub-head">
-    <p class="hub-eyebrow">48LAB</p>
-    <h2>운세 메뉴</h2>
-    <p>원하는 기능을 선택해서 바로 분석을 시작하세요.</p>
-  </div>
+<section class="fortune-hub-page">
+  <header class="fortune-hub-hero">
+    <p class="fortune-hub-kicker">Fortune Services</p>
+    <h1>원하는 운세를 먼저 이해하고 시작하세요</h1>
+    <p>
+      각 서비스의 목적과 해석 범위를 먼저 확인한 뒤, 버튼을 눌러 입력폼으로 이동합니다.
+      운세 용어가 익숙하지 않아도 이해할 수 있도록 설명 중심으로 구성했습니다.
+    </p>
+  </header>
 
-  <div class="home-card-grid">
+  <section class="fortune-hub-board" aria-label="운세 서비스 목록">
+    <% 
+      const cardThemeMap = {
+        compatibility: 'compatibility',
+        today: 'today',
+        flow: 'flow',
+        naming: 'naming',
+        'date-selection': 'date-selection',
+      };
+      const cardTaglineMap = {
+        compatibility: '관계 리듬 분석',
+        today: '하루 우선순위 가이드',
+        flow: '중장기 타이밍 전략',
+        naming: '이름 후보 비교 분석',
+        'date-selection': '중요 일정 적합도 비교',
+      };
+    %>
+
     <% (features || []).forEach(function(feature) { %>
-      <a class="home-menu-card active" href="/fortune/<%= feature.key %>">
-        <h3><%= feature.title %></h3>
-        <p><%= feature.description %></p>
-        <span>시작하기</span>
-      </a>
+      <% const theme = cardThemeMap[feature.key] || 'today'; %>
+      <article class="fortune-hub-card theme-<%= theme %>">
+        <div class="fortune-hub-card-bg" aria-hidden="true"></div>
+        <div class="fortune-hub-card-overlay" aria-hidden="true"></div>
+
+        <div class="fortune-hub-card-body">
+          <p class="fortune-hub-card-tag"><%= cardTaglineMap[feature.key] || '설명형 운세 서비스' %></p>
+          <h2><%= feature.title %></h2>
+          <p class="fortune-hub-card-desc"><%= feature.description %></p>
+
+          <div class="fortune-hub-card-actions">
+            <a class="fortune-hub-btn-primary" href="/fortune/<%= feature.key %>">서비스 설명 보기</a>
+            <a class="fortune-hub-btn-ghost" href="/fortune/<%= feature.key %>?view=form">바로 입력하기</a>
+          </div>
+        </div>
+      </article>
     <% }) %>
-  </div>
+  </section>
 </section>
