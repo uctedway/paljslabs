@@ -5,13 +5,14 @@ import { parseFormResultJson } from '../../form.js';
  * 구글 토큰을 서버로 전송
  */
 export async function googleSendTokenToServer(credential) {
+  const intent = String(window.socialAuthIntent || 'login').toLowerCase() === 'register' ? 'register' : 'login';
 	console.log('googleSendTokenToServer');
   const response = await fetch('/user/auth/google', {
 	method: 'POST',
 	headers: {
 	  'Content-Type': 'application/json',
 	},
-	body: JSON.stringify({ token: credential }),
+	body: JSON.stringify({ token: credential, intent }),
   });
 console.log(JSON.stringify(response));
   return await response.json();

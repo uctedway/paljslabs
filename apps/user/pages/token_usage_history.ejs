@@ -39,10 +39,11 @@
                   const changeTokens = Number(u.change_tokens || 0);
                   const entryTypeRaw = String(u.entry_type || '').trim().toLowerCase();
                   const entryLabelMap = {
-                    charge: '충전',
-                    consume: '사용',
+                    payment: '충전',
+                    usage: '사용',
                     refund: '환불',
-                    adjust: '조정',
+                    adjustment: '조정',
+                    event: '이벤트',
                   };
                   const entryLabel = entryLabelMap[entryTypeRaw] || (u.entry_type || '-');
                 %>

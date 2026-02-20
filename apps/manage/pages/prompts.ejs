@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub, scopeKey }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">프롬프트 설정</h2>
+        <p class="manage-desc">원국/대운 데이터 블록은 코드에서 고정됩니다. 여기서는 서비스별 지침 문구만 관리합니다.</p>
+
+        <% if (errorMessage) { %>
+          <p class="manage-alert error"><%= errorMessage %></p>
+        <% } %>
+        <% if (noticeMessage) { %>
+          <p class="manage-alert notice"><%= noticeMessage %></p>
+        <% } %>
+
+        <div class="manage-table-block">
+          <h3>편집 대상 선택</h3>
+          <div class="manage-inline-subnav">
+            <% (promptMeta?.scopeOptions || []).forEach(function (it) { %>
+              <a
+                href="/manage/prompts?scope=<%= encodeURIComponent(it.key) %>"
+                class="manage-btn manage-btn--small <%= scopeKey === it.key ? 'manage-btn--brand' : 'manage-btn--slate' %>"><%= it.label %></a>
+            <% }) %>
+          </div>
+        </div>
+
+        <form method="post" action="/manage/prompts" class="manage-table-block">
+          <h3>프롬프트 편집</h3>
+          <input type="hidden" name="scope_key" value="<%= scopeKey %>">
+
+          <p class="manage-desc">마지막 수정: <strong><%= promptData?.updatedAtKst || '-' %></strong></p>
+          <p class="manage-desc"><strong><%= promptData?.applyScopeText || '' %></strong></p>
+
+          <div class="manage-form">
+            <% if (scopeKey !== 'tone') { %>
+              <div>
+                <label class="manage-label" for="system_prompt">시스템 프롬프트</label>
+                <textarea id="system_prompt" name="system_prompt" class="manage-textarea" rows="20" required><%= promptData?.systemPrompt || '' %></textarea>
+              </div>
+            <% } %>
+            <% if (scopeKey === 'tone') { %>
+              <div class="manage-table-block" style="margin:0;">
+                <h3>상담톤 프롬프트</h3>
+                <p class="manage-desc">각 톤은 공통 시스템 프롬프트 뒤에 자동 결합됩니다.</p>
+                <% (promptMeta?.toneOptions || []).forEach(function (tone) { %>
+                  <div style="margin-bottom:10px;">
+                    <label class="manage-label" for="tone_prompt_<%= tone.key %>"><%= tone.label %></label>
+                    <textarea
+                      id="tone_prompt_<%= tone.key %>"
+                      name="tone_prompt_<%= tone.key %>"
+                      class="manage-textarea"
+                      rows="4"
+                      required><%= (promptData?.tonePromptMap || {})[tone.key] || '' %></textarea>
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+            <% if (scopeKey !== 'tone') { %>
+              <div>
+                <label class="manage-label" for="user_prompt_guide">추가 작성 가이드(선택)</label>
+                <textarea id="user_prompt_guide" name="user_prompt_guide" class="manage-textarea" rows="8"><%= promptData?.userPromptGuide || '' %></textarea>
+              </div>
+            <% } %>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+            <button type="submit" class="manage-btn manage-btn--mid manage-btn--brand">
+              <span class="material-symbols-outlined" style="font-size:18px;">save</span>
+              저장
+            </button>
+            <a
+              href="/manage/prompts?scope=<%= encodeURIComponent(scopeKey) %>"
+              class="manage-btn manage-btn--mid manage-btn--slate">새로고침</a>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,472 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 1200px;
+  background: #0b0f14;
+  color: #e6edf3;
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
+}
+
+.manage-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.manage-sidebar {
+  background: #111821;
+  border-right: 1px solid #1f2a37;
+  padding: 28px 22px;
+}
+
+.manage-logo {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  margin: 0 0 28px;
+  color: #f8fafc;
+}
+
+.manage-nav-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #93a4b7;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.manage-nav-group {
+  margin-bottom: 18px;
+}
+
+.manage-submenu {
+  margin: 0;
+  padding: 0 0 0 34px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.manage-submenu-link,
+.manage-submenu-btn {
+  width: 100%;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #c9d4e0;
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  font-size: 14px;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.manage-submenu-link:hover,
+.manage-submenu-btn:hover {
+  background: #1b2634;
+  color: #ffffff;
+}
+
+.manage-submenu-link.is-active {
+  background: #233549;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.manage-main {
+  padding: 36px;
+}
+
+.manage-dashboard {
+  margin-bottom: 28px;
+}
+
+.manage-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.manage-metric-card {
+  background: #121a24;
+  border: 1px solid #1f2a37;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.manage-metric-card h3 {
+  margin: 0 0 7px;
+  font-size: 13px;
+  color: #9eb0c2;
+}
+
+.manage-metric-card strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.manage-metric-card p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #8fa0b3;
+}
+
+.manage-table-block {
+  background: #121a24;
+  border: 1px solid #1f2a37;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.manage-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.manage-pager span {
+  font-size: 12px;
+  color: #9db0c5;
+}
+
+.manage-search-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.manage-table-block h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.manage-table-wrap {
+  overflow: auto;
+}
+
+.manage-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.manage-table th,
+.manage-table td {
+  border-bottom: 1px solid #1d2938;
+  padding: 9px 10px;
+  font-size: 12px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.manage-table th {
+  color: #9db0c5;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.manage-table td {
+  color: #e3ebf4;
+}
+
+.manage-pre {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  white-space: nowrap;
+  max-width: none;
+}
+
+.manage-panel {
+  max-width: 920px;
+  background: #121a24;
+  border: 1px solid #1f2a37;
+  border-radius: 14px;
+  padding: 26px;
+}
+
+.manage-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.manage-desc {
+  margin: 0 0 24px;
+  color: #98a8bb;
+  font-size: 14px;
+}
+
+.manage-form {
+  display: grid;
+  gap: 14px;
+}
+
+.manage-form-inline {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.manage-inline-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.manage-inline-subnav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.manage-label {
+  font-size: 13px;
+  color: #9fb0c4;
+  margin-bottom: 6px;
+}
+
+.manage-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0b1118;
+  border: 1px solid #2a3a4e;
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 12px 13px;
+  font-size: 14px;
+  min-height: 40px;
+  line-height: 1.2;
+}
+
+select.manage-input {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.manage-input:focus {
+  outline: none;
+  border-color: #4f83c2;
+}
+
+.manage-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0b1118;
+  border: 1px solid #2a3a4e;
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 12px 13px;
+  font-size: 13px;
+  font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.manage-textarea:focus {
+  outline: none;
+  border-color: #4f83c2;
+}
+
+.manage-btn,
+.manage-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease;
+}
+
+.manage-submit {
+  margin-top: 8px;
+  background: #2f6db3;
+  color: #fff;
+  border-radius: 10px;
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.manage-submit:hover {
+  background: #3f7ec6;
+}
+
+.manage-btn--big {
+  min-height: 46px;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+
+.manage-btn--mid {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.manage-btn--small {
+  min-height: 32px;
+  border-radius: 9px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+.manage-btn--tiny {
+  min-height: 26px;
+  border-radius: 7px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.manage-btn--brand {
+  background: #2f6db3;
+  color: #fff;
+}
+
+.manage-btn--brand:hover {
+  background: #3f7ec6;
+}
+
+.manage-btn--slate {
+  background: #253445;
+  color: #d6e2ef;
+}
+
+.manage-btn--slate:hover {
+  background: #32465d;
+  color: #fff;
+}
+
+.manage-btn--danger {
+  background: #7b2d37;
+  color: #ffd8dd;
+}
+
+.manage-btn--danger:hover {
+  background: #953846;
+  color: #fff;
+}
+
+.manage-alert {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.manage-alert.error {
+  background: #3b1d24;
+  border: 1px solid #7c3343;
+  color: #ffb8c5;
+}
+
+.manage-alert.notice {
+  background: #193223;
+  border: 1px solid #2f6b4a;
+  color: #b8f5cf;
+}
+
+.manage-login-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(1000px 500px at 10% -20%, #20344a 0%, transparent 60%),
+    radial-gradient(800px 500px at 95% 110%, #14283c 0%, transparent 60%),
+    #0a0f15;
+}
+
+.manage-login-card {
+  width: 420px;
+  background: #121a24;
+  border: 1px solid #223144;
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.manage-login-title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.manage-login-subtitle {
+  margin: 8px 0 20px;
+  color: #9ab0c6;
+  font-size: 14px;
+}
+
+.manage-submenu form {
+  margin: 0;
+}
+
+.manage-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 12, 0.74);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.manage-modal-backdrop.is-open {
+  display: flex;
+}
+
+.manage-modal {
+  width: 1200px;
+  max-height: 88vh;
+  overflow: auto;
+  background: #0f151e;
+  border: 1px solid #263446;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.manage-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #172230;
+  border-bottom: 1px solid #243244;
+}
+
+.manage-modal-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.manage-modal-body {
+  padding: 14px;
+}

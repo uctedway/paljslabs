@@ -54,6 +54,8 @@ function mapLoginErrorMessage(errorCode) {
   const code = String(errorCode || '').trim().toLowerCase();
   if (!code) return '';
   const table = {
+    social_user_not_found: '가입된 계정이 없습니다. 회원가입 후 로그인해주세요.',
+    social_user_exists: '이미 가입된 계정입니다. 로그인으로 이용해주세요.',
     kakao_state: '카카오 로그인 상태 검증에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.',
     kakao_token: '카카오 토큰 교환에 실패했습니다. Redirect URI/플랫폼 도메인/REST API 키 또는 Client Secret 설정을 확인해주세요.',
     kakao_profile: '카카오 프로필 정보를 가져오지 못했습니다. 동의 항목을 확인하고 다시 시도해주세요.',
@@ -124,15 +126,17 @@ const login = (req, res) => {
   if (referralCode) {
     req.session.pendingReferralCode = referralCode;
   }
+  req.session.socialAuthIntent = 'login';
 
-  const naverLoginUrl = authController.getNaverLoginUrl(req);
+  const naverLoginUrl = authController.getNaverLoginUrl(req, 'login');
   const naverCallbackUrl = authController.buildNaverCallbackUrl(req);
-  const kakaoLoginUrl = authController.getKakaoLoginUrl(req);
+  const kakaoLoginUrl = authController.getKakaoLoginUrl(req, 'login');
   const kakaoCallbackUrl = authController.buildKakaoCallbackUrl(req);
-  const appleLoginUrl = authController.getAppleLoginUrl(req);
+  const appleLoginUrl = authController.getAppleLoginUrl(req, 'login');
   const appleCallbackUrl = authController.buildAppleCallbackUrl(req);
 
   res.render('user/pages/login', {
+    authMode: 'login',
     googleClientId: '919882682607-edggad0pdf5itc8qb0a9sogo71711ero.apps.googleusercontent.com',
     naverLoginUrl,
     naverCallbackUrl,
@@ -150,14 +154,38 @@ const inviteEntry = (req, res) => {
   if (referralCode) {
     req.session.pendingReferralCode = referralCode;
   }
-  return res.redirect(referralCode ? `/user/login?ref=${encodeURIComponent(referralCode)}` : '/user/login');
+  return res.redirect(referralCode ? `/user/register?ref=${encodeURIComponent(referralCode)}` : '/user/register');
 };
 
 /**
  * 회원가입 페이지
  */
 const register = (req, res) => {
-  res.send('Register Page');
+  const referralCode = normalizeReferralCode(req.query?.ref);
+  if (referralCode) {
+    req.session.pendingReferralCode = referralCode;
+  }
+  req.session.socialAuthIntent = 'register';
+
+  const naverLoginUrl = authController.getNaverLoginUrl(req, 'register');
+  const naverCallbackUrl = authController.buildNaverCallbackUrl(req);
+  const kakaoLoginUrl = authController.getKakaoLoginUrl(req, 'register');
+  const kakaoCallbackUrl = authController.buildKakaoCallbackUrl(req);
+  const appleLoginUrl = authController.getAppleLoginUrl(req, 'register');
+  const appleCallbackUrl = authController.buildAppleCallbackUrl(req);
+
+  res.render('user/pages/login', {
+    authMode: 'register',
+    googleClientId: '919882682607-edggad0pdf5itc8qb0a9sogo71711ero.apps.googleusercontent.com',
+    naverLoginUrl,
+    naverCallbackUrl,
+    kakaoLoginUrl,
+    kakaoCallbackUrl,
+    appleLoginUrl,
+    appleCallbackUrl,
+    loginErrorMessage: mapLoginErrorMessage(req.query?.error),
+    pendingReferralCode: normalizeReferralCode(req.session?.pendingReferralCode),
+  });
 };
 
 const welcome = (req, res) => {

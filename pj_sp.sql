@@ -1,5 +1,247 @@
 SET ANSI_NULLS ON
 GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_MANAGE_LOG_ACTION]
+(
+	@admin_id      VARCHAR(100)   = '',
+	@admin_name    NVARCHAR(100)  = NULL,
+	@action_code   VARCHAR(60)    = '',
+	@target_type   VARCHAR(60)    = NULL,
+	@target_id     VARCHAR(200)   = NULL,
+	@result_status VARCHAR(20)    = 'SUCCESS',
+	@request_data  NVARCHAR(MAX)  = NULL,
+	@response_data NVARCHAR(MAX)  = NULL,
+	@ip_address    VARCHAR(100)   = NULL,
+	@user_agent    NVARCHAR(500)  = NULL
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @log_id BIGINT = 0;
+
+	IF (ISNULL(@admin_id, '') = '')
+	BEGIN
+		SET @resp_message = N'ADMIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	IF (ISNULL(@action_code, '') = '')
+	BEGIN
+		SET @resp_message = N'ACTION_CODE REQUIRED';
+		GOTO return_label;
+	END
+
+	IF (ISNULL(@result_status, '') = '')
+		SET @result_status = 'SUCCESS';
+
+	BEGIN TRY
+		INSERT INTO dbo.PJ_TB_MANAGE_ACTION_LOGS
+		(
+			admin_id,
+			admin_name,
+			action_code,
+			target_type,
+			target_id,
+			result_status,
+			request_data,
+			response_data,
+			ip_address,
+			user_agent,
+			created_at
+		)
+		VALUES
+		(
+			@admin_id,
+			@admin_name,
+			@action_code,
+			@target_type,
+			@target_id,
+			@result_status,
+			@request_data,
+			@response_data,
+			@ip_address,
+			@user_agent,
+			SYSDATETIME()
+		);
+
+		SET @log_id = SCOPE_IDENTITY();
+		SET @resp = 'OK';
+		SET @resp_message = N'ACTION LOGGED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@log_id AS log_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_PROMPT_TEMPLATE]
+(
+	@service_code VARCHAR(20) = '',
+	@feature_key  VARCHAR(40) = '',
+	@tone_key     VARCHAR(40) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@service_code, '') = '')
+	BEGIN
+		SET @resp_message = N'SERVICE_CODE REQUIRED';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'PROMPT TEMPLATE SELECTED';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		prompt_no,
+		service_code,
+		feature_key,
+		tone_key,
+		system_prompt,
+		user_prompt_guide,
+		is_active,
+		updated_by,
+		created_at,
+		updated_at
+	FROM dbo.PJ_TB_PROMPT_TEMPLATES WITH (NOLOCK)
+	WHERE service_code = @service_code
+	  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
+	  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '')
+	  AND is_active = 1
+	ORDER BY updated_at DESC, prompt_no DESC;
+
+	IF (@@ROWCOUNT > 0)
+		RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SAVE_PROMPT_TEMPLATE]
+(
+	@service_code      VARCHAR(20)   = '',
+	@feature_key       VARCHAR(40)   = '',
+	@tone_key          VARCHAR(40)   = '',
+	@system_prompt     NVARCHAR(MAX) = N'',
+	@user_prompt_guide NVARCHAR(MAX) = N'',
+	@updated_by        VARCHAR(100)  = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @affected INT = 0;
+
+	IF (ISNULL(@service_code, '') = '')
+	BEGIN
+		SET @resp_message = N'SERVICE_CODE REQUIRED';
+		GOTO return_label;
+	END
+
+	IF (ISNULL(@system_prompt, N'') = N'')
+	BEGIN
+		SET @resp_message = N'SYSTEM_PROMPT REQUIRED';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		IF EXISTS (
+			SELECT 1
+			FROM dbo.PJ_TB_PROMPT_TEMPLATES WITH (UPDLOCK, HOLDLOCK)
+			WHERE service_code = @service_code
+			  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
+			  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '')
+		)
+		BEGIN
+			UPDATE dbo.PJ_TB_PROMPT_TEMPLATES
+			SET
+				system_prompt = @system_prompt,
+				user_prompt_guide = @user_prompt_guide,
+				is_active = 1,
+				updated_by = @updated_by,
+				updated_at = SYSDATETIME()
+			WHERE service_code = @service_code
+			  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
+			  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '');
+		END
+		ELSE
+		BEGIN
+			INSERT INTO dbo.PJ_TB_PROMPT_TEMPLATES
+			(
+				service_code,
+				feature_key,
+				tone_key,
+				system_prompt,
+				user_prompt_guide,
+				is_active,
+				updated_by,
+				created_at,
+				updated_at
+			)
+			VALUES
+			(
+				@service_code,
+				NULLIF(@feature_key, ''),
+				NULLIF(@tone_key, ''),
+				@system_prompt,
+				@user_prompt_guide,
+				1,
+				@updated_by,
+				SYSDATETIME(),
+				SYSDATETIME()
+			);
+		END
+
+		SET @affected = @@ROWCOUNT;
+		SET @resp = 'OK';
+		SET @resp_message = N'PROMPT TEMPLATE SAVED';
+	END TRY
+	BEGIN CATCH
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@affected AS affected;
+END
+GO
+
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER   PROCEDURE [dbo].[PJ_USP_CHECK_USER]
@@ -41,6 +283,69 @@ return_label:
 	SELECT
 		@resp AS resp,
 		@resp_message AS resp_message;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_MANAGE_ADMIN_LOGIN]
+(
+	@admin_id      VARCHAR(100) = '',
+	@password_hash VARCHAR(128) = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @found_admin_id VARCHAR(100) = '';
+	DECLARE @found_admin_name NVARCHAR(100) = N'';
+	DECLARE @is_active BIT = 0;
+
+	IF (ISNULL(@admin_id, '') = '' OR ISNULL(@password_hash, '') = '')
+	BEGIN
+		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	SELECT TOP 1
+		@found_admin_id = a.admin_id,
+		@found_admin_name = a.admin_name,
+		@is_active = a.is_active
+	FROM dbo.PJ_TB_MANAGE_ADMINS a WITH (NOLOCK)
+	WHERE a.admin_id = @admin_id
+	  AND a.password_hash = @password_hash;
+
+	IF (ISNULL(@found_admin_id, '') = '')
+	BEGIN
+		SET @resp_message = N'INVALID CREDENTIALS';
+		GOTO return_label;
+	END
+
+	IF (ISNULL(@is_active, 0) = 0)
+	BEGIN
+		SET @resp_message = N'ADMIN DISABLED';
+		GOTO return_label;
+	END
+
+	UPDATE dbo.PJ_TB_MANAGE_ADMINS
+	SET
+		last_login_at = SYSDATETIME(),
+		updated_at = SYSDATETIME()
+	WHERE admin_id = @found_admin_id;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'OK';
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		CASE WHEN @resp = 'OK' THEN @found_admin_id ELSE CAST('' AS VARCHAR(100)) END AS admin_id,
+		CASE WHEN @resp = 'OK' THEN @found_admin_name ELSE CAST(NULL AS NVARCHAR(100)) END AS admin_name;
 END
 GO
 
@@ -300,6 +605,8 @@ BEGIN
 	DECLARE @resp VARCHAR(10) = 'ERROR';
 	DECLARE @resp_message NVARCHAR(200) = N'';
 	DECLARE @new_id BIGINT = 0;
+	DECLARE @signup_bonus_tokens INT = 3;
+	DECLARE @new_user_next_tokens INT = 0;
 	DECLARE @inviter_login_id VARCHAR(200) = '';
 	DECLARE @inviter_current_tokens INT = 0;
 	DECLARE @inviter_next_tokens INT = 0;
@@ -412,6 +719,43 @@ BEGIN
 		);
 
 		SET @new_id = SCOPE_IDENTITY();
+
+		/* =========================================
+		   4-0) 신규 가입 보너스 지급 (3토큰)
+		   - 회원가입 직후 즉시 지급하고 토큰 원장 기록을 남김
+		========================================= */
+		SET @new_user_next_tokens = @signup_bonus_tokens;
+
+		UPDATE dbo.PJ_TB_USERS
+		SET
+			token_balance = @new_user_next_tokens,
+			updated_at = SYSDATETIME()
+		WHERE id = @new_id;
+
+		INSERT INTO dbo.PJ_TB_TOKEN_LEDGER
+		(
+			login_id,
+			entry_type,
+			change_tokens,
+			balance_after,
+			event_code,
+			reference_type,
+			reference_id,
+			memo,
+			created_at
+		)
+		VALUES
+		(
+			@login_id,
+			'EVENT',
+			@signup_bonus_tokens,
+			@new_user_next_tokens,
+			'SIGNUP_BONUS',
+			'SIGNUP',
+			CONVERT(VARCHAR(32), @new_id),
+			N'신규 가입 보너스 지급',
+			SYSDATETIME()
+		);
 
 		/* =========================================
 		   4-1) 추천인 보상 처리

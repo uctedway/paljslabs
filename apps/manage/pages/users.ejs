@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">회원 목록</h2>
+        <p class="manage-desc">회원명/이메일/로그인ID로 검색하고, 상세/결제/토큰 내역을 모달에서 확인할 수 있습니다.</p>
+
+        <form method="get" action="/manage/users" class="manage-search-form">
+          <input
+            type="text"
+            name="q"
+            value="<%= userList?.keyword || '' %>"
+            class="manage-input"
+            placeholder="회원명, 이메일, 로그인ID 검색">
+          <input type="hidden" name="page_size" value="<%= userList?.pager?.pageSize || 20 %>">
+          <button type="submit" class="manage-btn manage-btn--mid manage-btn--brand">
+            <span class="material-symbols-outlined" style="font-size:18px;">search</span>
+            검색
+          </button>
+        </form>
+
+        <div class="manage-table-block">
+          <h3>검색 결과 <%= Number(userList?.pager?.totalRows || 0).toLocaleString('ko-KR') %>명</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>id</th>
+                  <th>provider</th>
+                  <th>회원명</th>
+                  <th>login_id</th>
+                  <th>email</th>
+                  <th>잔여토큰</th>
+                  <th>결제성공</th>
+                  <th>가입일(KST)</th>
+                  <th>최근결제(KST)</th>
+                  <th>액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (userList?.users || []).forEach(function (u) { %>
+                  <tr>
+                    <td><%= u.id %></td>
+                    <td><%= u.provider || '-' %></td>
+                    <td><%= u.user_name || '-' %></td>
+                    <td><%= u.login_id || '-' %></td>
+                    <td><%= u.email || '-' %></td>
+                    <td><strong><%= Number(u.token_balance || 0).toLocaleString('ko-KR') %></strong></td>
+                    <td><%= Number(u.success_payment_count || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= u.created_at_kst || '-' %></td>
+                    <td><%= u.last_payment_at_kst || '-' %></td>
+                    <td>
+                      <button
+                        type="button"
+                        class="manage-btn manage-btn--tiny manage-btn--slate js-open-user-modal"
+                        data-login-id="<%= u.login_id %>"
+                        data-user-name="<%= u.user_name || '' %>">
+                        상세
+                      </button>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="manage-pager">
+            <% if (userList?.pager?.hasPrev) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/users?q=<%= encodeURIComponent(userList.keyword || '') %>&page=<%= userList.pager.prevPage %>&page_size=<%= userList.pager.pageSize %>">이전</a>
+            <% } %>
+            <span>페이지 <%= userList?.pager?.page || 1 %> / <%= userList?.pager?.totalPages || 1 %></span>
+            <% if (userList?.pager?.hasNext) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/users?q=<%= encodeURIComponent(userList.keyword || '') %>&page=<%= userList.pager.nextPage %>&page_size=<%= userList.pager.pageSize %>">다음</a>
+            <% } %>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="manage-modal-backdrop" id="userModalBackdrop">
+    <div class="manage-modal" id="userModal">
+      <div class="manage-modal-head">
+        <h3 id="userModalTitle">회원 상세</h3>
+        <button type="button" class="manage-btn manage-btn--tiny manage-btn--slate" id="userModalClose">닫기</button>
+      </div>
+      <div class="manage-modal-body">
+        <div id="userModalSummary" class="manage-table-block"></div>
+
+        <div class="manage-table-block">
+          <h3>토큰 수동 지급</h3>
+          <form id="grantTokenForm" class="manage-form">
+            <input type="hidden" name="login_id" id="grantLoginId">
+            <div>
+              <label class="manage-label" for="grantEventCode">토큰 항목(event_code)</label>
+              <input id="grantEventCode" name="event_code" class="manage-input" value="MANUAL_EVENT" required>
+            </div>
+            <div>
+              <label class="manage-label" for="grantAmount">토큰 수</label>
+              <input id="grantAmount" name="amount" type="number" min="1" class="manage-input" required>
+            </div>
+            <div>
+              <label class="manage-label" for="grantMemo">메모</label>
+              <input id="grantMemo" name="memo" class="manage-input" value="관리자 수동 지급">
+            </div>
+            <button type="submit" class="manage-btn manage-btn--mid manage-btn--brand">
+              <span class="material-symbols-outlined" style="font-size:18px;">add_circle</span>
+              토큰 지급
+            </button>
+          </form>
+          <p id="grantResultMsg" class="manage-desc" style="margin-top:8px;"></p>
+        </div>
+
+        <div class="manage-table-block">
+          <h3>최근 결제내역</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table" id="paymentTable">
+              <thead>
+                <tr>
+                  <th>payment_id</th>
+                  <th>provider</th>
+                  <th>status</th>
+                  <th>amount_krw</th>
+                  <th>token_amount</th>
+                  <th>requested_at(KST)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="manage-table-block">
+          <h3>최근 토큰 원장</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table" id="ledgerTable">
+              <thead>
+                <tr>
+                  <th>ledger_id</th>
+                  <th>entry_type</th>
+                  <th>change</th>
+                  <th>balance_after</th>
+                  <th>event/usage</th>
+                  <th>memo</th>
+                  <th>created_at(KST)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const backdrop = document.getElementById('userModalBackdrop');
+    const closeBtn = document.getElementById('userModalClose');
+    const titleEl = document.getElementById('userModalTitle');
+    const summaryEl = document.getElementById('userModalSummary');
+    const paymentBody = document.querySelector('#paymentTable tbody');
+    const ledgerBody = document.querySelector('#ledgerTable tbody');
+    const grantForm = document.getElementById('grantTokenForm');
+    const grantLoginId = document.getElementById('grantLoginId');
+    const grantMsg = document.getElementById('grantResultMsg');
+    let currentLoginId = '';
+
+    function openModal() { backdrop.classList.add('is-open'); }
+    function closeModal() { backdrop.classList.remove('is-open'); }
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+
+    function escapeHtml(v) {
+      return String(v || '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    function renderSummary(user) {
+      summaryEl.innerHTML = `
+        <h3>기본 정보</h3>
+        <p class="manage-desc">login_id: <strong>${escapeHtml(user.login_id)}</strong></p>
+        <p class="manage-desc">이름: ${escapeHtml(user.user_name || '-')} / 이메일: ${escapeHtml(user.email || '-')}</p>
+        <p class="manage-desc">provider: ${escapeHtml(user.provider || '-')} / 잔여토큰: <strong>${Number(user.token_balance || 0).toLocaleString('ko-KR')}</strong></p>
+        <p class="manage-desc">가입일: ${escapeHtml(user.created_at_kst || '-')}</p>
+      `;
+    }
+
+    function renderPayments(rows) {
+      paymentBody.innerHTML = '';
+      (rows || []).forEach((p) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.payment_id || '-'}</td>
+          <td>${escapeHtml(p.provider || '-')}</td>
+          <td>${escapeHtml(p.status || '-')}</td>
+          <td>${Number(p.amount_krw || 0).toLocaleString('ko-KR')}</td>
+          <td>${Number(p.token_amount || 0).toLocaleString('ko-KR')}</td>
+          <td>${escapeHtml(p.requested_at_kst || '-')}</td>
+        `;
+        paymentBody.appendChild(tr);
+      });
+    }
+
+    function renderLedger(rows) {
+      ledgerBody.innerHTML = '';
+      (rows || []).forEach((l) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${l.ledger_id || '-'}</td>
+          <td>${escapeHtml(l.entry_type || '-')}</td>
+          <td>${Number(l.change_tokens || 0).toLocaleString('ko-KR')}</td>
+          <td>${Number(l.balance_after || 0).toLocaleString('ko-KR')}</td>
+          <td>${escapeHtml((l.event_code || l.usage_code || '-'))}</td>
+          <td>${escapeHtml(l.memo || '-')}</td>
+          <td>${escapeHtml(l.created_at_kst || '-')}</td>
+        `;
+        ledgerBody.appendChild(tr);
+      });
+    }
+
+    async function openUserDetail(loginId, userName) {
+      currentLoginId = loginId;
+      grantLoginId.value = loginId;
+      grantMsg.textContent = '';
+      titleEl.textContent = `회원 상세 - ${userName || loginId}`;
+      openModal();
+      summaryEl.innerHTML = '<p class="manage-desc">불러오는 중...</p>';
+      paymentBody.innerHTML = '';
+      ledgerBody.innerHTML = '';
+
+      const res = await fetch(`/manage/users/${encodeURIComponent(loginId)}/detail`, { credentials: 'same-origin' });
+      const json = await res.json();
+      if (!json || json.resp !== 'OK') {
+        summaryEl.innerHTML = '<p class="manage-alert error">회원 정보를 불러오지 못했습니다.</p>';
+        return;
+      }
+      renderSummary(json.user || {});
+      renderPayments(json.payments || []);
+      renderLedger(json.ledger || []);
+    }
+
+    document.querySelectorAll('.js-open-user-modal').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openUserDetail(btn.dataset.loginId || '', btn.dataset.userName || '');
+      });
+    });
+
+    grantForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentLoginId) return;
+      grantMsg.textContent = '지급 처리 중...';
+      const formData = new FormData(grantForm);
+      const payload = {
+        event_code: String(formData.get('event_code') || ''),
+        amount: Number(formData.get('amount') || 0),
+        memo: String(formData.get('memo') || ''),
+      };
+
+      const res = await fetch(`/manage/users/${encodeURIComponent(currentLoginId)}/grant-token`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!json || json.resp !== 'OK') {
+        grantMsg.textContent = `실패: ${json?.resp_message || 'TOKEN GRANT FAILED'}`;
+        return;
+      }
+      grantMsg.textContent = `완료: +${Number(json.granted_tokens || 0).toLocaleString('ko-KR')} 지급 / 현재 ${Number(json.current_tokens || 0).toLocaleString('ko-KR')}`;
+      openUserDetail(currentLoginId, currentLoginId);
+    });
+  })();
+  </script>
+</body>
+</html>

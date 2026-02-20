@@ -8,6 +8,12 @@ const GOOGLE_CLIENT_ID =
   '919882682607-edggad0pdf5itc8qb0a9sogo71711ero.apps.googleusercontent.com';
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const AUTH_INTENTS = new Set(['login', 'register']);
+
+function normalizeAuthIntent(rawIntent) {
+  const intent = String(rawIntent || '').trim().toLowerCase();
+  return AUTH_INTENTS.has(intent) ? intent : 'login';
+}
 
 /* =========================================
    공용: 회원가입
@@ -47,10 +53,18 @@ async function loadUserSessionRow(provider, login_id) {
   return rs && rs[0] ? rs[0] : {};
 }
 
-async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '' }) {
+async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login' }) {
+  const authIntent = normalizeAuthIntent(intent);
   const sessionRow = await loadUserSessionRow(provider, login_id);
   const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
   if (sessionResp === 'OK') {
+    if (authIntent === 'register') {
+      return {
+        ok: false,
+        stage: 'signup',
+        message: 'USER ALREADY EXISTS',
+      };
+    }
     return {
       ok: true,
       isNew: false,
@@ -64,6 +78,14 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
       ok: false,
       stage: 'session',
       message: String(sessionRow.resp_message || 'USER SESSION LOAD ERROR'),
+    };
+  }
+
+  if (authIntent === 'login') {
+    return {
+      ok: false,
+      stage: 'login',
+      message: 'USER NOT FOUND',
     };
   }
 
@@ -81,15 +103,11 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
   // 동시 요청 경합으로 이미 생성된 경우 세션 조회를 한 번 더 시도합니다.
   const createMessage = String(createdUser.resp_message || '');
   if (createMessage.toUpperCase().includes('ALREADY EXISTS')) {
-    const retryRow = await loadUserSessionRow(provider, login_id);
-    const retryResp = String(retryRow.resp || 'ERROR').toUpperCase();
-    if (retryResp === 'OK') {
-      return {
-        ok: true,
-        isNew: false,
-        row: retryRow,
-      };
-    }
+    return {
+      ok: false,
+      stage: 'signup',
+      message: 'USER ALREADY EXISTS',
+    };
   }
 
   return {
@@ -102,6 +120,10 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
 function normalizeReferralCode(rawCode) {
   const code = String(rawCode || '').trim().toUpperCase();
   return /^[A-Z0-9]{8,32}$/.test(code) ? code : '';
+}
+
+function getAuthEntryPathByIntent(intent) {
+  return normalizeAuthIntent(intent) === 'register' ? '/user/register' : '/user/login';
 }
 
 function buildNaverCallbackUrl(req) {
@@ -384,6 +406,7 @@ function setUserSession(req, userRow) {
 const googleAuth = async (req, res) => {
   try {
 	const token = req.body ? req.body.token : '';
+    const authIntent = normalizeAuthIntent(req.body?.intent || req.session?.socialAuthIntent);
 	//console.log('token   '+token);
 	if (!token) {
 	  return res.status(400).json({
@@ -422,13 +445,28 @@ const googleAuth = async (req, res) => {
 	  email,
 	  user_name,
 	  referralCode,
+      intent: authIntent,
 	});
 
 	if (!authResult.ok) {
+      const alertByMessage = {
+        'USER NOT FOUND': '가입된 계정이 없습니다. 회원가입을 먼저 진행해주세요.',
+        'USER ALREADY EXISTS': '이미 가입된 계정입니다. 로그인으로 이용해주세요.',
+      };
+      const fallbackByStage = {
+        login: '가입된 계정이 없습니다. 회원가입을 먼저 진행해주세요.',
+        signup: '회원가입 처리에 실패했습니다.',
+        session: '로그인 세션을 생성하지 못했습니다.',
+      };
+      const targetPath = getAuthEntryPathByIntent(authIntent);
+      const errorMessage = String(authResult.message || '').toUpperCase();
 	  return res.status(400).json({
 		resp: 'ERROR',
 		resp_message: authResult.message || 'ERROR',
-		resp_action: [{ type: 'alert', value: authResult.message || 'ERROR' }],
+		resp_action: [
+          { type: 'alert', value: alertByMessage[errorMessage] || fallbackByStage[authResult.stage] || '인증 처리 중 오류가 발생했습니다.' },
+          { type: 'redirect', value: targetPath },
+        ],
 	  });
 	}
 
@@ -467,38 +505,43 @@ const googleAuth = async (req, res) => {
 
 const naverAuthCallback = async (req, res) => {
   try {
+    const authIntent = normalizeAuthIntent(req.session?.naverAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const code = String(req.query?.code || '').trim();
     const state = String(req.query?.state || '').trim();
     const expectedState = String(req.session?.naverLoginState || '').trim();
     if (!code || !state || !expectedState || state !== expectedState) {
-      return res.redirect('/user/login?error=naver_state');
+      return res.redirect(`${fallbackPath}?error=naver_state`);
     }
 
     const accessToken = await exchangeNaverToken({ code, state, req });
     const profile = await fetchNaverUserProfile(accessToken);
     const login_id = String(profile.id || '').trim();
     if (!login_id) {
-      return res.redirect('/user/login?error=naver_profile');
+      return res.redirect(`${fallbackPath}?error=naver_profile`);
     }
 
     const provider = 'NAVER';
     const email = String(profile.email || '').trim();
     const user_name = String(profile.name || profile.nickname || '').trim() || '회원';
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
-
     const authResult = await resolveAuthUser({
       provider,
       login_id,
       email,
       user_name,
       referralCode,
+      intent: authIntent,
     });
     if (!authResult.ok) {
-      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'naver_session' : 'naver_signup'}`);
+      if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
+      if (authResult.message === 'USER ALREADY EXISTS') return res.redirect(`${fallbackPath}?error=social_user_exists`);
+      return res.redirect(`${fallbackPath}?error=${authResult.stage === 'session' ? 'naver_session' : 'naver_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.naverLoginState;
+    delete req.session.naverAuthIntent;
     await setUserSession(req, authResult.row);
     if (!authResult.isNew) {
       delete req.session.welcomeContext;
@@ -515,24 +558,28 @@ const naverAuthCallback = async (req, res) => {
     return res.redirect('/user/welcome');
   } catch (err) {
     console.error('[NAVER AUTH ERROR]', err);
-    return res.redirect('/user/login?error=naver_auth');
+    const authIntent = normalizeAuthIntent(req.session?.naverAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
+    return res.redirect(`${fallbackPath}?error=naver_auth`);
   }
 };
 
 const kakaoAuthCallback = async (req, res) => {
   try {
+    const authIntent = normalizeAuthIntent(req.session?.kakaoAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const code = String(req.query?.code || '').trim();
     const state = String(req.query?.state || '').trim();
     const expectedState = String(req.session?.kakaoLoginState || '').trim();
     if (!code || !state || !expectedState || state !== expectedState) {
-      return res.redirect('/user/login?error=kakao_state');
+      return res.redirect(`${fallbackPath}?error=kakao_state`);
     }
 
     const accessToken = await exchangeKakaoToken({ code, req });
     const profile = await fetchKakaoUserProfile(accessToken);
     const login_id = String(profile?.id || '').trim();
     if (!login_id) {
-      return res.redirect('/user/login?error=kakao_profile');
+      return res.redirect(`${fallbackPath}?error=kakao_profile`);
     }
 
     const provider = 'KAKAO';
@@ -541,20 +588,23 @@ const kakaoAuthCallback = async (req, res) => {
     const email = rawEmail || `${login_id}@kakao.local`;
     const user_name = String(profile?.kakao_account?.profile?.nickname || '').trim() || '회원';
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
-
     const authResult = await resolveAuthUser({
       provider,
       login_id,
       email,
       user_name,
       referralCode,
+      intent: authIntent,
     });
     if (!authResult.ok) {
-      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'kakao_session' : 'kakao_signup'}`);
+      if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
+      if (authResult.message === 'USER ALREADY EXISTS') return res.redirect(`${fallbackPath}?error=social_user_exists`);
+      return res.redirect(`${fallbackPath}?error=${authResult.stage === 'session' ? 'kakao_session' : 'kakao_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.kakaoLoginState;
+    delete req.session.kakaoAuthIntent;
     await setUserSession(req, authResult.row);
     if (!authResult.isNew) {
       delete req.session.welcomeContext;
@@ -571,51 +621,58 @@ const kakaoAuthCallback = async (req, res) => {
     return res.redirect('/user/welcome');
   } catch (err) {
     console.error('[KAKAO AUTH ERROR]', err);
+    const authIntent = normalizeAuthIntent(req.session?.kakaoAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const msg = String(err?.message || '');
     if (msg.startsWith('KAKAO_TOKEN_EXCHANGE_FAILED:')) {
-      return res.redirect('/user/login?error=kakao_token');
+      return res.redirect(`${fallbackPath}?error=kakao_token`);
     }
     if (msg.startsWith('KAKAO_PROFILE_FAILED:')) {
-      return res.redirect('/user/login?error=kakao_profile');
+      return res.redirect(`${fallbackPath}?error=kakao_profile`);
     }
-    return res.redirect('/user/login?error=kakao_auth');
+    return res.redirect(`${fallbackPath}?error=kakao_auth`);
   }
 };
 
 const appleAuthCallback = async (req, res) => {
   try {
+    const authIntent = normalizeAuthIntent(req.session?.appleAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const code = String(req.body?.code || req.query?.code || '').trim();
     const state = String(req.body?.state || req.query?.state || '').trim();
     const expectedState = String(req.session?.appleLoginState || '').trim();
     if (!code || !state || !expectedState || state !== expectedState) {
-      return res.redirect('/user/login?error=apple_state');
+      return res.redirect(`${fallbackPath}?error=apple_state`);
     }
 
     const tokenData = await exchangeAppleToken({ code, req });
     const idTokenPayload = parseJwtPayload(tokenData.id_token);
     const login_id = String(idTokenPayload?.sub || '').trim();
     if (!login_id) {
-      return res.redirect('/user/login?error=apple_profile');
+      return res.redirect(`${fallbackPath}?error=apple_profile`);
     }
 
     const provider = 'APPLE';
     const email = String(idTokenPayload?.email || `${login_id}@apple.local`).trim();
     const user_name = String(idTokenPayload?.email || '회원').trim();
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
-
     const authResult = await resolveAuthUser({
       provider,
       login_id,
       email,
       user_name,
       referralCode,
+      intent: authIntent,
     });
     if (!authResult.ok) {
-      return res.redirect(`/user/login?error=${authResult.stage === 'session' ? 'apple_session' : 'apple_signup'}`);
+      if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
+      if (authResult.message === 'USER ALREADY EXISTS') return res.redirect(`${fallbackPath}?error=social_user_exists`);
+      return res.redirect(`${fallbackPath}?error=${authResult.stage === 'session' ? 'apple_session' : 'apple_signup'}`);
     }
 
     delete req.session.pendingReferralCode;
     delete req.session.appleLoginState;
+    delete req.session.appleAuthIntent;
     await setUserSession(req, authResult.row);
     if (!authResult.isNew) {
       delete req.session.welcomeContext;
@@ -632,34 +689,39 @@ const appleAuthCallback = async (req, res) => {
     return res.redirect('/user/welcome');
   } catch (err) {
     console.error('[APPLE AUTH ERROR]', err);
+    const authIntent = normalizeAuthIntent(req.session?.appleAuthIntent || req.session?.socialAuthIntent);
+    const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const msg = String(err?.message || '');
     if (msg.startsWith('APPLE_TOKEN_EXCHANGE_FAILED:')) {
-      return res.redirect('/user/login?error=apple_token');
+      return res.redirect(`${fallbackPath}?error=apple_token`);
     }
-    return res.redirect('/user/login?error=apple_auth');
+    return res.redirect(`${fallbackPath}?error=apple_auth`);
   }
 };
 
-const getNaverLoginUrl = (req) => {
+const getNaverLoginUrl = (req, intent = 'login') => {
   const clientId = String(process.env.NAVER_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
   const state = randomState();
+  req.session.naverAuthIntent = normalizeAuthIntent(intent);
   req.session.naverLoginState = state;
   return buildNaverAuthorizeUrl(req, state);
 };
 
-const getKakaoLoginUrl = (req) => {
+const getKakaoLoginUrl = (req, intent = 'login') => {
   const clientId = String(process.env.KAKAO_LOGIN_REST_API_KEY || '').trim();
   if (!clientId) return '';
   const state = randomState();
+  req.session.kakaoAuthIntent = normalizeAuthIntent(intent);
   req.session.kakaoLoginState = state;
   return buildKakaoAuthorizeUrl(req, state);
 };
 
-const getAppleLoginUrl = (req) => {
+const getAppleLoginUrl = (req, intent = 'login') => {
   const clientId = String(process.env.APPLE_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
   const state = randomState();
+  req.session.appleAuthIntent = normalizeAuthIntent(intent);
   req.session.appleLoginState = state;
   return buildAppleAuthorizeUrl(req, state);
 };

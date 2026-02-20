@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">대시보드 요약</h2>
+        <p class="manage-desc">핵심 운영 지표만 표시합니다. 상세는 모니터링 메뉴에서 확인하세요.</p>
+
+        <div class="manage-metric-grid">
+          <article class="manage-metric-card">
+            <h3>전체 API 호출</h3>
+            <strong><%= Number(summary?.apiSummary?.totalCalls || 0).toLocaleString('ko-KR') %></strong>
+            <p>24시간: <%= Number(summary?.apiSummary?.calls24h || 0).toLocaleString('ko-KR') %></p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>API 실패</h3>
+            <strong><%= Number(summary?.apiSummary?.failedCalls || 0).toLocaleString('ko-KR') %></strong>
+            <p>평균 지연: <%= Number(summary?.apiSummary?.avgDurationMs || 0).toLocaleString('ko-KR') %> ms</p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>Claude 총 토큰</h3>
+            <strong><%= Number(summary?.claudeSummary?.totalTokens || 0).toLocaleString('ko-KR') %></strong>
+            <p>Prompt/Completion: <%= Number(summary?.claudeSummary?.totalPromptTokens || 0).toLocaleString('ko-KR') %> / <%= Number(summary?.claudeSummary?.totalCompletionTokens || 0).toLocaleString('ko-KR') %></p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>추정 비용 (USD)</h3>
+            <strong>$ <%= Number(summary?.claudeSummary?.estimatedUsd || 0).toFixed(4) %></strong>
+            <p>KRW: <%= Math.round(Number(summary?.claudeSummary?.estimatedKrw || 0)).toLocaleString('ko-KR') %>원</p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>Claude 예산 잔여(토큰)</h3>
+            <% if (summary?.claudeSummary?.budgetRemainingTokens === null) { %>
+              <strong>-</strong>
+              <p>환경변수 `MANAGE_CLAUDE_TOKEN_BUDGET` 미설정</p>
+            <% } else { %>
+              <strong><%= Number(summary?.claudeSummary?.budgetRemainingTokens || 0).toLocaleString('ko-KR') %></strong>
+              <p>설정 예산 기준 잔여</p>
+            <% } %>
+          </article>
+          <article class="manage-metric-card">
+            <h3>유저 토큰 잔액 합계</h3>
+            <strong><%= Number(summary?.tokenSummary?.totalTokenBalance || 0).toLocaleString('ko-KR') %></strong>
+            <p>최근 7일 사용: <%= Number(summary?.tokenSummary?.consumedTokens7d || 0).toLocaleString('ko-KR') %></p>
+          </article>
+        </div>
+
+        <div class="manage-table-block">
+          <h3>운세/기능별 평균 토큰 (요약)</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>feature</th>
+                  <th>호출수</th>
+                  <th>평균 토큰</th>
+                  <th>누적 토큰</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (summary?.featureSummary || []).forEach(function (r) { %>
+                  <tr>
+                    <td><%= r.feature_key || '(unknown)' %></td>
+                    <td><%= Number(r.call_count || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Math.round(Number(r.avg_tokens || 0)).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.total_tokens || 0).toLocaleString('ko-KR') %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

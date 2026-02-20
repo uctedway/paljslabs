@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">토큰 / 비용 모니터링</h2>
+        <p class="manage-desc">
+          단가 기준: input $<%= Number(tokenMetrics?.pricing?.inputUsdPer1M || 0) %>/1M, output $<%= Number(tokenMetrics?.pricing?.outputUsdPer1M || 0) %>/1M, 환율 <%= Number(tokenMetrics?.pricing?.usdKrwRate || 0).toLocaleString('ko-KR') %>원/USD
+        </p>
+
+        <div class="manage-metric-grid">
+          <article class="manage-metric-card">
+            <h3>총 토큰</h3>
+            <strong><%= Number(tokenMetrics?.totals?.totalTokens || 0).toLocaleString('ko-KR') %></strong>
+            <p>평균: <%= Number(tokenMetrics?.totals?.avgTotalTokens || 0).toLocaleString('ko-KR') %> / 호출</p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>Prompt / Completion</h3>
+            <strong><%= Number(tokenMetrics?.totals?.totalPromptTokens || 0).toLocaleString('ko-KR') %> / <%= Number(tokenMetrics?.totals?.totalCompletionTokens || 0).toLocaleString('ko-KR') %></strong>
+            <p>누적 토큰</p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>추정 비용 (USD)</h3>
+            <strong>$ <%= Number(tokenMetrics?.totals?.estimatedUsd || 0).toFixed(4) %></strong>
+            <p>KRW: <%= Math.round(Number(tokenMetrics?.totals?.estimatedKrw || 0)).toLocaleString('ko-KR') %>원</p>
+          </article>
+          <article class="manage-metric-card">
+            <h3>Claude 잔여 토큰</h3>
+            <% if (tokenMetrics?.totals?.budgetRemainingTokens === null) { %>
+              <strong>-</strong>
+              <p>`MANAGE_CLAUDE_TOKEN_BUDGET`를 설정하면 계산됩니다.</p>
+            <% } else { %>
+              <strong><%= Number(tokenMetrics?.totals?.budgetRemainingTokens || 0).toLocaleString('ko-KR') %></strong>
+              <p>설정 예산 대비 잔여</p>
+            <% } %>
+          </article>
+        </div>
+
+        <div class="manage-table-block">
+          <h3>운세/기능별 평균 토큰 및 비용</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>feature</th>
+                  <th>호출수</th>
+                  <th>prompt</th>
+                  <th>completion</th>
+                  <th>total</th>
+                  <th>평균 토큰</th>
+                  <th>USD(추정)</th>
+                  <th>KRW(추정)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (tokenMetrics?.features || []).forEach(function (r) { %>
+                  <tr>
+                    <td><%= r.feature_key || '(unknown)' %></td>
+                    <td><%= Number(r.call_count || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.prompt_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.completion_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.total_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Math.round(Number(r.avg_tokens || 0)).toLocaleString('ko-KR') %></td>
+                    <td>$ <%= Number(r.estimated_usd || 0).toFixed(4) %></td>
+                    <td><%= Math.round(Number(r.estimated_krw || 0)).toLocaleString('ko-KR') %>원</td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

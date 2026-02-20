@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">호출 로그</h2>
+        <p class="manage-desc">상세 호출/실패 로그는 페이지 단위로 조회합니다.</p>
+
+        <div class="manage-table-block">
+          <h3>최근 호출</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>req_id</th>
+                  <th>service</th>
+                  <th>feature</th>
+                  <th>status</th>
+                  <th>name</th>
+                  <th>prompt</th>
+                  <th>completion</th>
+                  <th>total</th>
+                  <th>duration(ms)</th>
+                  <th>요청시각(KST)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (monitoring?.recentCalls || []).forEach(function (r) { %>
+                  <tr>
+                    <td>#<%= r.req_id %></td>
+                    <td><%= r.service_code || '-' %></td>
+                    <td><%= r.feature_key || '-' %></td>
+                    <td><%= r.status || '-' %></td>
+                    <td><%= r.input_name || '-' %></td>
+                    <td><%= Number(r.prompt_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.completion_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.total_tokens || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= Number(r.duration_ms || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= r.requested_at_kst || '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <div class="manage-pager">
+            <% if (monitoring?.callPager?.hasPrev) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/monitoring/calls?page=<%= monitoring.callPager.prevPage %>&page_size=<%= monitoring.callPager.pageSize %>">이전</a>
+            <% } %>
+            <span>페이지 <%= monitoring?.callPager?.page || 1 %> / <%= monitoring?.callPager?.totalPages || 1 %></span>
+            <% if (monitoring?.callPager?.hasNext) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/monitoring/calls?page=<%= monitoring.callPager.nextPage %>&page_size=<%= monitoring.callPager.pageSize %>">다음</a>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="manage-table-block">
+          <h3>실패 로그</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>req_id</th>
+                  <th>service</th>
+                  <th>duration(ms)</th>
+                  <th>요청시각(KST)</th>
+                  <th>error</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (monitoring?.recentFailures || []).forEach(function (r) { %>
+                  <tr>
+                    <td>#<%= r.req_id %></td>
+                    <td><%= r.service_code || '-' %></td>
+                    <td><%= Number(r.duration_ms || 0).toLocaleString('ko-KR') %></td>
+                    <td><%= r.requested_at_kst || '-' %></td>
+                    <td class="manage-pre"><%= r.error_message || '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <div class="manage-pager">
+            <% if (monitoring?.failPager?.hasPrev) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/monitoring/calls?page=<%= monitoring.failPager.prevPage %>&page_size=<%= monitoring.failPager.pageSize %>">이전</a>
+            <% } %>
+            <span>페이지 <%= monitoring?.failPager?.page || 1 %> / <%= monitoring?.failPager?.totalPages || 1 %></span>
+            <% if (monitoring?.failPager?.hasNext) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/monitoring/calls?page=<%= monitoring.failPager.nextPage %>&page_size=<%= monitoring.failPager.pageSize %>">다음</a>
+            <% } %>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,10 +1,18 @@
 <main class="login-page">
   <section class="login-hero">
 	<div class="login-card">
-	  <h1 class="login-title">48LAB 로그인</h1>
+	  <% const mode = (authMode === 'register') ? 'register' : 'login'; %>
+	  <h1 class="login-title"><%= mode === 'register' ? '48LAB 회원가입' : '48LAB 로그인' %></h1>
 	  <% if (loginErrorMessage) { %>
 		<p class="login-error"><%= loginErrorMessage %></p>
 	  <% } %>
+	  <p class="login-subtext">
+		<% if (mode === 'register') { %>
+		  이미 계정이 있으신가요? <a href="/user/login">로그인</a>
+		<% } else { %>
+		  아직 계정이 없으신가요? <a href="/user/register">회원가입</a>
+		<% } %>
+	  </p>
 
 	  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -22,20 +30,21 @@
 			data-type="standard"
 			data-size="large"
 			data-theme="outline"
-			data-text="sign_in_with"
+			data-text="<%= mode === 'register' ? 'signup_with' : 'sign_in_with' %>"
 			data-shape="rectangular"
 			data-logo_alignment="left">
 		  </div>
 		</div>
 
-		<a class="provider-row naver-signin-btn <%= naverLoginUrl ? '' : 'is-disabled' %>" href="<%= naverLoginUrl || '#' %>">네이버로 로그인</a>
-		<a class="provider-row kakao-signin-btn <%= kakaoLoginUrl ? '' : 'is-disabled' %>" href="<%= kakaoLoginUrl || '#' %>">카카오로 로그인</a>
-		<a class="provider-row apple-signin-btn <%= appleLoginUrl ? '' : 'is-disabled' %>" href="<%= appleLoginUrl || '#' %>">Apple로 로그인</a>
+		<a class="provider-row naver-signin-btn <%= naverLoginUrl ? '' : 'is-disabled' %>" href="<%= naverLoginUrl || '#' %>">네이버로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
+		<a class="provider-row kakao-signin-btn <%= kakaoLoginUrl ? '' : 'is-disabled' %>" href="<%= kakaoLoginUrl || '#' %>">카카오로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
+		<a class="provider-row apple-signin-btn <%= appleLoginUrl ? '' : 'is-disabled' %>" href="<%= appleLoginUrl || '#' %>">Apple로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
 	  </div>
 
 	  <script type="module">
 		import { googleHandleCredentialResponse } from '/js/modules/apps/user/google_auth.js';
 		// GSI는 반드시 window에서 콜백을 찾음
+		window.socialAuthIntent = '<%= mode %>';
 		window.googleHandleCredentialResponse = googleHandleCredentialResponse;
 	  </script>
 	</div>

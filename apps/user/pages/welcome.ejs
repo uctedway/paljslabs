@@ -2,6 +2,7 @@
   <div class="mypage-content" style="max-width:760px;margin:40px auto;">
     <article class="mypage-card">
       <h2>가입을 축하합니다, <%= userName %>!</h2>
+      <p class="mypage-desc">신규 가입 보너스로 토큰 3개가 지급되었습니다.</p>
       <% if (referralApplied) { %>
         <p class="mypage-desc">추천인 링크로 가입이 완료되었습니다. 추천인에게 3토큰이 적립되었습니다.</p>
       <% } else { %>
@@ -10,6 +11,7 @@
 
       <div class="mypage-quick-links">
         <a class="mypage-btn primary" href="/user/mypage">마이페이지로 이동</a>
+        <a class="mypage-btn" href="/user/token-usage-history">토큰내역 보기</a>
         <a class="mypage-btn" href="/saju">사주 보러가기</a>
       </div>
       <p class="mypage-desc">잠시 후 마이페이지로 자동 이동합니다.</p>

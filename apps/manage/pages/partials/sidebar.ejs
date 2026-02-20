@@ -1,0 +1,143 @@
+<aside class="manage-sidebar">
+  <h1 class="manage-logo"><a href="/manage" style="color:inherit;text-decoration:none;">48LAB</a></h1>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">space_dashboard</span>
+      운영
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'dashboard' ? 'is-active' : '' %>" href="/manage">
+          <span class="material-symbols-outlined" style="font-size:18px;">dashboard</span>
+          대시보드
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">monitoring</span>
+      모니터링
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'calls' ? 'is-active' : '' %>" href="/manage/monitoring/calls">
+          <span class="material-symbols-outlined" style="font-size:18px;">list_alt</span>
+          호출 로그
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'tokens' ? 'is-active' : '' %>" href="/manage/monitoring/tokens">
+          <span class="material-symbols-outlined" style="font-size:18px;">paid</span>
+          토큰/비용
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">groups</span>
+      회원관리
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'users' ? 'is-active' : '' %>" href="/manage/users">
+          <span class="material-symbols-outlined" style="font-size:18px;">person_search</span>
+          회원 목록
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">edit_note</span>
+      프롬프트 관리
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && (!scopeKey || scopeKey === 'saju') ? 'is-active' : '' %>" href="/manage/prompts?scope=saju">
+          <span class="material-symbols-outlined" style="font-size:18px;">auto_awesome</span>
+          사주
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'compatibility' ? 'is-active' : '' %>" href="/manage/prompts?scope=compatibility">
+          <span class="material-symbols-outlined" style="font-size:18px;">favorite</span>
+          궁합
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'today' ? 'is-active' : '' %>" href="/manage/prompts?scope=today">
+          <span class="material-symbols-outlined" style="font-size:18px;">today</span>
+          오늘의 운세
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'flow' ? 'is-active' : '' %>" href="/manage/prompts?scope=flow">
+          <span class="material-symbols-outlined" style="font-size:18px;">timeline</span>
+          대운·세운
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'naming' ? 'is-active' : '' %>" href="/manage/prompts?scope=naming">
+          <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+          작명/개명
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'date-selection' ? 'is-active' : '' %>" href="/manage/prompts?scope=date-selection">
+          <span class="material-symbols-outlined" style="font-size:18px;">event</span>
+          택일
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">tune</span>
+      상담톤 관리
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'prompts' && scopeKey === 'tone' ? 'is-active' : '' %>" href="/manage/prompts?scope=tone">
+          <span class="material-symbols-outlined" style="font-size:18px;">settings_voice</span>
+          상담톤
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="manage-nav-group">
+    <p class="manage-nav-main">
+      <span class="material-symbols-outlined" style="font-size:18px;">manage_accounts</span>
+      관리자
+    </p>
+    <ul class="manage-submenu">
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'info' ? 'is-active' : '' %>" href="/manage/info">
+          <span class="material-symbols-outlined" style="font-size:18px;">badge</span>
+          정보변경
+        </a>
+      </li>
+      <li>
+        <a class="manage-submenu-link <%= activeSub === 'password' ? 'is-active' : '' %>" href="/manage/password">
+          <span class="material-symbols-outlined" style="font-size:18px;">password</span>
+          비밀번호 변경
+        </a>
+      </li>
+      <li>
+        <form method="post" action="/manage/logout">
+          <button type="submit" class="manage-submenu-btn">
+            <span class="material-symbols-outlined" style="font-size:18px;">logout</span>
+            로그아웃
+          </button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</aside>

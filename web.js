@@ -125,6 +125,7 @@ app.use(
 app.use((req, res, next) => {
   res.locals.session = req.session;
   res.locals.user = req.session ? req.session.user : null;
+  res.locals.manageAdmin = req.session ? req.session.manageAdmin : null;
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
@@ -148,12 +149,14 @@ const userRoutes = require('./apps/user/routes/user');
 const apiRoutes = require('./apps/api/routes/api');
 const sajuRoutes = require('./apps/saju/route');
 const fortuneRoutes = require('./apps/fortune/route');
+const manageRoutes = require('./apps/manage/routes/manage');
 
 app.use('/', homeRoutes);
 app.use('/user', userRoutes);
 app.use('/api', apiRoutes);
 app.use('/saju', sajuRoutes);
 app.use('/fortune', fortuneRoutes);
+app.use('/manage', manageRoutes);
 
 // ============================================
 // Error handling

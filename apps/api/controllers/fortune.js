@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const { beginApiRequest, finishApiRequest } = require('../utils/server');
 const db = require('../../core/utils/db');
 const { guardSajuService } = require('../services/saju_guard');
 const { consumeToken, refundToken } = require('../services/token_wallet');
@@ -17,6 +18,7 @@ const {
   keepAliveUserAnalysisSlot,
   releaseUserAnalysisSlot,
 } = require('../services/analysis_job_manager');
+const { getPromptTemplate } = require('../services/prompt_template_store');
 
 const FEATURE_MAP = {
   compatibility: { label: '궁합', usageCode: 'COMPATIBILITY_VIEW', promptFile: 'compatibility.txt' },
@@ -165,6 +167,17 @@ ${JSON.stringify(payload || {}, null, 2)}
 - body는 markdown으로 섹션/목록을 사용해 가독성 있게 작성한다.`;
 }
 
+function buildFortuneUserPrompt(featureRaw, payload, extraGuide = '') {
+  const guideBlock = String(extraGuide || '').trim()
+    ? `\n\n추가 작성 가이드:\n${String(extraGuide || '').trim()}`
+    : '';
+  return `원국 데이터:
+${JSON.stringify(featureRaw || {}, null, 2)}
+
+입력:
+${JSON.stringify(payload || {}, null, 2)}${guideBlock}`;
+}
+
 function extractJsonBlock(rawText) {
   const text = String(rawText || '').trim();
   if (!text) return '';
@@ -200,6 +213,11 @@ function parseClaudeStructuredResult(rawText, fallbackSummary = '') {
 async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
   const shortMode = isTruthyEnv(process.env.SAJU_CLAUDE_SANDBOX) || isTruthyEnv(process.env.CLAUDE_SHORT_TEST);
   const featureLabel = FEATURE_MAP[featureKey]?.label || '운세';
+  const runtimeTemplate = shortMode
+    ? null
+    : await getPromptTemplate({ serviceCode: 'FORTUNE', featureKey, toneKey: '' });
+  const systemPrompt = runtimeTemplate?.systemPrompt || buildClaudePrompt(featureKey, payload);
+  const userPromptGuide = runtimeTemplate?.userPromptGuide || '';
 
   const requestBody = shortMode
     ? {
@@ -210,10 +228,10 @@ async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
     : {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
-      system: buildClaudePrompt(featureKey, payload),
+      system: systemPrompt,
       messages: [{
         role: 'user',
-        content: `원국 데이터:\n${JSON.stringify(featureRaw || {}, null, 2)}\n\n입력:\n${JSON.stringify(payload || {}, null, 2)}`,
+        content: buildFortuneUserPrompt(featureRaw, payload, userPromptGuide),
       }],
     };
 
@@ -230,7 +248,13 @@ async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
   );
 
   const text = String(response?.data?.content?.[0]?.text || '').trim();
-  return text || `${featureLabel} 결과`;
+  return {
+    text: text || `${featureLabel} 결과`,
+    usage: response?.data?.usage || {},
+    model: String(response?.data?.model || 'claude-sonnet-4-20250514'),
+    sandboxMode: shortMode,
+    preparedSystemPrompt: systemPrompt,
+  };
 }
 
 function normalizeSinglePayload(featureKey, body = {}) {
@@ -609,12 +633,12 @@ async function buildFeatureResult(featureKey, payload, loginId) {
     const p1 = await resolvePersonSajuData(loginId, person1);
     const p2 = await resolvePersonSajuData(loginId, person2);
 
-    const claudeText = await requestClaudeFortuneResult({
+    const claudeResp = await requestClaudeFortuneResult({
       featureKey,
       payload,
       featureRaw: { person1: p1.data, person2: p2.data },
     });
-    const parsedResult = parseClaudeStructuredResult(claudeText, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
+    const parsedResult = parseClaudeStructuredResult(claudeResp.text, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
     return {
       resultText: parsedResult.body,
       summary: parsedResult.summary,
@@ -629,6 +653,7 @@ async function buildFeatureResult(featureKey, payload, loginId) {
         person1: p1.data,
         person2: p2.data,
       },
+      claude: claudeResp,
     };
   }
 
@@ -644,12 +669,12 @@ async function buildFeatureResult(featureKey, payload, loginId) {
   };
 
   const resolved = await resolvePersonSajuData(loginId, single);
-  const claudeText = await requestClaudeFortuneResult({
+  const claudeResp = await requestClaudeFortuneResult({
     featureKey,
     payload,
     featureRaw: { person1: resolved.data },
   });
-  const parsedResult = parseClaudeStructuredResult(claudeText, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
+  const parsedResult = parseClaudeStructuredResult(claudeResp.text, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
   return {
     resultText: parsedResult.body,
     summary: parsedResult.summary,
@@ -665,6 +690,7 @@ async function buildFeatureResult(featureKey, payload, loginId) {
     raw: {
       person1: resolved.data,
     },
+    claude: claudeResp,
   };
 }
 
@@ -677,6 +703,8 @@ async function processFortuneJob(resultId) {
   const featureMeta = FEATURE_MAP[featureKey];
   const loginId = String(record.loginId || '').trim();
   const tokenUsageReferenceId = String(record.tokenUsageReferenceId || '').trim();
+  const logReq = loginId ? { session: { user: { login_id: loginId } } } : {};
+  let claudeReqId = 0;
 
   if (!featureKey || !featureMeta) {
     await updateSajuResultRecord(resultId, {
@@ -697,8 +725,29 @@ async function processFortuneJob(resultId) {
   });
 
   try {
+    const claudeStartedAt = Date.now();
+    try {
+      const beginRow = await beginApiRequest(
+        logReq,
+        'CLAUDE',
+        JSON.stringify({
+          provider: 'FORTUNE',
+          feature_key: featureKey,
+          input: payload,
+        }),
+        Number(payload?.relative_id || 0)
+      );
+      claudeReqId = Number(beginRow?.req_id || 0);
+    } catch (logErr) {
+      console.error('[FORTUNE] beginApiRequest(CLAUDE) 실패:', logErr.message);
+    }
+
     const featureResult = await buildFeatureResult(featureKey, payload, loginId);
-    const claudePrompt = buildClaudePrompt(featureKey, payload);
+    const claudePrompt = String(featureResult?.claude?.preparedSystemPrompt || buildClaudePrompt(featureKey, payload));
+    const claudeUsage = featureResult?.claude?.usage || {};
+    const promptTokens = Number(claudeUsage?.input_tokens || 0);
+    const completionTokens = Number(claudeUsage?.output_tokens || 0);
+    const totalTokens = promptTokens + completionTokens;
 
     await updateSajuResultRecord(resultId, {
       status: 'completed',
@@ -717,7 +766,43 @@ async function processFortuneJob(resultId) {
       noticeMessage: String(featureResult.noticeMessage || ''),
     });
     await keepAliveUserAnalysisSlot({ loginId, resultId });
+
+    try {
+      await finishApiRequest(
+        logReq,
+        claudeReqId,
+        'SUCCESS',
+        JSON.stringify({
+          provider: 'CLAUDE',
+          model: featureResult?.claude?.model || 'claude-sonnet-4-20250514',
+          sandbox_mode: !!featureResult?.claude?.sandboxMode,
+          feature_key: featureKey,
+          result_length: String(featureResult?.resultText || '').length,
+          usage: claudeUsage,
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokens,
+        }),
+        '',
+        Date.now() - claudeStartedAt
+      );
+    } catch (logErr) {
+      console.error('[FORTUNE] finishApiRequest(CLAUDE SUCCESS) 실패:', logErr.message);
+    }
   } catch (featureErr) {
+    try {
+      await finishApiRequest(
+        logReq,
+        claudeReqId,
+        'FAILED',
+        '',
+        JSON.stringify(featureErr?.response?.data || featureErr?.message || featureErr),
+        0
+      );
+    } catch (logErr) {
+      console.error('[FORTUNE] finishApiRequest(CLAUDE FAILED) 실패:', logErr.message);
+    }
+
     await refundToken({
       loginId,
       amount: TOKENS_PER_SAJU_REQUEST,

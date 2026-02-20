@@ -22,6 +22,7 @@ const {
   getSajuResultRecordByLoginId,
   createOrGetShareTokenByLoginId,
 } = require('../services/saju_result_store');
+const { getPromptTemplate } = require('../services/prompt_template_store');
 
 const COUNSELING_TYPE_MAP = {
   soft: { label: '부드러운 상담', file: 'soft.txt' },
@@ -60,13 +61,30 @@ function loadPromptCache() {
   return promptCache;
 }
 
-function buildSystemPrompt(counselingType) {
+function buildDefaultSystemPrompt(counselingType) {
   const { basePrompt, typePrompts } = loadPromptCache();
   const typePrompt = typePrompts[counselingType] || typePrompts.balanced || '';
   return `${basePrompt}
 
 # 상담 유형 보정
 ${typePrompt}`;
+}
+
+function buildDefaultBaseSystemPrompt() {
+  const { basePrompt } = loadPromptCache();
+  return String(basePrompt || '').trim();
+}
+
+function buildDefaultTonePrompt(counselingType) {
+  const { typePrompts } = loadPromptCache();
+  return String(typePrompts[counselingType] || typePrompts.balanced || '').trim();
+}
+
+function composeSajuSystemPrompt(basePrompt, tonePrompt) {
+  return `${String(basePrompt || '').trim()}
+
+# 상담 유형 보정
+${String(tonePrompt || '').trim()}`.trim();
 }
 
 function getSessionLoginId(req) {
@@ -377,7 +395,10 @@ async function saveSajuRawData(loginId, relativeId, sajuRawData) {
   return rs && rs[0] ? rs[0] : {};
 }
 
-function buildUserPrompt(payload, sajuData, normalizedGender, counselingLabel, age, lifeStage) {
+function buildUserPrompt(payload, sajuData, normalizedGender, counselingLabel, age, lifeStage, extraGuide = '') {
+  const guideBlock = String(extraGuide || '').trim()
+    ? `\n\n# 추가 작성 가이드\n${String(extraGuide || '').trim()}`
+    : '';
   return `# 고객 정보
 - 이름: ${payload.name}
 - 성별: ${normalizedGender.promptGender}
@@ -410,7 +431,7 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 }
 \`\`\`
 - summary는 줄바꿈 최소화, 220자 이내 권장
-- body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성`;
+- body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성${guideBlock}`;
 }
 
 function extractJsonBlock(rawText) {
@@ -635,6 +656,29 @@ async function processSajuJob(resultId) {
       progressMessage: 'AI가 사주 해석 리포트를 작성하고 있습니다.',
     });
 
+    const [baseTemplate, toneTemplate] = isClaudeSandboxMode
+      ? [null, null]
+      : await Promise.all([
+        getPromptTemplate({ serviceCode: 'SAJU', featureKey: 'saju', toneKey: '' }),
+        getPromptTemplate({ serviceCode: 'SAJU_TONE', featureKey: '', toneKey: normalizedCounselingType }),
+      ]);
+
+    const defaultBasePrompt = buildDefaultBaseSystemPrompt();
+    const defaultTonePrompt = buildDefaultTonePrompt(normalizedCounselingType);
+    const baseSystemPrompt = String(baseTemplate?.systemPrompt || '').trim() || defaultBasePrompt;
+    const toneSystemPrompt = String(toneTemplate?.systemPrompt || '').trim() || defaultTonePrompt;
+    const composedSystemPrompt = composeSajuSystemPrompt(baseSystemPrompt, toneSystemPrompt);
+    const systemPrompt = composedSystemPrompt || buildDefaultSystemPrompt(normalizedCounselingType);
+    const userPromptGuide = String(baseTemplate?.userPromptGuide || '').trim();
+    const preparedUserPrompt = buildUserPrompt(
+      payload,
+      sajuData,
+      normalizedGender,
+      counselingLabel,
+      age,
+      lifeStage,
+      userPromptGuide
+    );
     const claudeRequestBody = isClaudeSandboxMode
       ? {
         model: 'claude-sonnet-4-20250514',
@@ -644,16 +688,19 @@ async function processSajuJob(resultId) {
       : {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 8192,
-        system: buildSystemPrompt(normalizedCounselingType),
+        system: systemPrompt,
         messages: [{
           role: 'user',
-          content: buildUserPrompt(payload, sajuData, normalizedGender, counselingLabel, age, lifeStage),
+          content: preparedUserPrompt,
         }],
       };
+    const claudeRequestBodyFinal = isClaudeSandboxMode
+      ? claudeRequestBody
+      : claudeRequestBody;
 
     const claudeResponse = await axios.post(
       'https://api.anthropic.com/v1/messages',
-      claudeRequestBody,
+      claudeRequestBodyFinal,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -670,6 +717,10 @@ async function processSajuJob(resultId) {
       `${payload.name || '고객'}님의 사주 핵심 흐름 요약`
     );
     const claudeResult = parsedResult.body;
+    const claudeUsage = claudeResponse?.data?.usage || {};
+    const promptTokens = Number(claudeUsage?.input_tokens || 0);
+    const completionTokens = Number(claudeUsage?.output_tokens || 0);
+    const totalTokens = promptTokens + completionTokens;
 
     await updateSajuResultRecord(resultId, {
       status: 'completed',
@@ -694,6 +745,10 @@ async function processSajuJob(resultId) {
           model: 'claude-sonnet-4-20250514',
           sandbox_mode: isClaudeSandboxMode,
           result_length: claudeResult.length,
+          usage: claudeUsage,
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: totalTokens,
         }),
         '',
         Date.now() - claudeStartedAt

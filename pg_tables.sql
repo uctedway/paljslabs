@@ -350,3 +350,126 @@ BEGIN
 	);
 END
 GO
+
+IF OBJECT_ID('dbo.PJ_TB_MANAGE_ADMINS', 'U') IS NULL
+BEGIN
+	CREATE TABLE [dbo].[PJ_TB_MANAGE_ADMINS](
+		[admin_no] [bigint] IDENTITY(1,1) NOT NULL,
+		[admin_id] [varchar](100) NOT NULL,
+		[admin_name] [nvarchar](100) NOT NULL,
+		[password_hash] [varchar](128) NOT NULL,
+		[is_active] [bit] NOT NULL CONSTRAINT [DF_PJ_TB_MANAGE_ADMINS_ACTIVE] DEFAULT ((1)),
+		[last_login_at] [datetime2](0) NULL,
+		[created_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_MANAGE_ADMINS_CREATED] DEFAULT (sysdatetime()),
+		[updated_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_MANAGE_ADMINS_UPDATED] DEFAULT (sysdatetime()),
+	 CONSTRAINT [PK_PJ_TB_MANAGE_ADMINS] PRIMARY KEY CLUSTERED ([admin_no] ASC),
+	 CONSTRAINT [UQ_PJ_TB_MANAGE_ADMINS_ADMIN_ID] UNIQUE NONCLUSTERED ([admin_id] ASC)
+	);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_MANAGE_ADMINS')
+	  AND name = 'IX_PJ_TB_MANAGE_ADMINS_ACTIVE'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_MANAGE_ADMINS_ACTIVE]
+	ON [dbo].[PJ_TB_MANAGE_ADMINS] ([is_active] ASC, [admin_id] ASC)
+	INCLUDE ([admin_name], [updated_at], [last_login_at]);
+END
+GO
+
+IF OBJECT_ID('dbo.PJ_TB_MANAGE_ACTION_LOGS', 'U') IS NULL
+BEGIN
+	CREATE TABLE [dbo].[PJ_TB_MANAGE_ACTION_LOGS](
+		[log_id] [bigint] IDENTITY(1,1) NOT NULL,
+		[admin_id] [varchar](100) NOT NULL,
+		[admin_name] [nvarchar](100) NULL,
+		[action_code] [varchar](60) NOT NULL,
+		[target_type] [varchar](60) NULL,
+		[target_id] [varchar](200) NULL,
+		[result_status] [varchar](20) NOT NULL CONSTRAINT [DF_PJ_TB_MANAGE_ACTION_LOGS_RESULT] DEFAULT ('SUCCESS'),
+		[request_data] [nvarchar](max) NULL,
+		[response_data] [nvarchar](max) NULL,
+		[ip_address] [varchar](100) NULL,
+		[user_agent] [nvarchar](500) NULL,
+		[created_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_MANAGE_ACTION_LOGS_CREATED] DEFAULT (sysdatetime()),
+	 CONSTRAINT [PK_PJ_TB_MANAGE_ACTION_LOGS] PRIMARY KEY CLUSTERED ([log_id] ASC)
+	);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_MANAGE_ACTION_LOGS')
+	  AND name = 'IX_PJ_TB_MANAGE_ACTION_LOGS_CREATED_AT'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_MANAGE_ACTION_LOGS_CREATED_AT]
+	ON [dbo].[PJ_TB_MANAGE_ACTION_LOGS] ([created_at] DESC)
+	INCLUDE ([admin_id], [action_code], [target_type], [target_id], [result_status]);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_MANAGE_ACTION_LOGS')
+	  AND name = 'IX_PJ_TB_MANAGE_ACTION_LOGS_ADMIN_ACTION'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_MANAGE_ACTION_LOGS_ADMIN_ACTION]
+	ON [dbo].[PJ_TB_MANAGE_ACTION_LOGS] ([admin_id] ASC, [action_code] ASC, [created_at] DESC)
+	INCLUDE ([target_type], [target_id], [result_status]);
+END
+GO
+
+IF OBJECT_ID('dbo.PJ_TB_PROMPT_TEMPLATES', 'U') IS NULL
+BEGIN
+	CREATE TABLE [dbo].[PJ_TB_PROMPT_TEMPLATES](
+		[prompt_no] [bigint] IDENTITY(1,1) NOT NULL,
+		[service_code] [varchar](20) NOT NULL,
+		[feature_key] [varchar](40) NULL,
+		[tone_key] [varchar](40) NULL,
+		[system_prompt] [nvarchar](max) NOT NULL,
+		[user_prompt_guide] [nvarchar](max) NULL,
+		[is_active] [bit] NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_ACTIVE] DEFAULT ((1)),
+		[updated_by] [varchar](100) NULL,
+		[created_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_CREATED] DEFAULT (sysdatetime()),
+		[updated_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_UPDATED] DEFAULT (sysdatetime()),
+	 CONSTRAINT [PK_PJ_TB_PROMPT_TEMPLATES] PRIMARY KEY CLUSTERED ([prompt_no] ASC)
+	);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_PROMPT_TEMPLATES')
+	  AND name = 'UX_PJ_TB_PROMPT_TEMPLATES_SCOPE'
+)
+BEGIN
+	CREATE UNIQUE NONCLUSTERED INDEX [UX_PJ_TB_PROMPT_TEMPLATES_SCOPE]
+	ON [dbo].[PJ_TB_PROMPT_TEMPLATES] (
+		[service_code] ASC,
+		[feature_key] ASC,
+		[tone_key] ASC
+	);
+END
+GO
+
+IF NOT EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_PROMPT_TEMPLATES')
+	  AND name = 'IX_PJ_TB_PROMPT_TEMPLATES_UPDATED'
+)
+BEGIN
+	CREATE NONCLUSTERED INDEX [IX_PJ_TB_PROMPT_TEMPLATES_UPDATED]
+	ON [dbo].[PJ_TB_PROMPT_TEMPLATES] ([updated_at] DESC)
+	INCLUDE ([service_code], [feature_key], [tone_key], [is_active], [updated_by]);
+END
+GO
