@@ -378,6 +378,37 @@ html.theme-dark .legal-header p {
     color: #94a3b8;
 }
 
+html.theme-dark .welcome-card {
+    background:
+      radial-gradient(circle at 100% 0%, rgba(96, 165, 250, 0.2), transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(52, 211, 153, 0.16), transparent 40%),
+      #0f172a;
+    border-color: #334155;
+}
+
+html.theme-dark .welcome-title,
+html.theme-dark .welcome-reward-value,
+html.theme-dark .welcome-redirect strong {
+    color: #e5e7eb;
+}
+
+html.theme-dark .welcome-kicker,
+html.theme-dark .welcome-lead,
+html.theme-dark .welcome-note,
+html.theme-dark .welcome-redirect {
+    color: #94a3b8;
+}
+
+html.theme-dark .welcome-reward-item {
+    background: #111827;
+    border-color: #334155;
+}
+
+html.theme-dark .welcome-reward-item.is-highlight {
+    background: #1e293b;
+    border-color: #3b82f6;
+}
+
 html.theme-dark .overview-head h3,
 html.theme-dark .hero-slide-content h2 {
     color: #f8fafc;

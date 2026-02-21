@@ -215,11 +215,14 @@ const emailRegister = (req, res) => {
 };
 
 const welcome = (req, res) => {
-  if (!requireLoginOrRedirect(req, res)) return;
-  const userName = String(req.session?.user?.user_name || '').trim() || '회원님';
-  const welcomeContext = req.session?.welcomeContext || {};
+  const isPreviewMode = String(process.env.WELCOME_PREVIEW || '').trim() === '1';
+  if (!isPreviewMode && !requireLoginOrRedirect(req, res)) return;
+  const userName = String(req.session?.user?.user_name || '').trim() || (isPreviewMode ? '체험회원' : '회원님');
+  const welcomeContext = req.session?.welcomeContext || (isPreviewMode ? { referralApplied: false } : {});
   const referralApplied = Number(welcomeContext.referralApplied ? 1 : 0) === 1;
-  delete req.session.welcomeContext;
+  if (!isPreviewMode) {
+    delete req.session.welcomeContext;
+  }
   res.render('user/pages/welcome', {
     title: '가입을 축하합니다',
     userName,

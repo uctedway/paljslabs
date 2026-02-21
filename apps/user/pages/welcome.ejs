@@ -1,26 +1,32 @@
-<section class="mypage-shell">
-  <div class="mypage-content" style="max-width:760px;margin:40px auto;">
-    <article class="mypage-card">
-      <h2>가입을 축하합니다, <%= userName %>!</h2>
-      <p class="mypage-desc">신규 가입 보너스로 토큰 3개가 지급되었습니다.</p>
-      <% if (referralApplied) { %>
-        <p class="mypage-desc">추천인 링크로 가입이 완료되었습니다. 추천인에게 3토큰이 적립되었습니다.</p>
-      <% } else { %>
-        <p class="mypage-desc">이제 마이페이지에서 토큰, 지인관리, 상담내역을 바로 확인할 수 있습니다.</p>
-      <% } %>
+<section class="welcome-shell">
+  <article class="welcome-card">
+    <p class="welcome-kicker">WELCOME TO 48LAB</p>
+    <h1 class="welcome-title"><%= userName %>님, 가입을 축하합니다.</h1>
+    <p class="welcome-lead">계정 생성이 완료되었고 바로 서비스를 이용할 수 있습니다.</p>
 
-      <div class="mypage-quick-links">
-        <a class="mypage-btn primary" href="/user/mypage">마이페이지로 이동</a>
-        <a class="mypage-btn" href="/user/token-usage-history">토큰내역 보기</a>
-        <a class="mypage-btn" href="/saju">사주 보러가기</a>
+    <div class="welcome-reward-row">
+      <div class="welcome-reward-item is-highlight">
+        <span class="welcome-reward-label">가입 보너스</span>
+        <strong class="welcome-reward-value">+3 TOKENS</strong>
       </div>
-      <p class="mypage-desc">잠시 후 마이페이지로 자동 이동합니다.</p>
-    </article>
-  </div>
-</section>
+      <div class="welcome-reward-item">
+        <span class="welcome-reward-label">추천 보상</span>
+        <strong class="welcome-reward-value"><%= referralApplied ? '적용됨' : '미적용' %></strong>
+      </div>
+    </div>
 
-<script>
-setTimeout(() => {
-  window.location.href = '/user/mypage';
-}, 2500);
-</script>
+    <% if (referralApplied) { %>
+      <p class="welcome-note">추천인 링크로 가입이 완료되어 추천인에게도 3토큰이 적립되었습니다.</p>
+    <% } else { %>
+      <p class="welcome-note">토큰 내역과 지인관리, 상담내역은 마이페이지에서 바로 확인할 수 있습니다.</p>
+    <% } %>
+
+    <div class="welcome-actions">
+      <a class="mypage-btn primary" href="/user/mypage">마이페이지로 이동</a>
+      <a class="mypage-btn" href="/user/token-usage-history">토큰내역 보기</a>
+      <a class="mypage-btn" href="/saju">사주 보러가기</a>
+    </div>
+
+    <p class="welcome-redirect">원할 때 버튼으로 이동해 주세요.</p>
+  </article>
+</section>
