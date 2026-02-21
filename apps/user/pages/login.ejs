@@ -2,17 +2,13 @@
   <section class="login-hero">
 	<div class="login-card">
 	  <% const mode = (authMode === 'register') ? 'register' : 'login'; %>
+	  <% const socialActionText = '계속하기'; %>
+	  <p class="login-kicker">48LAB ACCOUNT</p>
 	  <h1 class="login-title"><%= mode === 'register' ? '48LAB 회원가입' : '48LAB 로그인' %></h1>
+	  <p class="login-lead">원하는 소셜 계정으로 빠르게 시작하세요.</p>
 	  <% if (loginErrorMessage) { %>
 		<p class="login-error"><%= loginErrorMessage %></p>
 	  <% } %>
-	  <p class="login-subtext">
-		<% if (mode === 'register') { %>
-		  이미 계정이 있으신가요? <a href="/user/login">로그인</a>
-		<% } else { %>
-		  아직 계정이 없으신가요? <a href="/user/register">회원가입</a>
-		<% } %>
-	  </p>
 
 	  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -24,22 +20,50 @@
 	  </div>
 
 	  <div class="login-providers">
-		<div class="provider-row google-signin-wrap">
+		<div class="google-signin-wrap">
 		  <div
 			class="g_id_signin"
 			data-type="standard"
 			data-size="large"
 			data-theme="outline"
-			data-text="<%= mode === 'register' ? 'signup_with' : 'sign_in_with' %>"
+			data-text="signin_with"
 			data-shape="rectangular"
-			data-logo_alignment="left">
+			data-logo_alignment="left"
+			data-width="420">
 		  </div>
 		</div>
 
-		<a class="provider-row naver-signin-btn <%= naverLoginUrl ? '' : 'is-disabled' %>" href="<%= naverLoginUrl || '#' %>">네이버로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
-		<a class="provider-row kakao-signin-btn <%= kakaoLoginUrl ? '' : 'is-disabled' %>" href="<%= kakaoLoginUrl || '#' %>">카카오로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
-		<a class="provider-row apple-signin-btn <%= appleLoginUrl ? '' : 'is-disabled' %>" href="<%= appleLoginUrl || '#' %>">Apple로 <%= mode === 'register' ? '회원가입' : '로그인' %></a>
+		<a class="provider-row naver-signin-btn <%= naverLoginUrl ? '' : 'is-disabled' %>" href="<%= naverLoginUrl || '#' %>">
+		  <span class="provider-icon" aria-hidden="true">
+			<img src="/images/icons/social/naver.svg" alt="">
+		  </span>
+		  <span class="provider-label">네이버로 <%= socialActionText %></span>
+		</a>
+		<a class="provider-row kakao-signin-btn <%= kakaoLoginUrl ? '' : 'is-disabled' %>" href="<%= kakaoLoginUrl || '#' %>">
+		  <span class="provider-icon" aria-hidden="true">
+			<img src="/images/icons/social/kakao.svg" alt="">
+		  </span>
+		  <span class="provider-label">카카오로 <%= socialActionText %></span>
+		</a>
+		<a class="provider-row apple-signin-btn <%= appleLoginUrl ? '' : 'is-disabled' %>" href="<%= appleLoginUrl || '#' %>">
+		  <span class="provider-icon" aria-hidden="true">
+			<img src="/images/icons/social/apple.svg" alt="">
+		  </span>
+		  <span class="provider-label">Apple로 <%= socialActionText %></span>
+		</a>
 	  </div>
+
+	  <a class="email-entry-btn" href="<%= mode === 'register' ? '/user/email-register' : '/user/email-login' %>">
+		<%= mode === 'register' ? '이메일로 회원가입' : '이메일로 로그인' %>
+	  </a>
+
+	  <p class="login-subtext">
+		<% if (mode === 'register') { %>
+		  이미 계정이 있으신가요? <a href="/user/login">로그인</a>
+		<% } else { %>
+		  아직 계정이 없으신가요? <a href="/user/register">회원가입</a>
+		<% } %>
+	  </p>
 
 	  <script type="module">
 		import { googleHandleCredentialResponse } from '/js/modules/apps/user/google_auth.js';

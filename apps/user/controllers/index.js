@@ -77,6 +77,33 @@ function mapLoginErrorMessage(errorCode) {
   return table[code] || '소셜 로그인 처리 중 오류가 발생했습니다.';
 }
 
+function mapEmailRegisterErrorMessage(errorCode) {
+  const code = String(errorCode || '').trim().toLowerCase();
+  if (!code) return '';
+  const table = {
+    required: '필수 입력값을 모두 입력해주세요.',
+    invalid_email: '올바른 이메일 형식이 아닙니다.',
+    weak_password: '비밀번호는 8자 이상이어야 합니다.',
+    password_mismatch: '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+    email_exists: '이미 가입된 이메일입니다. 이메일 로그인 또는 소셜 로그인을 이용해주세요.',
+    signup_failed: '이메일 회원가입 처리 중 오류가 발생했습니다.',
+  };
+  return table[code] || '이메일 회원가입 처리 중 오류가 발생했습니다.';
+}
+
+function mapEmailLoginErrorMessage(errorCode) {
+  const code = String(errorCode || '').trim().toLowerCase();
+  if (!code) return '';
+  const table = {
+    required: '이메일과 비밀번호를 입력해주세요.',
+    invalid_email: '올바른 이메일 형식이 아닙니다.',
+    user_not_found: '가입된 이메일 계정을 찾을 수 없습니다.',
+    invalid_password: '비밀번호가 올바르지 않습니다.',
+    login_failed: '이메일 로그인 처리 중 오류가 발생했습니다.',
+  };
+  return table[code] || '이메일 로그인 처리 중 오류가 발생했습니다.';
+}
+
 function hasEnv(...keys) {
   return keys.every((key) => String(process.env[key] || '').trim());
 }
@@ -185,6 +212,34 @@ const register = (req, res) => {
     appleCallbackUrl,
     loginErrorMessage: mapLoginErrorMessage(req.query?.error),
     pendingReferralCode: normalizeReferralCode(req.session?.pendingReferralCode),
+  });
+};
+
+/**
+ * 이메일 로그인 화면(렌더 전용)
+ */
+const emailLogin = (req, res) => {
+  res.render('user/pages/email_login', {
+    title: '이메일 로그인',
+    emailLoginErrorMessage: mapEmailLoginErrorMessage(req.query?.error),
+    emailPrefill: String(req.query?.email || '').trim(),
+  });
+};
+
+/**
+ * 이메일 회원가입 화면(렌더 전용)
+ */
+const emailRegister = (req, res) => {
+  const referralCode = normalizeReferralCode(req.query?.ref);
+  if (referralCode) {
+    req.session.pendingReferralCode = referralCode;
+  }
+  res.render('user/pages/email_register', {
+    title: '이메일 회원가입',
+    emailRegisterErrorMessage: mapEmailRegisterErrorMessage(req.query?.error),
+    pendingReferralCode: normalizeReferralCode(req.session?.pendingReferralCode),
+    emailPrefill: String(req.query?.email || '').trim(),
+    namePrefill: String(req.query?.name || '').trim(),
   });
 };
 
@@ -332,6 +387,8 @@ module.exports = {
   inviteEntry,
   logout,
   register,
+  emailLogin,
+  emailRegister,
   welcome,
   billing,
   purchaseHistory,

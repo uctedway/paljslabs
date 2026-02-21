@@ -7,15 +7,19 @@ const mypageController = require('../controllers/mypage');
 router.get('/', indexController.index);
 
 router.get('/login', indexController.login);
+router.get('/email-login', indexController.emailLogin);
 router.get('/invite/:code', indexController.inviteEntry);
 router.get('/logout', indexController.logout);
 router.post('/auth/google', authController.googleAuth);
+router.post('/email-register', authController.emailRegister);
+router.post('/email-login', authController.emailLogin);
 router.get('/auth/naver/callback', authController.naverAuthCallback);
 router.get('/auth/kakao/callback', authController.kakaoAuthCallback);
 router.get('/auth/apple/callback', authController.appleAuthCallback);
 router.post('/auth/apple/callback', authController.appleAuthCallback);
 
 router.get('/register', indexController.register);
+router.get('/email-register', indexController.emailRegister);
 router.get('/welcome', indexController.welcome);
 router.get('/mypage', mypageController.index);
 router.get('/mypage/profile', mypageController.profilePage);

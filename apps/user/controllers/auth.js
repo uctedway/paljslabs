@@ -20,18 +20,20 @@ function normalizeAuthIntent(rawIntent) {
    - PJ_USP_CREATE_USERS 수정본: id + 기본정보 반환
    - 반환: row (resp/resp_message/id/provider/login_id/email/user_name...)
 ========================================= */
-async function signupUser(provider, login_id, email, user_name, referralCode = '') {
+async function signupUser(provider, login_id, email, user_name, referralCode = '', user_pass = '') {
   const q_provider = db.convertQ(provider || '');
   const q_login_id = db.convertQ(login_id || '');
   const q_email = db.convertQ(email || '');
   const q_user_name = db.convertQ(user_name || '');
   const q_referral_code = db.convertQ(String(referralCode || '').trim().toUpperCase());
+  const q_user_pass = db.convertQ(user_pass || '');
 
   const query = `
 	EXEC dbo.PJ_USP_CREATE_USERS
 	  @provider  = '${q_provider}',
 	  @login_id  = '${q_login_id}',
 	  @email     = '${q_email}',
+	  @user_pass = '${q_user_pass}',
 	  @user_name = '${q_user_name}',
 	  @referral_code = '${q_referral_code}'
   `;
@@ -53,7 +55,7 @@ async function loadUserSessionRow(provider, login_id) {
   return rs && rs[0] ? rs[0] : {};
 }
 
-async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login' }) {
+async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '' }) {
   const authIntent = normalizeAuthIntent(intent);
   const sessionRow = await loadUserSessionRow(provider, login_id);
   const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
@@ -89,7 +91,7 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
     };
   }
 
-  const createdUser = await signupUser(provider, login_id, email, user_name, referralCode);
+  const createdUser = await signupUser(provider, login_id, email, user_name, referralCode, user_pass);
   const createResp = String(createdUser.resp || 'ERROR').toUpperCase();
   if (createResp === 'OK') {
     return {
@@ -120,6 +122,32 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
 function normalizeReferralCode(rawCode) {
   const code = String(rawCode || '').trim().toUpperCase();
   return /^[A-Z0-9]{8,32}$/.test(code) ? code : '';
+}
+
+function normalizeEmail(rawEmail) {
+  return String(rawEmail || '').trim().toLowerCase();
+}
+
+function isValidEmailFormat(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+function hashUserPassword(rawPassword) {
+  return crypto.createHash('sha256').update(String(rawPassword || '')).digest('hex');
+}
+
+async function loadEmailPasswordHash(login_id) {
+  const q_login_id = db.convertQ(login_id || '');
+  const query = `
+    SELECT TOP 1
+      user_pass
+    FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+    WHERE provider = 'EMAIL'
+      AND login_id = '${q_login_id}'
+  `;
+  const rs = await db.query(query);
+  const row = rs && rs[0] ? rs[0] : {};
+  return String(row.user_pass || '').trim();
 }
 
 function getAuthEntryPathByIntent(intent) {
@@ -699,6 +727,109 @@ const appleAuthCallback = async (req, res) => {
   }
 };
 
+const emailRegister = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const user_name = String(req.body?.name || '').trim();
+    const password = String(req.body?.password || '');
+    const passwordConfirm = String(req.body?.password_confirm || '');
+    const safeEmailParam = encodeURIComponent(email);
+    const safeNameParam = encodeURIComponent(user_name);
+    const redirectWithError = (code) => res.redirect(`/user/email-register?error=${encodeURIComponent(code)}&email=${safeEmailParam}&name=${safeNameParam}`);
+
+    if (!email || !user_name || !password || !passwordConfirm) {
+      return redirectWithError('required');
+    }
+    if (!isValidEmailFormat(email)) {
+      return redirectWithError('invalid_email');
+    }
+    if (password.length < 8) {
+      return redirectWithError('weak_password');
+    }
+    if (password !== passwordConfirm) {
+      return redirectWithError('password_mismatch');
+    }
+
+    const provider = 'EMAIL';
+    const login_id = email;
+    const referralCode = normalizeReferralCode(req.session?.pendingReferralCode || req.body?.referral_code);
+    const passwordHash = hashUserPassword(password);
+
+    const authResult = await resolveAuthUser({
+      provider,
+      login_id,
+      email,
+      user_name,
+      user_pass: passwordHash,
+      referralCode,
+      intent: 'register',
+    });
+
+    if (!authResult.ok) {
+      const message = String(authResult.message || '').toUpperCase();
+      if (message.includes('ALREADY EXISTS')) {
+        return redirectWithError('email_exists');
+      }
+      return redirectWithError('signup_failed');
+    }
+
+    delete req.session.pendingReferralCode;
+    await setUserSession(req, authResult.row);
+    req.session.welcomeContext = {
+      isNewSignup: true,
+      referralApplied: !!authResult.referralApplied,
+    };
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => (err ? reject(err) : resolve()));
+    });
+    return res.redirect('/user/welcome');
+  } catch (err) {
+    console.error('[EMAIL REGISTER ERROR]', err);
+    return res.redirect('/user/email-register?error=signup_failed');
+  }
+};
+
+const emailLogin = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    const safeEmailParam = encodeURIComponent(email);
+    const redirectWithError = (code) => res.redirect(`/user/email-login?error=${encodeURIComponent(code)}&email=${safeEmailParam}`);
+
+    if (!email || !password) {
+      return redirectWithError('required');
+    }
+    if (!isValidEmailFormat(email)) {
+      return redirectWithError('invalid_email');
+    }
+
+    const provider = 'EMAIL';
+    const login_id = email;
+    const sessionRow = await loadUserSessionRow(provider, login_id);
+    const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
+    if (sessionResp !== 'OK') {
+      return redirectWithError('user_not_found');
+    }
+
+    const savedPasswordHash = await loadEmailPasswordHash(login_id);
+    if (!savedPasswordHash) {
+      return redirectWithError('invalid_password');
+    }
+    const passwordHash = hashUserPassword(password);
+    if (savedPasswordHash !== passwordHash) {
+      return redirectWithError('invalid_password');
+    }
+
+    await setUserSession(req, sessionRow);
+    delete req.session.welcomeContext;
+    delete req.session.pendingReferralCode;
+    return res.redirect('/user/mypage');
+  } catch (err) {
+    console.error('[EMAIL LOGIN ERROR]', err);
+    return res.redirect('/user/email-login?error=login_failed');
+  }
+};
+
 const getNaverLoginUrl = (req, intent = 'login') => {
   const clientId = String(process.env.NAVER_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
@@ -731,6 +862,8 @@ module.exports = {
   naverAuthCallback,
   kakaoAuthCallback,
   appleAuthCallback,
+  emailRegister,
+  emailLogin,
   getNaverLoginUrl,
   getKakaoLoginUrl,
   getAppleLoginUrl,

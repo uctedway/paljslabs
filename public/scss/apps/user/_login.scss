@@ -18,6 +18,7 @@
 }
 
 .login-title {
+  margin: 6px 0 0;
   text-align: center;
   font-size: clamp(26px, 4vw, 34px);
   line-height: 1.2;
@@ -25,25 +26,70 @@
   letter-spacing: -0.02em;
 }
 
+.login-kicker {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #5b6b80;
+}
+
+.login-lead {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: #516173;
+}
+
 .login-providers {
-  margin-top: var(--spacing-lg);
+  margin-top: 18px;
   display: grid;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .provider-row {
   width: 100%;
-  height: 52px;
+  min-height: 48px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-sm);
+  justify-content: flex-start;
+  padding: 0 14px;
+  gap: 10px;
+  font-size: 14px;
   font-weight: 700;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.provider-label {
+  flex: 1;
+  text-align: center;
+  padding-right: 28px;
+}
+
+.provider-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+}
+
+.provider-icon img {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .google-signin-wrap {
+  width: 100%;
+  height: 48px;
+  display: block;
   border: 1px solid #dbe5f3;
+  border-radius: 12px;
   background: #fff;
   padding: 0;
   overflow: hidden;
@@ -51,13 +97,19 @@
 
 .google-signin-wrap .g_id_signin {
   width: 100%;
-  @include flex-center;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .google-signin-wrap .g_id_signin > div,
 .google-signin-wrap .g_id_signin iframe {
   width: 100% !important;
-  min-height: 50px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  border: 0 !important;
 }
 
 .naver-signin-btn {
@@ -80,14 +132,91 @@
 
 .provider-row.is-disabled {
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 1;
+  cursor: default;
+}
+
+.email-entry-btn {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #ced9ea;
+  border-radius: 12px;
+  background: #f7faff;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card--email {
+  width: min(520px, 100%);
+}
+
+.email-auth-form {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.email-auth-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.email-auth-input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #cfd8e6;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #0f172a;
+  outline: 0;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.email-auth-input:focus {
+  border-color: #4f79d9;
+  box-shadow: 0 0 0 3px rgba(79, 121, 217, 0.18);
+}
+
+.email-auth-submit {
+  margin-top: 6px;
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-subtext {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: #5a687a;
+}
+
+.login-subtext a {
+  font-weight: 800;
+  color: #205ec9;
 }
 
 .login-error {
-  margin-top: var(--spacing-sm);
+  margin-top: 12px;
+  margin-bottom: 0;
   text-align: center;
   color: #b91c1c;
-  font-size: var(--font-size-sm);
+  font-size: 13px;
 }
 
 @include mobile-screen {
