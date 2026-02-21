@@ -215,6 +215,23 @@ function buildAppleCallbackUrl(req) {
   return buildAppUrl(req, '/user/auth/apple/callback');
 }
 
+function getAppleDebugContext(req) {
+  const clientId = String(process.env.APPLE_LOGIN_CLIENT_ID || '').trim();
+  const teamId = String(process.env.APPLE_LOGIN_TEAM_ID || '').trim();
+  const keyId = String(process.env.APPLE_LOGIN_KEY_ID || '').trim();
+  const privateKey = String(process.env.APPLE_LOGIN_PRIVATE_KEY || '').trim();
+  return {
+    client_id: clientId || '(empty)',
+    team_id_tail: teamId ? teamId.slice(-4) : '(empty)',
+    key_id_tail: keyId ? keyId.slice(-4) : '(empty)',
+    has_private_key: privateKey.length > 0,
+    private_key_length: privateKey.length,
+    redirect_uri: buildAppleCallbackUrl(req),
+    app_origin_env: String(process.env.APP_ORIGIN || '').trim() || '(empty)',
+    node_env: String(process.env.NODE_ENV || '').trim() || '(empty)',
+  };
+}
+
 function buildNaverAuthorizeUrl(req, state) {
   const clientId = String(process.env.NAVER_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
@@ -246,6 +263,13 @@ function buildAppleAuthorizeUrl(req, state) {
   if (!clientId) return '';
   const redirectUri = buildAppleCallbackUrl(req);
   const scope = String(process.env.APPLE_LOGIN_SCOPE || 'name email').trim();
+  console.info('[APPLE AUTHORIZE URL]', {
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope,
+    has_state: !!String(state || '').trim(),
+    state_prefix: String(state || '').slice(0, 8),
+  });
   const u = new URL('https://appleid.apple.com/auth/authorize');
   u.searchParams.set('response_type', 'code');
   u.searchParams.set('response_mode', 'form_post');
@@ -304,6 +328,13 @@ function buildAppleClientSecret() {
   signer.end();
   const signature = signer.sign(privateKey);
   const encodedSig = signature.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  console.info('[APPLE CLIENT SECRET BUILT]', {
+    team_id_tail: teamId ? teamId.slice(-4) : '(empty)',
+    client_id: clientId || '(empty)',
+    key_id_tail: keyId ? keyId.slice(-4) : '(empty)',
+    has_private_key: !!privateKey,
+    private_key_lines: privateKey ? privateKey.split('\n').length : 0,
+  });
   return `${data}.${encodedSig}`;
 }
 
@@ -404,6 +435,10 @@ async function exchangeAppleToken({ code, req }) {
   if (!clientId) {
     throw new Error('APPLE_LOGIN_ENV_NOT_CONFIGURED');
   }
+  console.info('[APPLE TOKEN EXCHANGE START]', {
+    ...getAppleDebugContext(req),
+    has_code: !!String(code || '').trim(),
+  });
   const clientSecret = buildAppleClientSecret();
   const body = new URLSearchParams();
   body.set('grant_type', 'authorization_code');
@@ -411,6 +446,13 @@ async function exchangeAppleToken({ code, req }) {
   body.set('client_id', clientId);
   body.set('client_secret', clientSecret);
   body.set('redirect_uri', buildAppleCallbackUrl(req));
+  console.info('[APPLE TOKEN REQUEST PAYLOAD]', {
+    client_id: clientId,
+    redirect_uri: buildAppleCallbackUrl(req),
+    grant_type: 'authorization_code',
+    has_code: !!String(code || '').trim(),
+    has_client_secret: !!clientSecret,
+  });
 
   let data;
   try {
@@ -425,6 +467,10 @@ async function exchangeAppleToken({ code, req }) {
     const detail = err?.response?.data
       ? JSON.stringify(err.response.data)
       : String(err.message || '');
+    console.error('[APPLE TOKEN EXCHANGE ERROR DETAIL]', {
+      ...getAppleDebugContext(req),
+      detail,
+    });
     throw new Error(`APPLE_TOKEN_EXCHANGE_FAILED:${detail}`);
   }
 
@@ -753,6 +799,13 @@ const appleAuthCallback = async (req, res) => {
     const code = String(req.body?.code || req.query?.code || '').trim();
     const state = String(req.body?.state || req.query?.state || '').trim();
     const expectedState = String(req.session?.appleLoginState || '').trim();
+    console.info('[APPLE CALLBACK RECEIVED]', {
+      ...getAppleDebugContext(req),
+      has_code: !!code,
+      has_state: !!state,
+      has_expected_state: !!expectedState,
+      auth_intent: authIntent,
+    });
     if (!code || !state || !expectedState || state !== expectedState) {
       return res.redirect(`${fallbackPath}?error=apple_state`);
     }
@@ -804,6 +857,7 @@ const appleAuthCallback = async (req, res) => {
     return res.redirect('/user/welcome');
   } catch (err) {
     console.error('[APPLE AUTH ERROR]', err);
+    console.error('[APPLE AUTH ERROR CONTEXT]', getAppleDebugContext(req));
     const authIntent = normalizeAuthIntent(req.session?.appleAuthIntent || req.session?.socialAuthIntent);
     const fallbackPath = getAuthEntryPathByIntent(authIntent);
     const msg = String(err?.message || '');
@@ -970,6 +1024,11 @@ const getAppleLoginUrl = (req, intent = 'login') => {
   const state = randomState();
   req.session.appleAuthIntent = normalizeAuthIntent(intent);
   req.session.appleLoginState = state;
+  console.info('[APPLE LOGIN URL CREATED]', {
+    ...getAppleDebugContext(req),
+    auth_intent: req.session.appleAuthIntent,
+    state_prefix: state.slice(0, 8),
+  });
   return buildAppleAuthorizeUrl(req, state);
 };
 
