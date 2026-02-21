@@ -59,8 +59,9 @@ async function loadUserSessionRow(provider, login_id) {
   return rs && rs[0] ? rs[0] : {};
 }
 
-async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '', terms_agreed = 0, privacy_agreed = 0 }) {
+async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '', terms_agreed = 0, privacy_agreed = 0, auto_signup_on_login = false }) {
   const authIntent = normalizeAuthIntent(intent);
+  const autoSignupOnLogin = authIntent === 'login' && !!auto_signup_on_login;
   const sessionRow = await loadUserSessionRow(provider, login_id);
   const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
   const sessionRowId = Number(sessionRow.id || 0);
@@ -95,7 +96,7 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
     };
   }
 
-  if (authIntent === 'login') {
+  if (authIntent === 'login' && !autoSignupOnLogin) {
     return {
       ok: false,
       stage: 'login',
@@ -117,6 +118,17 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
   // 동시 요청 경합으로 이미 생성된 경우 세션 조회를 한 번 더 시도합니다.
   const createMessage = String(createdUser.resp_message || '');
   if (createMessage.toUpperCase().includes('ALREADY EXISTS')) {
+    if (autoSignupOnLogin) {
+      const reloaded = await loadUserSessionRow(provider, login_id);
+      const reloadedResp = String(reloaded.resp || 'ERROR').toUpperCase();
+      if (reloadedResp === 'OK') {
+        return {
+          ok: true,
+          isNew: false,
+          row: reloaded,
+        };
+      }
+    }
     return {
       ok: false,
       stage: 'signup',
@@ -134,6 +146,37 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
 function normalizeReferralCode(rawCode) {
   const code = String(rawCode || '').trim().toUpperCase();
   return /^[A-Z0-9]{8,32}$/.test(code) ? code : '';
+}
+
+function clampDisplayName(rawName, provider, login_id) {
+  const name = String(rawName || '').trim();
+  if (name) return name.slice(0, 50);
+  const suffix = toHexDigest(login_id || '').slice(0, 8);
+  const prefix = String(provider || 'USER').trim().toUpperCase() || 'USER';
+  return `${prefix}_${suffix}`.slice(0, 50);
+}
+
+function pickSocialUserName({ provider, login_id, explicitName = '', email = '' }) {
+  const preferred = String(explicitName || '').trim();
+  if (preferred) return clampDisplayName(preferred, provider, login_id);
+  const localPart = String(email || '').trim().split('@')[0].trim();
+  if (localPart) return clampDisplayName(localPart, provider, login_id);
+  return clampDisplayName('', provider, login_id);
+}
+
+function parseApplePostedUserName(rawUser) {
+  if (!rawUser) return '';
+  let parsed = rawUser;
+  if (typeof rawUser === 'string') {
+    try {
+      parsed = JSON.parse(rawUser);
+    } catch (e) {
+      return '';
+    }
+  }
+  const firstName = String(parsed?.name?.firstName || '').trim();
+  const lastName = String(parsed?.name?.lastName || '').trim();
+  return `${lastName} ${firstName}`.trim();
 }
 
 function parseAgreeFlag(value) {
@@ -649,15 +692,21 @@ const googleAuth = async (req, res) => {
 
 	const provider = 'GOOGLE';
 	const login_id = String(payload.sub);
-	const email = payload.email || '';
-	const user_name = payload.name || '';
+	const email = String(payload.email || '').trim() || `${login_id}@google.local`;
+	const user_name = pickSocialUserName({
+      provider,
+      login_id,
+      explicitName: String(payload.name || '').trim(),
+      email,
+    });
 	const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
+    const autoSignupOnLogin = authIntent === 'login';
     const signupTermsAgreed = authIntent === 'register'
       ? (parseAgreeFlag(req.body?.terms_agreed) || hasSignupConsentInSession(req) ? 1 : 0)
-      : 0;
+      : 1;
     const signupPrivacyAgreed = authIntent === 'register'
       ? (parseAgreeFlag(req.body?.privacy_agreed) || hasSignupConsentInSession(req) ? 1 : 0)
-      : 0;
+      : 1;
 
 	const authResult = await resolveAuthUser({
 	  provider,
@@ -668,6 +717,7 @@ const googleAuth = async (req, res) => {
       terms_agreed: signupTermsAgreed,
       privacy_agreed: signupPrivacyAgreed,
       intent: authIntent,
+      auto_signup_on_login: autoSignupOnLogin,
 	});
 
 	if (!authResult.ok) {
@@ -749,17 +799,24 @@ const naverAuthCallback = async (req, res) => {
 
     const provider = 'NAVER';
     const email = String(profile.email || '').trim();
-    const user_name = String(profile.name || profile.nickname || '').trim() || '회원';
+    const resolvedEmail = email || `${login_id}@naver.local`;
+    const user_name = pickSocialUserName({
+      provider,
+      login_id,
+      explicitName: String(profile.name || profile.nickname || '').trim(),
+      email: resolvedEmail,
+    });
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
     const authResult = await resolveAuthUser({
       provider,
       login_id,
-      email,
+      email: resolvedEmail,
       user_name,
       referralCode,
-      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
-      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      terms_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
+      privacy_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
       intent: authIntent,
+      auto_signup_on_login: authIntent === 'login',
     });
     if (!authResult.ok) {
       if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
@@ -818,7 +875,12 @@ const kakaoAuthCallback = async (req, res) => {
     const rawEmail = String(profile?.kakao_account?.email || '').trim();
     // 카카오 이메일 미동의/미보유 계정 대응: DB 가입 실패를 피하기 위한 대체 이메일
     const email = rawEmail || `${login_id}@kakao.local`;
-    const user_name = String(profile?.kakao_account?.profile?.nickname || '').trim() || '회원';
+    const user_name = pickSocialUserName({
+      provider,
+      login_id,
+      explicitName: String(profile?.kakao_account?.profile?.nickname || '').trim(),
+      email,
+    });
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
     const authResult = await resolveAuthUser({
       provider,
@@ -826,9 +888,10 @@ const kakaoAuthCallback = async (req, res) => {
       email,
       user_name,
       referralCode,
-      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
-      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      terms_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
+      privacy_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
       intent: authIntent,
+      auto_signup_on_login: authIntent === 'login',
     });
     if (!authResult.ok) {
       if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
@@ -915,8 +978,15 @@ const appleAuthCallback = async (req, res) => {
     }
 
     const provider = 'APPLE';
-    const email = String(idTokenPayload?.email || `${login_id}@apple.local`).trim();
-    const user_name = String(idTokenPayload?.email || '회원').trim();
+    const rawEmail = String(idTokenPayload?.email || '').trim();
+    const email = rawEmail || `${login_id}@apple.local`;
+    const postedAppleName = parseApplePostedUserName(req.body?.user);
+    const user_name = pickSocialUserName({
+      provider,
+      login_id,
+      explicitName: postedAppleName,
+      email,
+    });
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
     const authResult = await resolveAuthUser({
       provider,
@@ -924,9 +994,10 @@ const appleAuthCallback = async (req, res) => {
       email,
       user_name,
       referralCode,
-      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
-      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      terms_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
+      privacy_agreed: authIntent === 'register' ? (hasSignupConsentInSession(req) ? 1 : 0) : 1,
       intent: authIntent,
+      auto_signup_on_login: authIntent === 'login',
     });
     if (!authResult.ok) {
       console.warn('[APPLE AUTH RESOLVE FAILED]', {
