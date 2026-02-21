@@ -28,6 +28,17 @@ if (typeof connectRedis === 'function' && !connectRedis.create && !connectRedis.
 }
 const app = express();
 const PORT = process.env.PORT || 3000;
+const APP_START_TS = Date.now();
+
+function buildDisplayLabel() {
+  const explicit = String(process.env.BUILD_NUMBER || '').trim();
+  if (explicit) return `b${explicit}`;
+  const renderCommit = String(process.env.RENDER_GIT_COMMIT || '').trim();
+  if (renderCommit) return `b${renderCommit.slice(0, 7)}`;
+  return `b${APP_START_TS}`;
+}
+
+const BUILD_LABEL = buildDisplayLabel();
 
 // ============================================
 // SASS 컴파일 함수
@@ -129,6 +140,7 @@ app.use((req, res, next) => {
   res.locals.session = req.session;
   res.locals.user = req.session ? req.session.user : null;
   res.locals.manageAdmin = req.session ? req.session.manageAdmin : null;
+  res.locals.buildLabel = BUILD_LABEL;
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));

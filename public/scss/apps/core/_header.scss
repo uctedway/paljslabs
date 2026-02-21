@@ -22,6 +22,7 @@
 			text-decoration: none;
 			display: inline-flex;
 			align-items: center;
+			gap: 8px;
 			
 			.theme-logo {
 				display: block;
@@ -31,6 +32,23 @@
 
 			.theme-logo-dark {
 				display: none;
+			}
+
+			.build-badge {
+				display: inline-flex;
+				align-items: center;
+				height: 18px;
+				padding: 0 6px;
+				border-radius: 999px;
+				border: 1px solid #d1d5db;
+				background: #f3f4f6;
+				color: #111827;
+				font-size: 10px;
+				font-weight: 700;
+				letter-spacing: 0.02em;
+				line-height: 1;
+				white-space: nowrap;
+				transform: translateY(-2px);
 			}
 			
 			&:hover {
@@ -278,6 +296,12 @@
 
 			a .theme-logo {
 				height: 32px;
+			}
+
+			a .build-badge {
+				height: 16px;
+				padding: 0 5px;
+				font-size: 9px;
 			}
 		}
 

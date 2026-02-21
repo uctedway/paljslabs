@@ -208,6 +208,12 @@ html.theme-dark .header .logo .theme-logo-dark {
     display: block;
 }
 
+html.theme-dark .header .logo .build-badge {
+    border-color: #334155;
+    background: #111827;
+    color: #cbd5e1;
+}
+
 html.theme-dark .header .desktop-shortcuts a,
 html.theme-dark .header .desktop-shortcuts .desktop-user-name,
 html.theme-dark .header .desktop-shortcuts .theme-toggle-btn,
