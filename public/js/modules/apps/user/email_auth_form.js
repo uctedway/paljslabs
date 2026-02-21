@@ -31,6 +31,7 @@ const CODE_MESSAGES = {
   CONSENT_REQUIRED: '이용약관과 개인정보처리방침에 동의해주세요.',
   USER_ALREADY_EXISTS: '이미 가입된 이메일입니다.',
   USER_NOT_FOUND: '가입된 이메일 계정을 찾을 수 없습니다.',
+  USER_WITHDRAWN: '탈퇴 처리된 계정입니다. 이메일 계정은 재가입 후 이용해주세요.',
   INVALID_PASSWORD: '비밀번호가 올바르지 않습니다.',
   EMAIL_SIGNUP_FAILED: '이메일 회원가입 처리 중 오류가 발생했습니다.',
   EMAIL_LOGIN_FAILED: '이메일 로그인 처리 중 오류가 발생했습니다.',

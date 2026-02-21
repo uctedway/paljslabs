@@ -27,6 +27,7 @@ router.get('/mypage/profile', mypageController.profilePage);
 router.get('/mypage/relatives', mypageController.relativesPage);
 router.get('/mypage/history', mypageController.historyPage);
 router.get('/mypage/history/:resultId', mypageController.historyDetail);
+router.get('/mypage/withdraw', mypageController.withdrawPage);
 router.get('/billing', indexController.billing);
 router.get('/purchase-history', indexController.purchaseHistory);
 router.get('/token-usage-history', indexController.tokenUsageHistory);
@@ -38,5 +39,6 @@ router.post('/mypage/profile/update', mypageController.updateProfile);
 router.post('/mypage/relatives/create', mypageController.createRelative);
 router.post('/mypage/relatives/update', mypageController.updateRelative);
 router.post('/mypage/relatives/delete', mypageController.deleteRelative);
+router.post('/mypage/withdraw', mypageController.withdrawAccount);
 
 module.exports = router;

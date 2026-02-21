@@ -59,6 +59,22 @@ async function loadUserSessionRow(provider, login_id) {
   return rs && rs[0] ? rs[0] : {};
 }
 
+async function reactivateWithdrawnUser({ provider, login_id, email, user_name }) {
+  const qProvider = db.convertQ(provider || '');
+  const qLoginId = db.convertQ(login_id || '');
+  const qEmail = db.convertQ(email || '');
+  const qUserName = db.convertQ(user_name || '');
+  const query = `
+    EXEC dbo.PJ_USP_REACTIVATE_USER
+      @provider = '${qProvider}',
+      @login_id = '${qLoginId}',
+      @email = '${qEmail}',
+      @user_name = N'${qUserName}'
+  `;
+  const rs = await db.query(query);
+  return rs && rs[0] ? rs[0] : {};
+}
+
 async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '', terms_agreed = 0, privacy_agreed = 0, auto_signup_on_login = false }) {
   const authIntent = normalizeAuthIntent(intent);
   const autoSignupOnLogin = authIntent === 'login' && !!auto_signup_on_login;
@@ -67,6 +83,7 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
   const sessionRowId = Number(sessionRow.id || 0);
   const sessionRowLoginId = String(sessionRow.login_id || '').trim();
   const sessionRowProvider = String(sessionRow.provider || '').trim();
+  const sessionRowStatus = String(sessionRow.status || '').trim().toUpperCase();
   if (sessionResp === 'OK') {
     if (authIntent === 'register') {
       return {
@@ -83,6 +100,23 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
   }
 
   const sessionMessage = String(sessionRow.resp_message || '').trim().toUpperCase();
+  const isUserWithdrawn = (
+    sessionMessage === 'USER WITHDRAWN'
+    || sessionRowStatus === 'WITHDRAWN'
+  );
+  if (isUserWithdrawn && autoSignupOnLogin) {
+    const reactivated = await reactivateWithdrawnUser({ provider, login_id, email, user_name });
+    if (String(reactivated.resp || 'ERROR').toUpperCase() === 'OK') {
+      const reloaded = await loadUserSessionRow(provider, login_id);
+      if (String(reloaded.resp || 'ERROR').toUpperCase() === 'OK') {
+        return {
+          ok: true,
+          isNew: false,
+          row: reloaded,
+        };
+      }
+    }
+  }
   const isUserNotFound = (
     sessionMessage === 'USER NOT FOUND'
     || sessionMessage.includes('NOT FOUND')
@@ -1130,7 +1164,11 @@ const emailLogin = async (req, res) => {
     const login_id = email;
     const sessionRow = await loadUserSessionRow(provider, login_id);
     const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
+    const sessionMessage = String(sessionRow.resp_message || '').trim().toUpperCase();
     if (sessionResp !== 'OK') {
+      if (sessionMessage === 'USER WITHDRAWN') {
+        return res.status(400).json({ resp: 'ERROR', resp_message: 'USER_WITHDRAWN', resp_action: [] });
+      }
       return res.status(400).json({ resp: 'ERROR', resp_message: 'USER_NOT_FOUND', resp_action: [] });
     }
 

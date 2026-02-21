@@ -186,6 +186,40 @@
   gap: var(--spacing-sm);
 }
 
+.withdraw-card {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fff 0%, #fff8f8 100%);
+}
+
+.withdraw-warnings {
+  margin: 0 0 var(--spacing-md);
+  padding-left: 18px;
+  color: #7f1d1d;
+  font-size: var(--font-size-sm);
+  display: grid;
+  gap: 4px;
+}
+
+.withdraw-confirm-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.withdraw-confirm-check {
+  margin-top: var(--spacing-sm);
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  color: #334155;
+}
+
+.withdraw-confirm-check input[type='checkbox'] {
+  margin-top: 2px;
+}
+
 .welcome-shell {
   min-height: calc(100vh - 210px);
   display: grid;

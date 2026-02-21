@@ -407,6 +407,21 @@ const historyDetail = async (req, res) => {
   });
 };
 
+const withdrawPage = async (req, res) => {
+  if (!requireLoginOrRedirect(req, res)) return;
+
+  const common = await loadMypageCommon(req, {
+    includeTokens: false,
+    includeProfile: false,
+    includeReferral: false,
+  });
+
+  res.render('user/pages/mypage_withdraw', {
+    ...common,
+    currentMenu: 'withdraw',
+  });
+};
+
 const updateProfile = async (req, res) => {
   if (!isLoggedIn(req)) {
     return res.status(401).json({
@@ -787,14 +802,99 @@ const deleteRelative = async (req, res) => {
   }
 };
 
+const withdrawAccount = async (req, res) => {
+  if (!isLoggedIn(req)) {
+    return res.status(401).json({
+      resp: 'ERROR',
+      resp_message: 'LOGIN REQUIRED',
+      resp_action: [{ type: 'alert', value: '로그인이 필요합니다.' }],
+    });
+  }
+
+  try {
+    const loginId = String(req.session?.user?.login_id || '').trim();
+    const confirmText = normalizeText(req.body?.confirm_text);
+    const agreed = String(req.body?.confirm_agree || '').trim() === '1';
+    const reason = normalizeText(req.body?.withdraw_reason).slice(0, 500);
+
+    if (!loginId) {
+      return res.status(400).json({
+        resp: 'ERROR',
+        resp_message: 'LOGIN_ID REQUIRED',
+        resp_action: [{ type: 'alert', value: '로그인 정보가 유효하지 않습니다.' }],
+      });
+    }
+    if (confirmText !== '탈퇴') {
+      return res.status(400).json({
+        resp: 'ERROR',
+        resp_message: 'CONFIRM_TEXT_MISMATCH',
+        resp_action: [{ type: 'alert', value: '확인 문구에 "탈퇴"를 정확히 입력해주세요.' }],
+      });
+    }
+    if (!agreed) {
+      return res.status(400).json({
+        resp: 'ERROR',
+        resp_message: 'WITHDRAW_AGREE_REQUIRED',
+        resp_action: [{ type: 'alert', value: '탈퇴 안내사항 동의가 필요합니다.' }],
+      });
+    }
+
+    const qLoginId = db.convertQ(loginId);
+    const qReason = db.convertQ(reason);
+    const withdrawQuery = `
+      EXEC dbo.PJ_USP_WITHDRAW_USER
+        @login_id = '${qLoginId}',
+        @withdraw_reason = N'${qReason}'
+    `;
+    const rs = await db.query(withdrawQuery);
+    const row = rs && rs[0] ? rs[0] : {};
+    if (String(row.resp || 'ERROR').toUpperCase() !== 'OK') {
+      return res.status(400).json({
+        resp: 'ERROR',
+        resp_message: String(row.resp_message || 'WITHDRAW_FAILED'),
+        resp_action: [{ type: 'alert', value: String(row.resp_message || '회원탈퇴 처리에 실패했습니다.') }],
+      });
+    }
+
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('[WITHDRAW SESSION DESTROY ERROR]', err);
+        return res.status(500).json({
+          resp: 'ERROR',
+          resp_message: 'SESSION_DESTROY_FAILED',
+          resp_action: [{ type: 'alert', value: '탈퇴 후 세션 정리에 실패했습니다. 다시 시도해주세요.' }],
+        });
+      }
+      res.clearCookie('48lab.sid');
+      return res.json({
+        resp: 'OK',
+        resp_message: 'WITHDRAWN',
+        resp_action: [
+          { type: 'alert', value: '회원탈퇴가 완료되었습니다.' },
+          { type: 'redirect', value: '/' },
+        ],
+      });
+    });
+  } catch (err) {
+    console.error('[WITHDRAW ERROR]', err);
+    return res.status(500).json({
+      resp: 'ERROR',
+      resp_message: 'SERVER ERROR',
+      resp_action: [{ type: 'alert', value: '회원탈퇴 처리 중 오류가 발생했습니다.' }],
+    });
+  }
+};
+
 module.exports = {
   index,
   profilePage,
   relativesPage,
   historyPage,
   historyDetail,
+  withdrawPage,
   updateProfile,
   createRelative,
   updateRelative,
   deleteRelative,
+  withdrawAccount,
 };

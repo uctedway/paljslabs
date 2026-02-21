@@ -92,6 +92,264 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_GET_USER_SESSION]
+(
+	@provider   VARCHAR(20)   = '',
+	@login_id   VARCHAR(200)  = ''
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @status VARCHAR(20) = '';
+
+	IF (ISNULL(@provider, '') = '' OR ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	SELECT TOP 1 @status = ISNULL([status], 'ACTIVE')
+	FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+	WHERE provider = @provider
+	  AND login_id = @login_id;
+
+	IF (@@ROWCOUNT = 0)
+	BEGIN
+		SET @resp_message = N'USER NOT FOUND';
+		GOTO return_label;
+	END
+
+	IF (@status = 'WITHDRAWN')
+	BEGIN
+		SET @resp_message = N'USER WITHDRAWN';
+		GOTO return_label;
+	END
+
+	IF (@status <> 'ACTIVE')
+	BEGIN
+		SET @resp_message = N'USER INACTIVE';
+		GOTO return_label;
+	END
+
+	SET @resp = 'OK';
+	SET @resp_message = N'OK';
+
+	SELECT TOP 1
+		@resp AS resp,
+		@resp_message AS resp_message,
+		id,
+		provider,
+		login_id,
+		email,
+		user_name,
+		user_gender,
+		user_birth_date,
+		user_birth_time,
+		birth_time_unknown,
+		[status],
+		created_at,
+		updated_at
+	FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+	WHERE provider = @provider
+	  AND login_id = @login_id;
+
+	RETURN;
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		CAST(0 AS BIGINT)           AS id,
+		CAST('' AS VARCHAR(20))     AS provider,
+		CAST('' AS VARCHAR(200))    AS login_id,
+		CAST('' AS VARCHAR(320))    AS email,
+		CAST(NULL AS NVARCHAR(50))  AS user_name,
+		CAST(NULL AS CHAR(1))       AS user_gender,
+		CAST(NULL AS DATE)          AS user_birth_date,
+		CAST(NULL AS TIME(0))       AS user_birth_time,
+		CAST(NULL AS BIT)           AS birth_time_unknown,
+		CAST(NULL AS VARCHAR(20))   AS [status],
+		CAST(NULL AS DATETIME2(0))  AS created_at,
+		CAST(NULL AS DATETIME2(0))  AS updated_at;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_WITHDRAW_USER]
+(
+	@login_id        VARCHAR(200)  = '',
+	@withdraw_reason NVARCHAR(500) = NULL
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @current_tokens INT = 0;
+	DECLARE @next_tokens INT = 0;
+
+	IF (ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'LOGIN_ID REQUIRED';
+		GOTO return_label;
+	END
+
+	BEGIN TRY
+		BEGIN TRAN;
+
+		SELECT @current_tokens = ISNULL(token_balance, 0)
+		FROM dbo.PJ_TB_USERS WITH (UPDLOCK, HOLDLOCK)
+		WHERE login_id = @login_id;
+
+		IF (@@ROWCOUNT = 0)
+		BEGIN
+			SET @resp_message = N'USER NOT FOUND';
+			ROLLBACK TRAN;
+			GOTO return_label;
+		END
+
+		IF EXISTS (
+			SELECT 1
+			FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+			WHERE login_id = @login_id
+			  AND [status] = 'WITHDRAWN'
+		)
+		BEGIN
+			SET @resp = 'OK';
+			SET @resp_message = N'ALREADY WITHDRAWN';
+			ROLLBACK TRAN;
+			GOTO return_label;
+		END
+
+		SET @next_tokens = 0;
+
+		UPDATE dbo.PJ_TB_USERS
+		SET
+			[status] = 'WITHDRAWN',
+			withdrawn_at = SYSDATETIME(),
+			withdraw_reason = NULLIF(@withdraw_reason, N''),
+			token_balance = @next_tokens,
+			updated_at = SYSDATETIME()
+		WHERE login_id = @login_id;
+
+		IF (@current_tokens <> 0)
+		BEGIN
+			INSERT INTO dbo.PJ_TB_TOKEN_LEDGER
+			(
+				login_id,
+				entry_type,
+				change_tokens,
+				balance_after,
+				event_code,
+				reference_type,
+				reference_id,
+				memo,
+				created_at
+			)
+			VALUES
+			(
+				@login_id,
+				'EVENT',
+				(@next_tokens - @current_tokens),
+				@next_tokens,
+				'ACCOUNT_WITHDRAW',
+				'ACCOUNT',
+				@login_id,
+				N'회원탈퇴로 인한 토큰 소멸',
+				SYSDATETIME()
+			);
+		END
+
+		COMMIT TRAN;
+		SET @resp = 'OK';
+		SET @resp_message = N'USER WITHDRAWN';
+	END TRY
+	BEGIN CATCH
+		IF (@@TRANCOUNT > 0) ROLLBACK TRAN;
+		SET @resp = 'ERROR';
+		SET @resp_message = ERROR_MESSAGE();
+	END CATCH
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@login_id AS login_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_REACTIVATE_USER]
+(
+	@provider   VARCHAR(20)   = '',
+	@login_id   VARCHAR(200)  = '',
+	@email      VARCHAR(320)  = '',
+	@user_name  NVARCHAR(50)  = NULL
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+
+	IF (ISNULL(@provider, '') = '' OR ISNULL(@login_id, '') = '')
+	BEGIN
+		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	IF NOT EXISTS (
+		SELECT 1
+		FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+		WHERE provider = @provider
+		  AND login_id = @login_id
+	)
+	BEGIN
+		SET @resp_message = N'USER NOT FOUND';
+		GOTO return_label;
+	END
+
+	UPDATE dbo.PJ_TB_USERS
+	SET
+		[status] = 'ACTIVE',
+		withdrawn_at = NULL,
+		withdraw_reason = NULL,
+		email = CASE WHEN ISNULL(@email, '') <> '' THEN @email ELSE email END,
+		user_name = CASE WHEN ISNULL(@user_name, N'') <> N'' THEN @user_name ELSE user_name END,
+		terms_agreed = 1,
+		privacy_agreed = 1,
+		policy_agreed_at = ISNULL(policy_agreed_at, SYSDATETIME()),
+		updated_at = SYSDATETIME()
+	WHERE provider = @provider
+	  AND login_id = @login_id;
+
+	SET @resp = 'OK';
+	SET @resp_message = N'USER REACTIVATED';
+
+return_label:
+	SELECT
+		@resp AS resp,
+		@resp_message AS resp_message,
+		@provider AS provider,
+		@login_id AS login_id;
+END
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_PROMPT_TEMPLATE]
 (
 	@service_code VARCHAR(20) = '',
@@ -614,6 +872,7 @@ BEGIN
 	DECLARE @inviter_next_tokens INT = 0;
 	DECLARE @normalized_referral_code VARCHAR(32) = UPPER(LTRIM(RTRIM(ISNULL(@referral_code, ''))));
 	DECLARE @referral_applied BIT = 0;
+	DECLARE @signup_bonus_granted BIT = 0;
 
 	/* =========================================
 	   1) 필수 파라미터 검증
@@ -740,40 +999,71 @@ BEGIN
 
 		/* =========================================
 		   4-0) 신규 가입 보너스 지급 (3토큰)
-		   - 회원가입 직후 즉시 지급하고 토큰 원장 기록을 남김
+		   - provider/login_id 기준 1회만 지급
 		========================================= */
-		SET @new_user_next_tokens = @signup_bonus_tokens;
-
-		UPDATE dbo.PJ_TB_USERS
-		SET
-			token_balance = @new_user_next_tokens,
-			updated_at = SYSDATETIME()
-		WHERE id = @new_id;
-
-		INSERT INTO dbo.PJ_TB_TOKEN_LEDGER
-		(
-			login_id,
-			entry_type,
-			change_tokens,
-			balance_after,
-			event_code,
-			reference_type,
-			reference_id,
-			memo,
-			created_at
+		IF NOT EXISTS (
+			SELECT 1
+			FROM dbo.PJ_TB_SIGNUP_BONUS_HISTORY WITH (UPDLOCK, HOLDLOCK)
+			WHERE provider = @provider
+			  AND login_id = @login_id
 		)
-		VALUES
-		(
-			@login_id,
-			'EVENT',
-			@signup_bonus_tokens,
-			@new_user_next_tokens,
-			'SIGNUP_BONUS',
-			'SIGNUP',
-			CONVERT(VARCHAR(32), @new_id),
-			N'신규 가입 보너스 지급',
-			SYSDATETIME()
-		);
+		BEGIN
+			INSERT INTO dbo.PJ_TB_SIGNUP_BONUS_HISTORY
+			(
+				provider,
+				login_id,
+				user_id,
+				granted_tokens,
+				created_at
+			)
+			VALUES
+			(
+				@provider,
+				@login_id,
+				@new_id,
+				@signup_bonus_tokens,
+				SYSDATETIME()
+			);
+
+			SET @new_user_next_tokens = @signup_bonus_tokens;
+			SET @signup_bonus_granted = 1;
+
+			UPDATE dbo.PJ_TB_USERS
+			SET
+				token_balance = @new_user_next_tokens,
+				updated_at = SYSDATETIME()
+			WHERE id = @new_id;
+
+			INSERT INTO dbo.PJ_TB_TOKEN_LEDGER
+			(
+				login_id,
+				entry_type,
+				change_tokens,
+				balance_after,
+				event_code,
+				reference_type,
+				reference_id,
+				memo,
+				created_at
+			)
+			VALUES
+			(
+				@login_id,
+				'EVENT',
+				@signup_bonus_tokens,
+				@new_user_next_tokens,
+				'SIGNUP_BONUS',
+				'SIGNUP',
+				CONVERT(VARCHAR(32), @new_id),
+				N'신규 가입 보너스 지급',
+				SYSDATETIME()
+			);
+		END
+		ELSE
+		BEGIN
+			SET @new_user_next_tokens = 0;
+			SET @signup_bonus_granted = 0;
+		END
 
 		/* =========================================
 		   4-1) 추천인 보상 처리
@@ -880,6 +1170,7 @@ return_label:
 			u.birth_time_unknown,
 			u.created_at,
 			u.updated_at,
+			@signup_bonus_granted AS signup_bonus_granted,
 			@referral_applied AS referral_applied
 		FROM dbo.PJ_TB_USERS u WITH (NOLOCK)
 		WHERE u.id = @new_id;
@@ -901,6 +1192,7 @@ return_label:
 			CAST(NULL AS BIT)          AS birth_time_unknown,
 			CAST(NULL AS DATETIME2)    AS created_at,
 			CAST(NULL AS DATETIME2)    AS updated_at,
+			CAST(0 AS BIT)             AS signup_bonus_granted,
 			CAST(0 AS BIT)             AS referral_applied;
 	END
 
@@ -1138,8 +1430,9 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @resp         VARCHAR(10)    = 'ERROR';
-	DECLARE @resp_message NVARCHAR(200)  = N'';
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @status VARCHAR(20) = '';
 
 	/* =========================================
 	   1) 필수값 검증
@@ -1150,19 +1443,26 @@ BEGIN
 		GOTO return_label;
 	END
 
-	/* =========================================
-	   2) 존재 확인
-	   - login_id가 PK라서 빠르게 찾힘
-	   - provider도 같이 검증 (소셜 구분용)
-	========================================= */
-	IF NOT EXISTS (
-		SELECT 1
-		FROM dbo.PJ_TB_USERS WITH (NOLOCK)
-		WHERE provider = @provider
-		  AND login_id = @login_id
-	)
+	SELECT TOP 1 @status = ISNULL([status], 'ACTIVE')
+	FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+	WHERE provider = @provider
+	  AND login_id = @login_id;
+
+	IF (@@ROWCOUNT = 0)
 	BEGIN
 		SET @resp_message = N'USER NOT FOUND';
+		GOTO return_label;
+	END
+
+	IF (@status = 'WITHDRAWN')
+	BEGIN
+		SET @resp_message = N'USER WITHDRAWN';
+		GOTO return_label;
+	END
+
+	IF (@status <> 'ACTIVE')
+	BEGIN
+		SET @resp_message = N'USER INACTIVE';
 		GOTO return_label;
 	END
 
@@ -1192,6 +1492,7 @@ return_label:
 			user_birth_date,
 			user_birth_time,
 			birth_time_unknown,
+			[status],
 
 			created_at,
 			updated_at
@@ -1215,6 +1516,7 @@ return_label:
 			CAST(NULL AS DATE)          AS user_birth_date,
 			CAST(NULL AS TIME(0))       AS user_birth_time,
 			CAST(NULL AS BIT)           AS birth_time_unknown,
+			CAST(NULL AS VARCHAR(20))   AS [status],
 
 			CAST(NULL AS DATETIME2(0))  AS created_at,
 			CAST(NULL AS DATETIME2(0))  AS updated_at;
@@ -3168,12 +3470,36 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @resp         VARCHAR(10)    = 'ERROR';
-	DECLARE @resp_message NVARCHAR(200)  = N'';
+	DECLARE @resp VARCHAR(10) = 'ERROR';
+	DECLARE @resp_message NVARCHAR(200) = N'';
+	DECLARE @status VARCHAR(20) = '';
 
 	IF (ISNULL(@provider, '') = '' OR ISNULL(@login_id, '') = '')
 	BEGIN
 		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	SELECT TOP 1 @status = ISNULL([status], 'ACTIVE')
+	FROM dbo.PJ_TB_USERS WITH (NOLOCK)
+	WHERE provider = @provider
+	  AND login_id = @login_id;
+
+	IF (@@ROWCOUNT = 0)
+	BEGIN
+		SET @resp_message = N'USER NOT FOUND';
+		GOTO return_label;
+	END
+
+	IF (@status = 'WITHDRAWN')
+	BEGIN
+		SET @resp_message = N'USER WITHDRAWN';
+		GOTO return_label;
+	END
+
+	IF (@status <> 'ACTIVE')
+	BEGIN
+		SET @resp_message = N'USER INACTIVE';
 		GOTO return_label;
 	END
 
@@ -3192,18 +3518,12 @@ BEGIN
 		u.user_birth_date,
 		u.user_birth_time,
 		u.birth_time_unknown,
+		u.[status],
 		u.created_at,
 		u.updated_at
 	FROM dbo.PJ_TB_USERS u WITH (NOLOCK)
 	WHERE u.provider = @provider
 	  AND u.login_id = @login_id;
-
-	IF (@@ROWCOUNT = 0)
-	BEGIN
-		SET @resp = 'ERROR';
-		SET @resp_message = N'USER NOT FOUND';
-		GOTO return_label;
-	END
 
 	RETURN;
 
@@ -3220,6 +3540,7 @@ return_label:
 		CAST(NULL AS DATE)          AS user_birth_date,
 		CAST(NULL AS TIME(0))       AS user_birth_time,
 		CAST(NULL AS BIT)           AS birth_time_unknown,
+		CAST(NULL AS VARCHAR(20))   AS [status],
 		CAST(NULL AS DATETIME2(0))  AS created_at,
 		CAST(NULL AS DATETIME2(0))  AS updated_at;
 END

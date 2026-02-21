@@ -409,6 +409,19 @@ html.theme-dark .welcome-reward-item.is-highlight {
     border-color: #3b82f6;
 }
 
+html.theme-dark .withdraw-card {
+    border-color: #7f1d1d;
+    background: linear-gradient(180deg, #0f172a 0%, #1f1113 100%);
+}
+
+html.theme-dark .withdraw-warnings {
+    color: #fca5a5;
+}
+
+html.theme-dark .withdraw-confirm-check {
+    color: #cbd5e1;
+}
+
 html.theme-dark .overview-head h3,
 html.theme-dark .hero-slide-content h2 {
     color: #f8fafc;
@@ -417,6 +430,38 @@ html.theme-dark .hero-slide-content h2 {
 html.theme-dark .hub-eyebrow,
 html.theme-dark .hero-kicker {
     color: #93c5fd;
+}
+
+html.theme-dark .notfound-card {
+    background:
+      radial-gradient(circle at 8% 8%, rgba(248, 113, 113, 0.12), transparent 32%),
+      radial-gradient(circle at 88% 92%, rgba(96, 165, 250, 0.2), transparent 38%),
+      #0f172a;
+    border-color: #334155;
+}
+
+html.theme-dark .notfound-card h1 {
+    color: #f8fafc;
+}
+
+html.theme-dark .notfound-card > p {
+    color: #94a3b8;
+}
+
+html.theme-dark .notfound-kicker {
+    border-color: #7f1d1d;
+    background: #3f0b0b;
+    color: #fca5a5;
+}
+
+html.theme-dark .notfound-btn-secondary {
+    color: #bfdbfe;
+    border-color: #334155;
+    background: #111827;
+}
+
+html.theme-dark .notfound-btn-secondary:hover {
+    background: #1f2937;
 }
 
 html.theme-dark .hero-cta-link,
