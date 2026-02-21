@@ -107,6 +107,7 @@ const redisStore = (typeof RedisStoreCtor.create === 'function')
   : new RedisStoreCtor({ client: redisClient, prefix: 'sess:' });
   
 // Session middleware
+const isProd = process.env.NODE_ENV === 'production';
 app.use(
   session({
     name: '48lab.sid', // 쿠키 이름 (원하시면 프로젝트명에 맞게)
@@ -114,10 +115,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: redisStore,
+    proxy: isProd,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // 운영 HTTPS에서만 true
-      sameSite: 'lax', // 보통 웹서비스는 lax가 무난
+      // Apple Sign In(form_post) 콜백은 cross-site POST라서 운영에서는 None+Secure가 필요합니다.
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 1000 * 60 * 60 * 2, // 2시간
     },
   })
