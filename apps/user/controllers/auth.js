@@ -929,6 +929,13 @@ const appleAuthCallback = async (req, res) => {
       intent: authIntent,
     });
     if (!authResult.ok) {
+      console.warn('[APPLE AUTH RESOLVE FAILED]', {
+        stage: authResult.stage || '',
+        message: String(authResult.message || ''),
+        auth_intent: authIntent,
+        login_id_prefix: login_id.slice(0, 12),
+        provider,
+      });
       if (authResult.stage === 'login') return res.redirect(`${fallbackPath}?error=social_user_not_found`);
       if (authResult.message === 'USER ALREADY EXISTS') return res.redirect(`${fallbackPath}?error=social_user_exists`);
       return res.redirect(`${fallbackPath}?error=${authResult.stage === 'session' ? 'apple_session' : 'apple_signup'}`);
