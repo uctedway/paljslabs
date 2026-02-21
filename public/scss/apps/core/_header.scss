@@ -51,7 +51,8 @@
 		flex: 0 0 auto;
 
 		.desktop-user-name,
-		a {
+		a,
+		.theme-toggle-btn {
 			display: inline-flex;
 			align-items: center;
 			gap: 5px;
@@ -63,6 +64,11 @@
 			font-size: 12px;
 			font-weight: 700;
 			white-space: nowrap;
+		}
+
+		.theme-toggle-btn {
+			cursor: pointer;
+			font-family: inherit;
 		}
 
 		.token-shortcut strong {
@@ -237,8 +243,10 @@
 	@include mobile-screen {
 		flex-direction: row;
 		justify-content: flex-start;
+		align-items: center;
 		gap: var(--spacing-sm);
-		padding: var(--spacing-md);
+		padding: 10px 12px;
+		min-height: 58px;
 		
 		.menu-toggle {
 			display: inline-flex;
@@ -262,16 +270,15 @@
 		}
 
 		.logo {
+			min-width: 0;
+
 			a img {
-				height: 34px;
+				height: 32px;
 			}
 		}
 
 		.analysis-status-badge {
-			margin-left: auto;
-			margin-right: 6px;
-			padding: 8px 9px;
-			font-size: 11px;
+			display: none;
 		}
 
 		.desktop-shortcuts {
@@ -280,40 +287,47 @@
 
 		.mobile-appbar-actions {
 			display: inline-flex;
-			margin-left: 0;
+			margin-left: auto;
+			flex-shrink: 0;
 
 			a {
 				display: inline-flex;
 				align-items: center;
 				gap: 4px;
-				padding: 8px 10px;
+				padding: 7px 9px;
 				border: 1px solid #dbe5f3;
 				border-radius: 10px;
 				background: #f8fbff;
 				color: #0f172a;
-				font-size: 12px;
+				font-size: 11px;
 				font-weight: 700;
+				white-space: nowrap;
 			}
 		}
 
-			.nav {
-				position: fixed;
+		.nav {
+			position: fixed;
 			top: 0;
 			left: 0;
-			width: min(84vw, 320px);
+			width: min(88vw, 340px);
+			max-width: calc(100vw - 28px);
 			height: 100vh;
 			background: #fff;
 			border-right: 1px solid #e2e8f0;
-			box-shadow: 10px 0 28px rgba(15, 23, 42, 0.18);
-			transform: translateX(-102%);
+			box-shadow: none;
+			transform: translateX(calc(-100% - 20px));
 			transition: transform 0.26s ease;
 				z-index: 1101;
 			display: flex;
 			flex-direction: column;
+			align-items: stretch;
 			gap: 2px;
-			padding: 12px var(--spacing-md) var(--spacing-md);
+			padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--spacing-md) calc(env(safe-area-inset-bottom, 0px) + 12px);
 				overflow-y: auto;
 				overflow-x: hidden;
+				margin-left: 0;
+				max-width: none;
+				white-space: normal;
 
 				.mobile-nav-head {
 					display: flex;
@@ -325,6 +339,14 @@
 					border: 1px solid #dbe5f3;
 					border-radius: 12px;
 					background: #f8fbff;
+				}
+
+				.mobile-nav-head.is-guest {
+					padding: 0;
+					margin-bottom: 2px;
+					border: 0;
+					background: transparent;
+					justify-content: flex-end;
 				}
 
 				.mobile-only-nav {
@@ -341,6 +363,7 @@
 					gap: 6px;
 					color: #0f172a;
 					font-size: 13px;
+					text-decoration: none;
 				}
 
 				.mobile-nav-login-btn {
@@ -372,6 +395,18 @@
 					display: inline-flex;
 					align-items: center;
 					gap: 6px;
+				}
+
+				.mobile-theme-toggle-btn {
+					height: 34px;
+					padding: 0 10px;
+					border: 1px solid #dbe5f3;
+					border-radius: 10px;
+					background: #fff;
+					color: #0f172a;
+					font-size: 12px;
+					font-weight: 700;
+					cursor: pointer;
 				}
 
 				.mobile-nav-close {
@@ -448,6 +483,8 @@
 
 				a {
 					font-size: var(--font-size-sm);
+					justify-content: flex-start;
+					width: 100%;
 					padding: 11px 12px;
 					border-radius: 10px;
 				}
@@ -497,6 +534,7 @@
 
 	body.mobile-nav-open .header .nav {
 		transform: translateX(0);
+		box-shadow: 10px 0 28px rgba(15, 23, 42, 0.18);
 	}
 
 	body.mobile-nav-open .mobile-nav-backdrop {

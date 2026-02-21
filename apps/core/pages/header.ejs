@@ -39,18 +39,15 @@
 		<% } %>
 	</div>
 	<nav class="nav" id="headerNav">
-		<div class="mobile-nav-head">
+		<div class="mobile-nav-head <%= user ? '' : 'is-guest' %>">
 			<% if (user) { %>
-			<div class="mobile-nav-user">
+			<a class="mobile-nav-user" href="/user/mypage">
 				<img class="mi-icon" src="/images/icons/material/account_circle.svg" alt="">
 				<strong><%= `${String(user.user_name || '회원')}님` %></strong>
-			</div>
-			<% } else { %>
-			<a class="mobile-nav-login-btn" href="/user/login">
-				<img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인
 			</a>
 			<% } %>
 			<div class="mobile-nav-head-actions">
+				<button type="button" class="theme-toggle-btn mobile-theme-toggle-btn" data-theme-toggle aria-label="테마 전환">기본</button>
 				<% if (user) { %>
 				<a class="mobile-nav-settings" href="/user/mypage/profile" aria-label="개인정보수정 이동">
 					<img class="mi-icon" src="/images/icons/material/edit_note.svg" alt="">
@@ -105,6 +102,7 @@
 		<% } else { %>
 			<a href="/user/login"><img class="mi-icon" src="/images/icons/material/login.svg" alt="">로그인</a>
 		<% } %>
+		<button type="button" class="theme-toggle-btn" data-theme-toggle aria-label="테마 전환">기본</button>
 	</div>
 </header>
 <button type="button" class="mobile-nav-backdrop" id="mobileNavBackdrop" aria-label="메뉴 닫기"></button>

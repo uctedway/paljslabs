@@ -54,6 +54,7 @@ function mapLoginErrorMessage(errorCode) {
   const code = String(errorCode || '').trim().toLowerCase();
   if (!code) return '';
   const table = {
+    consent_required: '회원가입을 진행하려면 이용약관과 개인정보처리방침 동의가 필요합니다.',
     social_user_not_found: '가입된 계정이 없습니다. 회원가입 후 로그인해주세요.',
     social_user_exists: '이미 가입된 계정입니다. 로그인으로 이용해주세요.',
     kakao_state: '카카오 로그인 상태 검증에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.',
@@ -75,33 +76,6 @@ function mapLoginErrorMessage(errorCode) {
     naver_auth: '네이버 인증 처리 중 오류가 발생했습니다.',
   };
   return table[code] || '소셜 로그인 처리 중 오류가 발생했습니다.';
-}
-
-function mapEmailRegisterErrorMessage(errorCode) {
-  const code = String(errorCode || '').trim().toLowerCase();
-  if (!code) return '';
-  const table = {
-    required: '필수 입력값을 모두 입력해주세요.',
-    invalid_email: '올바른 이메일 형식이 아닙니다.',
-    weak_password: '비밀번호는 8자 이상이어야 합니다.',
-    password_mismatch: '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
-    email_exists: '이미 가입된 이메일입니다. 이메일 로그인 또는 소셜 로그인을 이용해주세요.',
-    signup_failed: '이메일 회원가입 처리 중 오류가 발생했습니다.',
-  };
-  return table[code] || '이메일 회원가입 처리 중 오류가 발생했습니다.';
-}
-
-function mapEmailLoginErrorMessage(errorCode) {
-  const code = String(errorCode || '').trim().toLowerCase();
-  if (!code) return '';
-  const table = {
-    required: '이메일과 비밀번호를 입력해주세요.',
-    invalid_email: '올바른 이메일 형식이 아닙니다.',
-    user_not_found: '가입된 이메일 계정을 찾을 수 없습니다.',
-    invalid_password: '비밀번호가 올바르지 않습니다.',
-    login_failed: '이메일 로그인 처리 중 오류가 발생했습니다.',
-  };
-  return table[code] || '이메일 로그인 처리 중 오류가 발생했습니다.';
 }
 
 function hasEnv(...keys) {
@@ -154,6 +128,7 @@ const login = (req, res) => {
     req.session.pendingReferralCode = referralCode;
   }
   req.session.socialAuthIntent = 'login';
+  delete req.session.signupConsentAgreed;
 
   const naverLoginUrl = authController.getNaverLoginUrl(req, 'login');
   const naverCallbackUrl = authController.buildNaverCallbackUrl(req);
@@ -193,6 +168,7 @@ const register = (req, res) => {
     req.session.pendingReferralCode = referralCode;
   }
   req.session.socialAuthIntent = 'register';
+  req.session.signupConsentAgreed = false;
 
   const naverLoginUrl = authController.getNaverLoginUrl(req, 'register');
   const naverCallbackUrl = authController.buildNaverCallbackUrl(req);
@@ -221,8 +197,6 @@ const register = (req, res) => {
 const emailLogin = (req, res) => {
   res.render('user/pages/email_login', {
     title: '이메일 로그인',
-    emailLoginErrorMessage: mapEmailLoginErrorMessage(req.query?.error),
-    emailPrefill: String(req.query?.email || '').trim(),
   });
 };
 
@@ -236,10 +210,7 @@ const emailRegister = (req, res) => {
   }
   res.render('user/pages/email_register', {
     title: '이메일 회원가입',
-    emailRegisterErrorMessage: mapEmailRegisterErrorMessage(req.query?.error),
     pendingReferralCode: normalizeReferralCode(req.session?.pendingReferralCode),
-    emailPrefill: String(req.query?.email || '').trim(),
-    namePrefill: String(req.query?.name || '').trim(),
   });
 };
 

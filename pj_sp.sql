@@ -589,6 +589,8 @@ ALTER PROCEDURE [dbo].[PJ_USP_CREATE_USERS]
 	@email               VARCHAR(320)  = '',
 
 	@user_pass           VARCHAR(500)  = NULL,
+	@terms_agreed        BIT           = 0,
+	@privacy_agreed      BIT           = 0,
 
 	@user_name           NVARCHAR(50)  = NULL,
 	@user_gender         CHAR(1)       = NULL,
@@ -621,6 +623,16 @@ BEGIN
 		OR ISNULL(@email, '') = '')
 	BEGIN
 		SET @resp_message = N'REQUIRED VALUES MISSING';
+		GOTO return_label;
+	END
+
+	/* =========================================
+	   1-0) 약관/개인정보 동의 검증
+	   - 모든 가입은 필수 동의가 있어야 함
+	========================================= */
+	IF (ISNULL(@terms_agreed, 0) <> 1 OR ISNULL(@privacy_agreed, 0) <> 1)
+	BEGIN
+		SET @resp_message = N'CONSENT REQUIRED';
 		GOTO return_label;
 	END
 
@@ -695,6 +707,9 @@ BEGIN
 			login_id,
 			email,
 			user_pass,
+			terms_agreed,
+			privacy_agreed,
+			policy_agreed_at,
 			user_name,
 			user_gender,
 			user_birth_date,
@@ -709,6 +724,9 @@ BEGIN
 			@login_id,
 			@email,
 			@user_pass,
+			@terms_agreed,
+			@privacy_agreed,
+			SYSDATETIME(),
 			@user_name,
 			@user_gender,
 			@user_birth_date,

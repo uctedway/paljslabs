@@ -20,13 +20,15 @@ function normalizeAuthIntent(rawIntent) {
    - PJ_USP_CREATE_USERS 수정본: id + 기본정보 반환
    - 반환: row (resp/resp_message/id/provider/login_id/email/user_name...)
 ========================================= */
-async function signupUser(provider, login_id, email, user_name, referralCode = '', user_pass = '') {
+async function signupUser(provider, login_id, email, user_name, referralCode = '', user_pass = '', terms_agreed = 0, privacy_agreed = 0) {
   const q_provider = db.convertQ(provider || '');
   const q_login_id = db.convertQ(login_id || '');
   const q_email = db.convertQ(email || '');
   const q_user_name = db.convertQ(user_name || '');
   const q_referral_code = db.convertQ(String(referralCode || '').trim().toUpperCase());
   const q_user_pass = db.convertQ(user_pass || '');
+  const q_terms_agreed = Number(terms_agreed ? 1 : 0);
+  const q_privacy_agreed = Number(privacy_agreed ? 1 : 0);
 
   const query = `
 	EXEC dbo.PJ_USP_CREATE_USERS
@@ -34,6 +36,8 @@ async function signupUser(provider, login_id, email, user_name, referralCode = '
 	  @login_id  = '${q_login_id}',
 	  @email     = '${q_email}',
 	  @user_pass = '${q_user_pass}',
+	  @terms_agreed = ${q_terms_agreed},
+	  @privacy_agreed = ${q_privacy_agreed},
 	  @user_name = '${q_user_name}',
 	  @referral_code = '${q_referral_code}'
   `;
@@ -55,7 +59,7 @@ async function loadUserSessionRow(provider, login_id) {
   return rs && rs[0] ? rs[0] : {};
 }
 
-async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '' }) {
+async function resolveAuthUser({ provider, login_id, email, user_name, referralCode = '', intent = 'login', user_pass = '', terms_agreed = 0, privacy_agreed = 0 }) {
   const authIntent = normalizeAuthIntent(intent);
   const sessionRow = await loadUserSessionRow(provider, login_id);
   const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
@@ -91,7 +95,7 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
     };
   }
 
-  const createdUser = await signupUser(provider, login_id, email, user_name, referralCode, user_pass);
+  const createdUser = await signupUser(provider, login_id, email, user_name, referralCode, user_pass, terms_agreed, privacy_agreed);
   const createResp = String(createdUser.resp || 'ERROR').toUpperCase();
   if (createResp === 'OK') {
     return {
@@ -124,6 +128,15 @@ function normalizeReferralCode(rawCode) {
   return /^[A-Z0-9]{8,32}$/.test(code) ? code : '';
 }
 
+function parseAgreeFlag(value) {
+  const v = String(value || '').trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'y' || v === 'yes' || v === 'on';
+}
+
+function hasSignupConsentInSession(req) {
+  return !!(req && req.session && req.session.signupConsentAgreed === true);
+}
+
 function normalizeEmail(rawEmail) {
   return String(rawEmail || '').trim().toLowerCase();
 }
@@ -132,8 +145,44 @@ function isValidEmailFormat(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
 }
 
-function hashUserPassword(rawPassword) {
+function hashUserPasswordLegacy(rawPassword) {
   return crypto.createHash('sha256').update(String(rawPassword || '')).digest('hex');
+}
+
+function createSaltedPasswordHash(rawPassword) {
+  const password = String(rawPassword || '');
+  const iterations = 120000;
+  const keylen = 32;
+  const digest = 'sha256';
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.pbkdf2Sync(password, salt, iterations, keylen, digest).toString('hex');
+  return `pbkdf2$${iterations}$${salt}$${derivedKey}`;
+}
+
+function verifyPasswordHash(rawPassword, savedHash) {
+  const password = String(rawPassword || '');
+  const stored = String(savedHash || '').trim();
+  if (!stored) return false;
+
+  // New format: pbkdf2$iterations$salt$hash
+  if (stored.startsWith('pbkdf2$')) {
+    const chunks = stored.split('$');
+    if (chunks.length !== 4) return false;
+    const iterations = Number(chunks[1]);
+    const salt = chunks[2];
+    const expectedHex = chunks[3];
+    if (!Number.isFinite(iterations) || iterations <= 0 || !salt || !expectedHex) return false;
+    const computedHex = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256').toString('hex');
+    const expected = Buffer.from(expectedHex, 'hex');
+    const computed = Buffer.from(computedHex, 'hex');
+    if (expected.length !== computed.length) return false;
+    return crypto.timingSafeEqual(expected, computed);
+  }
+
+  // Backward compatibility: legacy unsalted SHA-256
+  const legacyHash = hashUserPasswordLegacy(password);
+  if (legacyHash.length !== stored.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(legacyHash), Buffer.from(stored));
 }
 
 async function loadEmailPasswordHash(login_id) {
@@ -435,6 +484,17 @@ const googleAuth = async (req, res) => {
   try {
 	const token = req.body ? req.body.token : '';
     const authIntent = normalizeAuthIntent(req.body?.intent || req.session?.socialAuthIntent);
+    if (authIntent === 'register') {
+      const termsAgreed = parseAgreeFlag(req.body?.terms_agreed);
+      const privacyAgreed = parseAgreeFlag(req.body?.privacy_agreed);
+      if (!(termsAgreed && privacyAgreed) && !hasSignupConsentInSession(req)) {
+        return res.status(400).json({
+          resp: 'ERROR',
+          resp_message: 'CONSENT_REQUIRED',
+          resp_action: [],
+        });
+      }
+    }
 	//console.log('token   '+token);
 	if (!token) {
 	  return res.status(400).json({
@@ -466,6 +526,12 @@ const googleAuth = async (req, res) => {
 	const email = payload.email || '';
 	const user_name = payload.name || '';
 	const referralCode = normalizeReferralCode(req.session?.pendingReferralCode);
+    const signupTermsAgreed = authIntent === 'register'
+      ? (parseAgreeFlag(req.body?.terms_agreed) || hasSignupConsentInSession(req) ? 1 : 0)
+      : 0;
+    const signupPrivacyAgreed = authIntent === 'register'
+      ? (parseAgreeFlag(req.body?.privacy_agreed) || hasSignupConsentInSession(req) ? 1 : 0)
+      : 0;
 
 	const authResult = await resolveAuthUser({
 	  provider,
@@ -473,6 +539,8 @@ const googleAuth = async (req, res) => {
 	  email,
 	  user_name,
 	  referralCode,
+      terms_agreed: signupTermsAgreed,
+      privacy_agreed: signupPrivacyAgreed,
       intent: authIntent,
 	});
 
@@ -499,6 +567,7 @@ const googleAuth = async (req, res) => {
 	}
 
 	delete req.session.pendingReferralCode;
+    delete req.session.signupConsentAgreed;
 	await setUserSession(req, authResult.row);
 
 	if (!authResult.isNew) {
@@ -535,6 +604,9 @@ const naverAuthCallback = async (req, res) => {
   try {
     const authIntent = normalizeAuthIntent(req.session?.naverAuthIntent || req.session?.socialAuthIntent);
     const fallbackPath = getAuthEntryPathByIntent(authIntent);
+    if (authIntent === 'register' && !hasSignupConsentInSession(req)) {
+      return res.redirect(`${fallbackPath}?error=consent_required`);
+    }
     const code = String(req.query?.code || '').trim();
     const state = String(req.query?.state || '').trim();
     const expectedState = String(req.session?.naverLoginState || '').trim();
@@ -559,6 +631,8 @@ const naverAuthCallback = async (req, res) => {
       email,
       user_name,
       referralCode,
+      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
       intent: authIntent,
     });
     if (!authResult.ok) {
@@ -568,6 +642,7 @@ const naverAuthCallback = async (req, res) => {
     }
 
     delete req.session.pendingReferralCode;
+    delete req.session.signupConsentAgreed;
     delete req.session.naverLoginState;
     delete req.session.naverAuthIntent;
     await setUserSession(req, authResult.row);
@@ -596,6 +671,9 @@ const kakaoAuthCallback = async (req, res) => {
   try {
     const authIntent = normalizeAuthIntent(req.session?.kakaoAuthIntent || req.session?.socialAuthIntent);
     const fallbackPath = getAuthEntryPathByIntent(authIntent);
+    if (authIntent === 'register' && !hasSignupConsentInSession(req)) {
+      return res.redirect(`${fallbackPath}?error=consent_required`);
+    }
     const code = String(req.query?.code || '').trim();
     const state = String(req.query?.state || '').trim();
     const expectedState = String(req.session?.kakaoLoginState || '').trim();
@@ -622,6 +700,8 @@ const kakaoAuthCallback = async (req, res) => {
       email,
       user_name,
       referralCode,
+      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
       intent: authIntent,
     });
     if (!authResult.ok) {
@@ -631,6 +711,7 @@ const kakaoAuthCallback = async (req, res) => {
     }
 
     delete req.session.pendingReferralCode;
+    delete req.session.signupConsentAgreed;
     delete req.session.kakaoLoginState;
     delete req.session.kakaoAuthIntent;
     await setUserSession(req, authResult.row);
@@ -666,6 +747,9 @@ const appleAuthCallback = async (req, res) => {
   try {
     const authIntent = normalizeAuthIntent(req.session?.appleAuthIntent || req.session?.socialAuthIntent);
     const fallbackPath = getAuthEntryPathByIntent(authIntent);
+    if (authIntent === 'register' && !hasSignupConsentInSession(req)) {
+      return res.redirect(`${fallbackPath}?error=consent_required`);
+    }
     const code = String(req.body?.code || req.query?.code || '').trim();
     const state = String(req.body?.state || req.query?.state || '').trim();
     const expectedState = String(req.session?.appleLoginState || '').trim();
@@ -690,6 +774,8 @@ const appleAuthCallback = async (req, res) => {
       email,
       user_name,
       referralCode,
+      terms_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
+      privacy_agreed: authIntent === 'register' && hasSignupConsentInSession(req) ? 1 : 0,
       intent: authIntent,
     });
     if (!authResult.ok) {
@@ -699,6 +785,7 @@ const appleAuthCallback = async (req, res) => {
     }
 
     delete req.session.pendingReferralCode;
+    delete req.session.signupConsentAgreed;
     delete req.session.appleLoginState;
     delete req.session.appleAuthIntent;
     await setUserSession(req, authResult.row);
@@ -733,27 +820,29 @@ const emailRegister = async (req, res) => {
     const user_name = String(req.body?.name || '').trim();
     const password = String(req.body?.password || '');
     const passwordConfirm = String(req.body?.password_confirm || '');
-    const safeEmailParam = encodeURIComponent(email);
-    const safeNameParam = encodeURIComponent(user_name);
-    const redirectWithError = (code) => res.redirect(`/user/email-register?error=${encodeURIComponent(code)}&email=${safeEmailParam}&name=${safeNameParam}`);
 
     if (!email || !user_name || !password || !passwordConfirm) {
-      return redirectWithError('required');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'REQUIRED_VALUES_MISSING', resp_action: [] });
     }
     if (!isValidEmailFormat(email)) {
-      return redirectWithError('invalid_email');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'INVALID_EMAIL_FORMAT', resp_action: [] });
     }
     if (password.length < 8) {
-      return redirectWithError('weak_password');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'WEAK_PASSWORD', resp_action: [] });
     }
     if (password !== passwordConfirm) {
-      return redirectWithError('password_mismatch');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'PASSWORD_MISMATCH', resp_action: [] });
+    }
+    const termsAgreed = parseAgreeFlag(req.body?.terms_agreed);
+    const privacyAgreed = parseAgreeFlag(req.body?.privacy_agreed);
+    if (!(termsAgreed && privacyAgreed)) {
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'CONSENT_REQUIRED', resp_action: [] });
     }
 
     const provider = 'EMAIL';
     const login_id = email;
     const referralCode = normalizeReferralCode(req.session?.pendingReferralCode || req.body?.referral_code);
-    const passwordHash = hashUserPassword(password);
+    const passwordHash = createSaltedPasswordHash(password);
 
     const authResult = await resolveAuthUser({
       provider,
@@ -761,6 +850,8 @@ const emailRegister = async (req, res) => {
       email,
       user_name,
       user_pass: passwordHash,
+      terms_agreed: termsAgreed ? 1 : 0,
+      privacy_agreed: privacyAgreed ? 1 : 0,
       referralCode,
       intent: 'register',
     });
@@ -768,12 +859,13 @@ const emailRegister = async (req, res) => {
     if (!authResult.ok) {
       const message = String(authResult.message || '').toUpperCase();
       if (message.includes('ALREADY EXISTS')) {
-        return redirectWithError('email_exists');
+        return res.status(400).json({ resp: 'ERROR', resp_message: 'USER_ALREADY_EXISTS', resp_action: [] });
       }
-      return redirectWithError('signup_failed');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'EMAIL_SIGNUP_FAILED', resp_action: [] });
     }
 
     delete req.session.pendingReferralCode;
+    delete req.session.signupConsentAgreed;
     await setUserSession(req, authResult.row);
     req.session.welcomeContext = {
       isNewSignup: true,
@@ -782,10 +874,14 @@ const emailRegister = async (req, res) => {
     await new Promise((resolve, reject) => {
       req.session.save((err) => (err ? reject(err) : resolve()));
     });
-    return res.redirect('/user/welcome');
+    return res.json({
+      resp: 'OK',
+      resp_message: 'OK',
+      resp_action: [{ type: 'redirect', value: '/user/welcome' }],
+    });
   } catch (err) {
     console.error('[EMAIL REGISTER ERROR]', err);
-    return res.redirect('/user/email-register?error=signup_failed');
+    return res.status(500).json({ resp: 'ERROR', resp_message: 'EMAIL_SIGNUP_FAILED', resp_action: [] });
   }
 };
 
@@ -793,14 +889,12 @@ const emailLogin = async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const password = String(req.body?.password || '');
-    const safeEmailParam = encodeURIComponent(email);
-    const redirectWithError = (code) => res.redirect(`/user/email-login?error=${encodeURIComponent(code)}&email=${safeEmailParam}`);
 
     if (!email || !password) {
-      return redirectWithError('required');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'REQUIRED_VALUES_MISSING', resp_action: [] });
     }
     if (!isValidEmailFormat(email)) {
-      return redirectWithError('invalid_email');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'INVALID_EMAIL_FORMAT', resp_action: [] });
     }
 
     const provider = 'EMAIL';
@@ -808,25 +902,47 @@ const emailLogin = async (req, res) => {
     const sessionRow = await loadUserSessionRow(provider, login_id);
     const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
     if (sessionResp !== 'OK') {
-      return redirectWithError('user_not_found');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'USER_NOT_FOUND', resp_action: [] });
     }
 
     const savedPasswordHash = await loadEmailPasswordHash(login_id);
     if (!savedPasswordHash) {
-      return redirectWithError('invalid_password');
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'INVALID_PASSWORD', resp_action: [] });
     }
-    const passwordHash = hashUserPassword(password);
-    if (savedPasswordHash !== passwordHash) {
-      return redirectWithError('invalid_password');
+    if (!verifyPasswordHash(password, savedPasswordHash)) {
+      return res.status(400).json({ resp: 'ERROR', resp_message: 'INVALID_PASSWORD', resp_action: [] });
     }
 
     await setUserSession(req, sessionRow);
     delete req.session.welcomeContext;
     delete req.session.pendingReferralCode;
-    return res.redirect('/user/mypage');
+    return res.json({
+      resp: 'OK',
+      resp_message: 'OK',
+      resp_action: [{ type: 'redirect', value: '/user/mypage' }],
+    });
   } catch (err) {
     console.error('[EMAIL LOGIN ERROR]', err);
-    return res.redirect('/user/email-login?error=login_failed');
+    return res.status(500).json({ resp: 'ERROR', resp_message: 'EMAIL_LOGIN_FAILED', resp_action: [] });
+  }
+};
+
+const signupConsent = async (req, res) => {
+  try {
+    const termsAgreed = parseAgreeFlag(req.body?.terms_agreed);
+    const privacyAgreed = parseAgreeFlag(req.body?.privacy_agreed);
+    req.session.signupConsentAgreed = !!(termsAgreed && privacyAgreed);
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => (err ? reject(err) : resolve()));
+    });
+    return res.json({
+      resp: req.session.signupConsentAgreed ? 'OK' : 'ERROR',
+      resp_message: req.session.signupConsentAgreed ? 'OK' : 'CONSENT_REQUIRED',
+      resp_action: [],
+    });
+  } catch (err) {
+    console.error('[SIGNUP CONSENT ERROR]', err);
+    return res.status(500).json({ resp: 'ERROR', resp_message: 'CONSENT_SAVE_FAILED', resp_action: [] });
   }
 };
 
@@ -864,6 +980,7 @@ module.exports = {
   appleAuthCallback,
   emailRegister,
   emailLogin,
+  signupConsent,
   getNaverLoginUrl,
   getKakaoLoginUrl,
   getAppleLoginUrl,

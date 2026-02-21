@@ -94,7 +94,11 @@ export function parseFormResurtJson(json) {
 	const value = act.value;
 
 	if (type === 'alert') {
-	  alert(value ?? '');
+	  if (window.AppToast && typeof window.AppToast.show === 'function') {
+		window.AppToast.show(String(value ?? ''), { type: 'warning', duration: 2400 });
+	  } else {
+		alert(value ?? '');
+	  }
 	  continue;
 	}
 

@@ -130,3 +130,480 @@ input[type='checkbox'] {
     min-height: var(--form-control-height);
     border-radius: var(--form-control-radius);
 }
+
+.app-toast-container {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%);
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.app-toast {
+    min-width: 220px;
+    max-width: min(88vw, 460px);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.92);
+}
+
+.app-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.app-toast--warning,
+.app-toast--error,
+.app-toast--success {
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.92);
+}
+
+html.theme-dark {
+    color-scheme: dark;
+    --color-primary: #60a5fa;
+    --color-primary-dark: #3b82f6;
+    --color-primary-light: #93c5fd;
+    --color-secondary: #9ca3af;
+    --color-secondary-dark: #6b7280;
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-error: #f87171;
+    --color-text: #e5e7eb;
+    --color-text-light: #9ca3af;
+    --color-bg: #0b1220;
+    --color-bg-light: #111827;
+    --color-bg-dark: #020617;
+    --color-border: #253247;
+    --form-control-border: #334155;
+    --form-control-bg: #0f172a;
+    --form-control-placeholder: #64748b;
+    --form-control-focus: #60a5fa;
+}
+
+html.theme-dark body {
+    background: #0b1220;
+    color: #e5e7eb;
+}
+
+html.theme-dark .header {
+    background: #0f172a;
+    border-bottom-color: #253247;
+}
+
+html.theme-dark .header .desktop-shortcuts a,
+html.theme-dark .header .desktop-shortcuts .desktop-user-name,
+html.theme-dark .header .desktop-shortcuts .theme-toggle-btn,
+html.theme-dark .header .mobile-appbar-actions a,
+html.theme-dark .header .analysis-status-badge,
+html.theme-dark .header .mobile-nav-login-btn,
+html.theme-dark .header .mobile-nav-settings,
+html.theme-dark .header .mobile-nav-close,
+html.theme-dark .header .mobile-theme-toggle-btn {
+    background: #111827;
+    border-color: #334155;
+    color: #e5e7eb;
+}
+
+html.theme-dark .header .nav {
+    background: #0f172a;
+    border-right-color: #253247;
+}
+
+html.theme-dark .header .nav a {
+    color: #e5e7eb;
+}
+
+html.theme-dark .header .nav a:hover {
+    background: #111827;
+    color: #93c5fd;
+}
+
+html.theme-dark .header .mobile-nav-head {
+    background: #111827;
+    border-color: #334155;
+}
+
+html.theme-dark .header .nav-submenu {
+    border-left-color: #334155;
+}
+
+html.theme-dark .header .nav-submenu a {
+    color: #cbd5e1;
+}
+
+html.theme-dark .header .submenu-toggle[aria-expanded='true'] {
+    border-color: #475569;
+    background: #1f2937;
+}
+
+html.theme-dark .login-page {
+    background: linear-gradient(165deg, #0b1220 0%, #121b2f 100%);
+}
+
+html.theme-dark .login-card,
+html.theme-dark .signup-consent-section,
+html.theme-dark .signup-consent-panel,
+html.theme-dark .google-signin-wrap,
+html.theme-dark .mypage-section,
+html.theme-dark .mypage-card,
+html.theme-dark .history-table-wrap,
+html.theme-dark .billing-card,
+html.theme-dark .billing-result-card,
+html.theme-dark .legal-inner {
+    background: #111827;
+    border-color: #334155;
+    color: #e5e7eb;
+}
+
+html.theme-dark .login-title,
+html.theme-dark .signup-consent-title,
+html.theme-dark .signup-consent-panel-title,
+html.theme-dark .legal-section h2,
+html.theme-dark .footer-brand h2 {
+    color: #f8fafc;
+}
+
+html.theme-dark .login-kicker,
+html.theme-dark .login-lead,
+html.theme-dark .login-subtext,
+html.theme-dark .signup-consent-check,
+html.theme-dark .legal-section p,
+html.theme-dark .legal-section li,
+html.theme-dark .footer-brand p,
+html.theme-dark .footer-legal a {
+    color: #94a3b8;
+}
+
+html.theme-dark .signup-consent-scroll {
+    background: #0f172a;
+    color: #cbd5e1;
+}
+
+html.theme-dark .footer {
+    background: #0f172a;
+    border-top-color: #253247;
+}
+
+html.theme-dark .footer-legal {
+    border-top-color: #253247;
+}
+
+html.theme-dark .footer-shortcuts a {
+    color: #cbd5e1;
+}
+
+html.theme-dark .mobile-nav-backdrop {
+    background: rgba(2, 6, 23, 0.75);
+}
+
+html.theme-dark .mi-icon {
+    filter: invert(1) brightness(1.12);
+}
+
+html.theme-dark .home-band-inner article,
+html.theme-dark .overview-card,
+html.theme-dark .showcase-item,
+html.theme-dark .home-global-guide,
+html.theme-dark .home-final-cta,
+html.theme-dark .result-card,
+html.theme-dark .result-pane,
+html.theme-dark .result-section,
+html.theme-dark .history-table-wrap,
+html.theme-dark .data-grid-wrap,
+html.theme-dark .data-grid-shell,
+html.theme-dark .billing-method-card,
+html.theme-dark .billing-pack,
+html.theme-dark .history-empty,
+html.theme-dark .relative-item,
+html.theme-dark .mypage-history-item,
+html.theme-dark .mypage-code,
+html.theme-dark .mypage-history-meta-grid p,
+html.theme-dark .mypage-shortcuts,
+html.theme-dark .billing-balance {
+    background: #111827;
+    border-color: #334155;
+    color: #e5e7eb;
+    box-shadow: none;
+}
+
+html.theme-dark .hero-slide::after {
+    background: rgba(15, 23, 42, 0.52);
+}
+
+html.theme-dark .home-band-inner strong,
+html.theme-dark .overview-text h4,
+html.theme-dark .showcase-content h3,
+html.theme-dark .mypage-card h3,
+html.theme-dark .billing-head h2,
+html.theme-dark .history-head h2,
+html.theme-dark .data-grid-head h2 {
+    color: #f8fafc;
+}
+
+html.theme-dark .home-band-inner p,
+html.theme-dark .overview-text p,
+html.theme-dark .showcase-content p,
+html.theme-dark .billing-label,
+html.theme-dark .billing-help,
+html.theme-dark .mypage-desc,
+html.theme-dark .mypage-history-date,
+html.theme-dark .data-grid-desc,
+html.theme-dark .data-grid-muted,
+html.theme-dark .history-empty,
+html.theme-dark .legal-header p {
+    color: #94a3b8;
+}
+
+html.theme-dark .overview-head h3,
+html.theme-dark .hero-slide-content h2 {
+    color: #f8fafc;
+}
+
+html.theme-dark .hub-eyebrow,
+html.theme-dark .hero-kicker {
+    color: #93c5fd;
+}
+
+html.theme-dark .hero-cta-link,
+html.theme-dark .billing-head a,
+html.theme-dark .history-head a,
+html.theme-dark .data-grid-link,
+html.theme-dark .mypage-add-link,
+html.theme-dark .footer-shortcuts a:hover,
+html.theme-dark .footer-brand a {
+    color: #93c5fd;
+}
+
+html.theme-dark .data-grid-link {
+    border-color: #334155;
+    background: #0f172a;
+}
+
+html.theme-dark .data-grid-code {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+}
+
+html.theme-dark .data-grid-table th,
+html.theme-dark .history-table th {
+    background: #0f172a;
+    color: #cbd5e1;
+    border-bottom-color: #334155;
+}
+
+html.theme-dark .data-grid-table td,
+html.theme-dark .history-table td {
+    border-bottom-color: #233146;
+    color: #e5e7eb;
+}
+
+html.theme-dark .data-grid-table tbody tr:hover {
+    background: #172033;
+}
+
+html.theme-dark .data-grid-badge {
+    border-color: #334155;
+    background: #0f172a;
+    color: #cbd5e1;
+}
+
+html.theme-dark .mypage-history-status {
+    background: #1f2937;
+    color: #cbd5e1;
+}
+
+html.theme-dark .mypage-history-status.completed,
+html.theme-dark .data-grid-badge.status-approved,
+html.theme-dark .data-grid-badge.status-completed,
+html.theme-dark .data-grid-badge.entry-charge,
+html.theme-dark .data-grid-badge.entry-refund {
+    background: rgba(22, 163, 74, 0.16);
+    border-color: rgba(22, 163, 74, 0.42);
+    color: #86efac;
+}
+
+html.theme-dark .mypage-history-status.processing,
+html.theme-dark .mypage-history-status.queued,
+html.theme-dark .data-grid-badge.status-ready,
+html.theme-dark .data-grid-badge.status-pending,
+html.theme-dark .data-grid-badge.status-processing,
+html.theme-dark .data-grid-badge.status-queued {
+    background: rgba(217, 119, 6, 0.16);
+    border-color: rgba(217, 119, 6, 0.44);
+    color: #fcd34d;
+}
+
+html.theme-dark .mypage-history-status.failed,
+html.theme-dark .data-grid-badge.status-failed,
+html.theme-dark .data-grid-badge.status-canceled,
+html.theme-dark .data-grid-badge.entry-consume {
+    background: rgba(185, 28, 28, 0.2);
+    border-color: rgba(220, 38, 38, 0.42);
+    color: #fca5a5;
+}
+
+html.theme-dark .data-grid-change.is-plus {
+    color: #86efac;
+}
+
+html.theme-dark .data-grid-change.is-minus {
+    color: #fca5a5;
+}
+
+html.theme-dark .mypage-shortcuts a,
+html.theme-dark .mypage-submenu a,
+html.theme-dark .mypage-history-title {
+    color: #e5e7eb;
+}
+
+html.theme-dark .mypage-submenu {
+    border-left-color: #334155;
+}
+
+html.theme-dark .mypage-shortcuts > .mypage-nav-group + .mypage-nav-group {
+    border-top-color: #334155;
+}
+
+html.theme-dark .overview-head,
+html.theme-dark .showcase-content,
+html.theme-dark .fortune-hub-page,
+html.theme-dark .legal-page,
+html.theme-dark .history-shell,
+html.theme-dark .billing-shell,
+html.theme-dark .mypage-shell {
+    color: #e5e7eb;
+}
+
+html.theme-dark .hero-slider {
+    background: #0f172a;
+    border-bottom-color: #253247;
+}
+
+html.theme-dark .hero-slide-content,
+html.theme-dark .hero-slide-content p,
+html.theme-dark .hero-kicker,
+html.theme-dark .overview-head p,
+html.theme-dark .hub-eyebrow {
+    color: #cbd5e1;
+}
+
+html.theme-dark .home-band-inner article,
+html.theme-dark .overview-card,
+html.theme-dark .showcase-item {
+    border-color: #334155;
+    background: #111827;
+}
+
+html.theme-dark .overview-image::after {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0.45));
+}
+
+html.theme-dark .fortune-intro {
+    border-color: #334155;
+    background:
+      radial-gradient(circle at 12% 14%, rgba(96, 165, 250, 0.15), transparent 38%),
+      radial-gradient(circle at 82% 18%, rgba(45, 212, 191, 0.08), transparent 41%),
+      linear-gradient(140deg, #111827 0%, #0f172a 52%, #0b1220 100%);
+    box-shadow: none;
+}
+
+html.theme-dark .fortune-intro-hero h1,
+html.theme-dark .fortune-intro-subtitle,
+html.theme-dark .fortune-intro-card h3,
+html.theme-dark .fortune-intro-note h4 {
+    color: #f8fafc;
+}
+
+html.theme-dark .fortune-intro-description,
+html.theme-dark .fortune-intro-card p,
+html.theme-dark .fortune-intro-note li {
+    color: #cbd5e1;
+}
+
+html.theme-dark .fortune-intro-card,
+html.theme-dark .fortune-intro-note {
+    border-color: #334155;
+    background: #0f172a;
+}
+
+html.theme-dark .btn-service-secondary {
+    border-color: #334155;
+    background: #111827;
+    color: #93c5fd;
+}
+
+html.theme-dark .btn-service-secondary:hover {
+    border-color: #475569;
+    background: #1f2937;
+}
+
+html.theme-dark .saju-form-section {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: none;
+}
+
+html.theme-dark .saju-form-section h2,
+html.theme-dark #sajuForm .form-group > label,
+html.theme-dark #fortuneForm .form-group > label {
+    color: #f8fafc;
+}
+
+html.theme-dark .saju-form-section .section-desc {
+    color: #94a3b8;
+}
+
+html.theme-dark #sajuForm .radio-label,
+html.theme-dark #fortuneForm .radio-label,
+html.theme-dark #sajuForm .compat-panel,
+html.theme-dark #fortuneForm .compat-panel,
+html.theme-dark #sajuForm .btn-manage-relative,
+html.theme-dark #fortuneForm .btn-manage-relative {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e5e7eb;
+}
+
+html.theme-dark #sajuForm .radio-label:hover,
+html.theme-dark #fortuneForm .radio-label:hover,
+html.theme-dark #sajuForm .btn-manage-relative:hover,
+html.theme-dark #fortuneForm .btn-manage-relative:hover {
+    border-color: #60a5fa;
+}
+
+@media (max-width: 768px) {
+    html.theme-dark .header .menu-toggle {
+        background: #111827;
+        border-color: #334155;
+    }
+
+    html.theme-dark .header .menu-toggle span {
+        background: #f8fafc;
+    }
+
+    html.theme-dark .header .mobile-nav-settings,
+    html.theme-dark .header .mobile-nav-close,
+    html.theme-dark .header .mobile-theme-toggle-btn {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    html.theme-dark .header .mobile-nav-settings:hover,
+    html.theme-dark .header .mobile-nav-close:hover,
+    html.theme-dark .header .mobile-theme-toggle-btn:hover {
+        background: rgba(148, 163, 184, 0.12);
+        border-color: rgba(148, 163, 184, 0.22);
+    }
+}

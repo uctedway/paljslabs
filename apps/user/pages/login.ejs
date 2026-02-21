@@ -9,6 +9,29 @@
 	  <% if (loginErrorMessage) { %>
 		<p class="login-error"><%= loginErrorMessage %></p>
 	  <% } %>
+	  <% if (mode === 'register') { %>
+		<section class="signup-consent-section">
+		  <h2 class="signup-consent-title">회원가입 약관 동의</h2>
+		  <div class="signup-consent-grid">
+			<div class="signup-consent-panel">
+			  <p class="signup-consent-panel-title">이용약관</p>
+			  <div class="signup-consent-scroll">
+				<%- include('../../core/pages/partials/legal_terms_content') %>
+			  </div>
+			</div>
+			<div class="signup-consent-panel">
+			  <p class="signup-consent-panel-title">개인정보처리방침</p>
+			  <div class="signup-consent-scroll">
+				<%- include('../../core/pages/partials/legal_privacy_content') %>
+			  </div>
+			</div>
+		  </div>
+		  <div class="signup-consent-checks">
+			<label class="signup-consent-check"><input type="checkbox" id="agree-terms"> 이용약관에 동의합니다. (필수)</label>
+			<label class="signup-consent-check"><input type="checkbox" id="agree-privacy"> 개인정보처리방침에 동의합니다. (필수)</label>
+		  </div>
+		</section>
+	  <% } %>
 
 	  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -67,9 +90,11 @@
 
 	  <script type="module">
 		import { googleHandleCredentialResponse } from '/js/modules/apps/user/google_auth.js';
+		import { initSignupConsentGate } from '/js/modules/apps/user/signup_consent.js';
 		// GSI는 반드시 window에서 콜백을 찾음
 		window.socialAuthIntent = '<%= mode %>';
 		window.googleHandleCredentialResponse = googleHandleCredentialResponse;
+		initSignupConsentGate();
 	  </script>
 	</div>
   </section>

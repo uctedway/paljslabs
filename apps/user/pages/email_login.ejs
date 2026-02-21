@@ -4,16 +4,13 @@
       <p class="login-kicker">48LAB ACCOUNT</p>
       <h1 class="login-title">이메일 로그인</h1>
       <p class="login-lead">이메일 계정으로 로그인하세요.</p>
-      <% if (emailLoginErrorMessage) { %>
-        <p class="login-error"><%= emailLoginErrorMessage %></p>
-      <% } %>
 
-      <form class="email-auth-form" action="/user/email-login" method="post">
+      <form class="email-auth-form" action="/user/email-login" method="post" novalidate>
         <label class="email-auth-label" for="email-login-id">이메일</label>
-        <input id="email-login-id" class="email-auth-input" type="email" name="email" placeholder="you@example.com" autocomplete="email" value="<%= emailPrefill || '' %>">
+        <input id="email-login-id" class="email-auth-input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
 
         <label class="email-auth-label" for="email-login-password">비밀번호</label>
-        <input id="email-login-password" class="email-auth-input" type="password" name="password" placeholder="비밀번호 입력" autocomplete="current-password">
+        <input id="email-login-password" class="email-auth-input" type="password" name="password" placeholder="비밀번호 입력" autocomplete="current-password" required>
 
         <button type="submit" class="email-auth-submit">로그인</button>
       </form>
@@ -21,6 +18,16 @@
       <p class="login-subtext">
         아직 이메일 계정이 없으신가요? <a href="/user/email-register">이메일 회원가입</a>
       </p>
+
+      <script type="module">
+        import { bindEmailAuthForm } from '/js/modules/apps/user/email_auth_form.js';
+
+        bindEmailAuthForm('.email-auth-form', [
+          { selector: '#email-login-id', message: '이메일을 입력해주세요.' },
+          { selector: '#email-login-password', message: '비밀번호를 입력해주세요.' },
+        ]);
+
+      </script>
     </div>
   </section>
 </main>

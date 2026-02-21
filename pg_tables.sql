@@ -111,6 +111,9 @@ CREATE TABLE [dbo].[PJ_TB_USERS](
 	[created_at] [datetime2](0) NOT NULL,
 	[updated_at] [datetime2](0) NOT NULL,
 	[user_pass] [varchar](500) NULL,
+	[terms_agreed] [bit] NOT NULL,
+	[privacy_agreed] [bit] NOT NULL,
+	[policy_agreed_at] [datetime2](0) NULL,
 	[saju_raw_data] [nvarchar](max) NULL,
 	[token_balance] [int] NOT NULL,
  CONSTRAINT [PK_PJ_TB_USERS] PRIMARY KEY CLUSTERED 
@@ -124,6 +127,10 @@ CREATE TABLE [dbo].[PJ_TB_USERS](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[PJ_TB_USERS] ADD  DEFAULT ((0)) FOR [token_balance]
+GO
+ALTER TABLE [dbo].[PJ_TB_USERS] ADD  DEFAULT ((0)) FOR [terms_agreed]
+GO
+ALTER TABLE [dbo].[PJ_TB_USERS] ADD  DEFAULT ((0)) FOR [privacy_agreed]
 GO
 
 SET ANSI_NULLS ON

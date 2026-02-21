@@ -4,6 +4,16 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title><%= typeof title !== 'undefined' ? title : '48LAB' %></title>
+	<script>
+	(function () {
+		try {
+			var mode = localStorage.getItem('theme.mode');
+			if (mode !== 'light') {
+				document.documentElement.classList.add('theme-dark');
+			}
+		} catch (_) {}
+	})();
+	</script>
 	<link rel="stylesheet" href="/css/style.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
@@ -18,6 +28,8 @@
 		<%- include('footer') %>
 	</div>
 	<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+	<script src="/js/modules/global_toast.js"></script>
+	<script type="module" src="/js/modules/theme_mode.js"></script>
 	<%- script %>
 </body>
 </html>

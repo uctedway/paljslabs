@@ -11,6 +11,7 @@ router.get('/email-login', indexController.emailLogin);
 router.get('/invite/:code', indexController.inviteEntry);
 router.get('/logout', indexController.logout);
 router.post('/auth/google', authController.googleAuth);
+router.post('/auth/signup-consent', authController.signupConsent);
 router.post('/email-register', authController.emailRegister);
 router.post('/email-login', authController.emailLogin);
 router.get('/auth/naver/callback', authController.naverAuthCallback);
