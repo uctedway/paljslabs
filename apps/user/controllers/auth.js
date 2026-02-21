@@ -232,35 +232,72 @@ function getAppleDebugContext(req) {
   };
 }
 
-function readCookie(req, name) {
-  const target = String(name || '').trim();
-  if (!target) return '';
-  const rawCookie = String(req?.headers?.cookie || '');
-  if (!rawCookie) return '';
-  const pairs = rawCookie.split(';');
-  for (const pair of pairs) {
-    const idx = pair.indexOf('=');
-    if (idx < 0) continue;
-    const key = pair.slice(0, idx).trim();
-    if (key !== target) continue;
-    const value = pair.slice(idx + 1).trim();
-    try {
-      return decodeURIComponent(value);
-    } catch (e) {
-      return value;
-    }
-  }
-  return '';
+function toHexDigest(input) {
+  return crypto.createHash('sha256').update(String(input || '')).digest('hex');
 }
 
-function getAppleStateCookieOptions() {
-  const isProd = String(process.env.NODE_ENV || '').trim() === 'production';
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    path: '/user',
+function getAppleStateSecret() {
+  const sessionSecret = String(process.env.SESSION_SECRET || '').trim();
+  if (sessionSecret) return sessionSecret;
+  return toHexDigest(String(process.env.APPLE_LOGIN_CLIENT_ID || '').trim() || 'apple_state_fallback');
+}
+
+function fromBase64Url(input) {
+  const s = String(input || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = s + '='.repeat((4 - (s.length % 4)) % 4);
+  return Buffer.from(padded, 'base64').toString('utf8');
+}
+
+function signAppleStatePayload(encodedPayload) {
+  return crypto
+    .createHmac('sha256', getAppleStateSecret())
+    .update(String(encodedPayload || ''))
+    .digest('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function createAppleState(intent) {
+  const payload = {
+    i: normalizeAuthIntent(intent),
+    t: Date.now(),
+    n: crypto.randomBytes(12).toString('hex'),
   };
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  const signature = signAppleStatePayload(encodedPayload);
+  return `${encodedPayload}.${signature}`;
+}
+
+function decodeAppleState(state) {
+  const raw = String(state || '').trim();
+  if (!raw) return { valid: false, reason: 'EMPTY_STATE' };
+  const chunks = raw.split('.');
+  if (chunks.length !== 2) return { valid: false, reason: 'INVALID_STATE_FORMAT' };
+  const encodedPayload = chunks[0];
+  const signature = chunks[1];
+  if (!encodedPayload || !signature) return { valid: false, reason: 'INVALID_STATE_CHUNKS' };
+  const expectedSig = signAppleStatePayload(encodedPayload);
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+    return { valid: false, reason: 'STATE_SIGNATURE_MISMATCH' };
+  }
+  let payload;
+  try {
+    payload = JSON.parse(fromBase64Url(encodedPayload));
+  } catch (e) {
+    return { valid: false, reason: 'STATE_PAYLOAD_PARSE_FAILED' };
+  }
+  const issuedAt = Number(payload?.t || 0);
+  const authIntent = normalizeAuthIntent(payload?.i);
+  if (!Number.isFinite(issuedAt) || issuedAt <= 0) {
+    return { valid: false, reason: 'STATE_INVALID_ISSUED_AT' };
+  }
+  if (Date.now() - issuedAt > 1000 * 60 * 10) {
+    return { valid: false, reason: 'STATE_EXPIRED' };
+  }
+  return { valid: true, payload: { authIntent, issuedAt } };
 }
 
 function buildNaverAuthorizeUrl(req, state) {
@@ -822,32 +859,38 @@ const kakaoAuthCallback = async (req, res) => {
 
 const appleAuthCallback = async (req, res) => {
   try {
-    const authIntent = normalizeAuthIntent(req.session?.appleAuthIntent || req.session?.socialAuthIntent);
+    const state = String(req.body?.state || req.query?.state || '').trim();
+    const decodedState = decodeAppleState(state);
+    const authIntent = normalizeAuthIntent(
+      req.session?.appleAuthIntent
+      || req.session?.socialAuthIntent
+      || (decodedState.valid ? decodedState.payload?.authIntent : '')
+    );
     const fallbackPath = getAuthEntryPathByIntent(authIntent);
     if (authIntent === 'register' && !hasSignupConsentInSession(req)) {
       return res.redirect(`${fallbackPath}?error=consent_required`);
     }
     const code = String(req.body?.code || req.query?.code || '').trim();
-    const state = String(req.body?.state || req.query?.state || '').trim();
-    const expectedStateFromSession = String(req.session?.appleLoginState || '').trim();
-    const expectedStateFromCookie = String(readCookie(req, 'apple_login_state') || '').trim();
-    const expectedState = expectedStateFromSession || expectedStateFromCookie;
+    const expectedState = String(req.session?.appleLoginState || '').trim();
     console.info('[APPLE CALLBACK RECEIVED]', {
       ...getAppleDebugContext(req),
       has_code: !!code,
       has_state: !!state,
       has_expected_state: !!expectedState,
-      has_expected_state_session: !!expectedStateFromSession,
-      has_expected_state_cookie: !!expectedStateFromCookie,
+      decoded_state_valid: !!decodedState.valid,
+      decoded_state_reason: decodedState.valid ? 'OK' : decodedState.reason,
       auth_intent: authIntent,
     });
-    if (!code || !state || !expectedState || state !== expectedState) {
-      res.clearCookie('apple_login_state', getAppleStateCookieOptions());
+    const sessionStateMatched = !!(expectedState && state && state === expectedState);
+    const stateValidated = sessionStateMatched || !!decodedState.valid;
+    if (!code || !state || !stateValidated) {
       console.warn('[APPLE STATE MISMATCH]', {
         has_code: !!code,
         has_state: !!state,
         state_prefix: state.slice(0, 8),
         expected_prefix: expectedState.slice(0, 8),
+        state_validated: stateValidated,
+        decoded_state_reason: decodedState.valid ? 'OK' : decodedState.reason,
       });
       return res.redirect(`${fallbackPath}?error=apple_state`);
     }
@@ -883,7 +926,6 @@ const appleAuthCallback = async (req, res) => {
     delete req.session.signupConsentAgreed;
     delete req.session.appleLoginState;
     delete req.session.appleAuthIntent;
-    res.clearCookie('apple_login_state', getAppleStateCookieOptions());
     await setUserSession(req, authResult.row);
     if (!authResult.isNew) {
       delete req.session.welcomeContext;
@@ -1064,8 +1106,9 @@ const getKakaoLoginUrl = (req, intent = 'login') => {
 const getAppleLoginUrl = (req, intent = 'login') => {
   const clientId = String(process.env.APPLE_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
-  const state = randomState();
-  req.session.appleAuthIntent = normalizeAuthIntent(intent);
+  const authIntent = normalizeAuthIntent(intent);
+  const state = createAppleState(authIntent);
+  req.session.appleAuthIntent = authIntent;
   req.session.appleLoginState = state;
   console.info('[APPLE LOGIN URL CREATED]', {
     ...getAppleDebugContext(req),

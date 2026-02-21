@@ -50,23 +50,6 @@ function normalizeReferralCode(rawCode) {
   return /^[A-Z0-9]{8,32}$/.test(code) ? code : '';
 }
 
-function getAppleStateCookieOptions() {
-  const isProd = String(process.env.NODE_ENV || '').trim() === 'production';
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    path: '/user',
-    maxAge: 1000 * 60 * 10,
-  };
-}
-
-function setAppleStateCookie(req, res) {
-  const state = String(req.session?.appleLoginState || '').trim();
-  if (!state) return;
-  res.cookie('apple_login_state', state, getAppleStateCookieOptions());
-}
-
 function mapLoginErrorMessage(errorCode) {
   const code = String(errorCode || '').trim().toLowerCase();
   if (!code) return '';
@@ -153,7 +136,6 @@ const login = (req, res) => {
   const kakaoCallbackUrl = authController.buildKakaoCallbackUrl(req);
   const appleLoginUrl = authController.getAppleLoginUrl(req, 'login');
   const appleCallbackUrl = authController.buildAppleCallbackUrl(req);
-  setAppleStateCookie(req, res);
 
   res.render('user/pages/login', {
     authMode: 'login',
@@ -194,7 +176,6 @@ const register = (req, res) => {
   const kakaoCallbackUrl = authController.buildKakaoCallbackUrl(req);
   const appleLoginUrl = authController.getAppleLoginUrl(req, 'register');
   const appleCallbackUrl = authController.buildAppleCallbackUrl(req);
-  setAppleStateCookie(req, res);
 
   res.render('user/pages/login', {
     authMode: 'register',
