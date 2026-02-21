@@ -9,7 +9,11 @@ const { normalizeRelationCode } = require('../../core/utils/relation_codes');
 const { toErrorDisplay } = require('../utils/analysis_error');
 const { guardSajuService } = require('../services/saju_guard');
 const { consumeToken, refundToken } = require('../services/token_wallet');
-const { TOKENS_PER_SAJU_REQUEST } = require('../services/token_constants');
+const {
+  ANALYSIS_MODE_TRIAL,
+  normalizeAnalysisMode,
+  getRequiredTokensByMode,
+} = require('../services/token_constants');
 const {
   tryAcquireUserAnalysisSlot,
   keepAliveUserAnalysisSlot,
@@ -78,6 +82,15 @@ function buildDefaultBaseSystemPrompt() {
 function buildDefaultTonePrompt(counselingType) {
   const { typePrompts } = loadPromptCache();
   return String(typePrompts[counselingType] || typePrompts.balanced || '').trim();
+}
+
+function buildDefaultTrialBaseSystemPrompt() {
+  return [
+    '당신은 사주 맛보기 분석 도우미입니다.',
+    '입력된 생년월일시와 성별 정보를 바탕으로 핵심 흐름을 간단히 설명하세요.',
+    '출력은 반드시 JSON 객체(summary, body)만 반환하세요.',
+    'summary는 120자 이내, body는 최대 5문장으로 작성하세요.',
+  ].join('\n');
 }
 
 function composeSajuSystemPrompt(basePrompt, tonePrompt) {
@@ -326,6 +339,19 @@ function normalizeTargetType(rawTarget, relativeIdNum) {
   return 'new';
 }
 
+function getSajuRequestConfig(analysisMode) {
+  const mode = normalizeAnalysisMode(analysisMode);
+  const isTrial = mode === ANALYSIS_MODE_TRIAL;
+  return {
+    mode,
+    isTrial,
+    requiredTokens: getRequiredTokensByMode(mode),
+    usageCode: isTrial ? 'SAJU_TRIAL_VIEW' : 'SAJU_VIEW',
+    referenceType: isTrial ? 'SAJU_TRIAL_REQUEST' : 'SAJU_REQUEST',
+    maxTokens: isTrial ? 900 : 8192,
+  };
+}
+
 function calculateAge(birthYear, birthMonth, birthDay) {
   const today = new Date();
   const birth = new Date(birthYear, birthMonth - 1, birthDay);
@@ -434,6 +460,24 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 - body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성${guideBlock}`;
 }
 
+function buildSajuTrialUserPrompt(payload, normalizedGender, counselingLabel, age, lifeStage, extraGuide = '') {
+  const guideBlock = String(extraGuide || '').trim()
+    ? `\n\n추가 작성 가이드:\n${String(extraGuide || '').trim()}`
+    : '';
+  return `입력 정보:
+- 이름: ${payload.name}
+- 성별: ${normalizedGender.promptGender}
+- 생년월일시: ${payload.birthYear}-${payload.birthMonth}-${payload.birthDay} ${payload.birthTime}
+- 만 나이: ${age}세
+- 생애주기: ${lifeStage}
+- 상담 유형: ${counselingLabel}
+
+요청:
+- 위 정보만으로 핵심 흐름을 간단히 해석해줘.
+- summary는 120자 이내, body는 5문장 이내로 작성해줘.
+- 단정적 결론보다 참고 가능한 조언 중심으로 작성해줘.${guideBlock}`;
+}
+
 function extractJsonBlock(rawText) {
   const text = String(rawText || '').trim();
   if (!text) return '';
@@ -471,6 +515,7 @@ async function processSajuJob(resultId) {
   if (!record) return;
 
   const payload = record.request || {};
+  const requestConfig = getSajuRequestConfig(payload.analysis_mode);
   const loginId = String(record.loginId || '');
   const tokenUsageReferenceId = String(record.tokenUsageReferenceId || '').trim();
   const relativeIdNum = toPositiveInt(payload.relative_id);
@@ -491,17 +536,19 @@ async function processSajuJob(resultId) {
 
   await updateSajuResultRecord(resultId, {
     status: 'processing',
-    step: 'LOOKUP_CACHE',
-    progressMessage: '저장된 사주 원본 데이터를 확인하고 있습니다.',
+    step: requestConfig.isTrial ? 'CLAUDE' : 'LOOKUP_CACHE',
+    progressMessage: requestConfig.isTrial
+      ? '체험 분석을 위해 AI 해석을 준비하고 있습니다.'
+      : '저장된 사주 원본 데이터를 확인하고 있습니다.',
   });
 
   try {
     let sajuData = null;
-    let sajuDataSource = 'ABLECITY';
+    let sajuDataSource = requestConfig.isTrial ? 'TRIAL_DIRECT' : 'ABLECITY';
     const logReq = loginId ? { session: { user: { login_id: loginId } } } : {};
     let targetInfoChanged = false;
 
-    if (targetType === 'self' || targetType === 'relative') {
+    if (!requestConfig.isTrial && (targetType === 'self' || targetType === 'relative')) {
       try {
         const currentSnapshot = await loadSelectedTargetSnapshot(loginId, targetType, relativeIdNum);
         const requestedSnapshot = buildRequestedTargetSnapshot(payload);
@@ -525,7 +572,7 @@ async function processSajuJob(resultId) {
       }
     }
 
-    if (!targetInfoChanged) {
+    if (!requestConfig.isTrial && !targetInfoChanged) {
       try {
         sajuData = await loadSavedSajuRawData(sajuLookupLoginId, relativeIdNum);
         if (sajuData) {
@@ -543,7 +590,7 @@ async function processSajuJob(resultId) {
       console.log('[SAJU JOB] 대상 정보 변경 감지: 캐시 조회 생략, 에이블시티 재호출');
     }
 
-    if (!sajuData) {
+    if (!requestConfig.isTrial && !sajuData) {
       if (targetType === 'new') {
         console.log('[SAJU JOB] 새로보기: 원국데이터베이스 조회 생략');
       }
@@ -631,6 +678,7 @@ async function processSajuJob(resultId) {
         'CLAUDE',
         JSON.stringify({
           provider: sajuDataSource,
+          analysis_mode: requestConfig.mode,
           input: {
             name: payload.name,
             birth,
@@ -659,26 +707,42 @@ async function processSajuJob(resultId) {
     const [baseTemplate, toneTemplate] = isClaudeSandboxMode
       ? [null, null]
       : await Promise.all([
-        getPromptTemplate({ serviceCode: 'SAJU', featureKey: 'saju', toneKey: '' }),
+        getPromptTemplate({
+          serviceCode: 'SAJU',
+          featureKey: 'saju',
+          toneKey: '',
+          analysisMode: requestConfig.mode,
+        }),
         getPromptTemplate({ serviceCode: 'SAJU_TONE', featureKey: '', toneKey: normalizedCounselingType }),
       ]);
 
-    const defaultBasePrompt = buildDefaultBaseSystemPrompt();
+    const defaultBasePrompt = requestConfig.isTrial
+      ? buildDefaultTrialBaseSystemPrompt()
+      : buildDefaultBaseSystemPrompt();
     const defaultTonePrompt = buildDefaultTonePrompt(normalizedCounselingType);
     const baseSystemPrompt = String(baseTemplate?.systemPrompt || '').trim() || defaultBasePrompt;
     const toneSystemPrompt = String(toneTemplate?.systemPrompt || '').trim() || defaultTonePrompt;
     const composedSystemPrompt = composeSajuSystemPrompt(baseSystemPrompt, toneSystemPrompt);
     const systemPrompt = composedSystemPrompt || buildDefaultSystemPrompt(normalizedCounselingType);
     const userPromptGuide = String(baseTemplate?.userPromptGuide || '').trim();
-    const preparedUserPrompt = buildUserPrompt(
-      payload,
-      sajuData,
-      normalizedGender,
-      counselingLabel,
-      age,
-      lifeStage,
-      userPromptGuide
-    );
+    const preparedUserPrompt = requestConfig.isTrial
+      ? buildSajuTrialUserPrompt(
+        payload,
+        normalizedGender,
+        counselingLabel,
+        age,
+        lifeStage,
+        userPromptGuide
+      )
+      : buildUserPrompt(
+        payload,
+        sajuData,
+        normalizedGender,
+        counselingLabel,
+        age,
+        lifeStage,
+        userPromptGuide
+      );
     const claudeRequestBody = isClaudeSandboxMode
       ? {
         model: 'claude-sonnet-4-20250514',
@@ -687,7 +751,7 @@ async function processSajuJob(resultId) {
       }
       : {
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 8192,
+        max_tokens: requestConfig.maxTokens,
         system: systemPrompt,
         messages: [{
           role: 'user',
@@ -744,6 +808,7 @@ async function processSajuJob(resultId) {
           provider: 'CLAUDE',
           model: 'claude-sonnet-4-20250514',
           sandbox_mode: isClaudeSandboxMode,
+          analysis_mode: requestConfig.mode,
           result_length: claudeResult.length,
           usage: claudeUsage,
           prompt_tokens: promptTokens,
@@ -778,8 +843,8 @@ async function processSajuJob(resultId) {
       try {
         const refundRow = await refundToken({
           loginId,
-          amount: TOKENS_PER_SAJU_REQUEST,
-          referenceType: 'SAJU_REQUEST',
+          amount: Number(payload.analysis_token_cost || requestConfig.requiredTokens),
+          referenceType: requestConfig.referenceType,
           referenceId: tokenUsageReferenceId,
           memo: `${payload.name || '고객'} 사주 실패 자동환불`,
         });
@@ -813,7 +878,11 @@ exports.createSajuFortuneRequest = async (req, res) => {
   let acquiredResultId = '';
   let acquiredLoginId = '';
   try {
-    const guard = await guardSajuService(req);
+    const requestConfig = getSajuRequestConfig(req.body?.analysis_mode);
+    const guard = await guardSajuService(req, {
+      analysisMode: requestConfig.mode,
+      requiredTokens: requestConfig.requiredTokens,
+    });
     if (!guard.ok) {
       return res.status(guard.httpStatus || 403).json({
         resp: 'ERROR',
@@ -837,6 +906,8 @@ exports.createSajuFortuneRequest = async (req, res) => {
       relative_id: relativeIdNum,
       targetType: normalizeTargetType(rawSajuTarget, relativeIdNum),
       counselingType: normalizeCounselingType(req.body?.counselingType),
+      analysis_mode: requestConfig.mode,
+      analysis_token_cost: requestConfig.requiredTokens,
     };
 
     const normalizedGender = normalizeGender(payload.gender);
@@ -876,11 +947,11 @@ exports.createSajuFortuneRequest = async (req, res) => {
     const tokenUsageReferenceId = buildTokenReferenceId();
     const consumeRow = await consumeToken({
       loginId: guard.loginId,
-      amount: TOKENS_PER_SAJU_REQUEST,
-      usageCode: 'SAJU_VIEW',
-      referenceType: 'SAJU_REQUEST',
+      amount: requestConfig.requiredTokens,
+      usageCode: requestConfig.usageCode,
+      referenceType: requestConfig.referenceType,
       referenceId: tokenUsageReferenceId,
-      memo: `${payload.name} 사주 요청`,
+      memo: `${payload.name} ${requestConfig.isTrial ? '사주 체험' : '사주'} 요청`,
     });
     if (String(consumeRow?.resp || 'ERROR').toUpperCase() !== 'OK') {
       await releaseUserAnalysisSlot({ loginId: guard.loginId, resultId }).catch(() => {});
@@ -889,7 +960,7 @@ exports.createSajuFortuneRequest = async (req, res) => {
         resp_message: consumeRow?.resp_message || 'TOKEN_CONSUME_FAILED',
         message: '토큰 차감에 실패했습니다.',
         current_tokens: Number(consumeRow?.current_tokens || 0),
-        required_tokens: TOKENS_PER_SAJU_REQUEST,
+        required_tokens: requestConfig.requiredTokens,
       });
     }
 
@@ -905,10 +976,10 @@ exports.createSajuFortuneRequest = async (req, res) => {
     } catch (createErr) {
       await refundToken({
         loginId: guard.loginId,
-        amount: TOKENS_PER_SAJU_REQUEST,
-        referenceType: 'SAJU_REQUEST',
+        amount: requestConfig.requiredTokens,
+        referenceType: requestConfig.referenceType,
         referenceId: tokenUsageReferenceId,
-        memo: `${payload.name} 사주 요청 생성 실패 자동환불`,
+        memo: `${payload.name} ${requestConfig.isTrial ? '사주 체험' : '사주'} 요청 생성 실패 자동환불`,
       }).catch(() => {});
       await releaseUserAnalysisSlot({ loginId: guard.loginId, resultId }).catch(() => {});
       throw createErr;
@@ -925,7 +996,8 @@ exports.createSajuFortuneRequest = async (req, res) => {
       resp: 'OK',
       resp_message: 'REQUEST ACCEPTED',
       result_id: record.resultId,
-      consumed_tokens: TOKENS_PER_SAJU_REQUEST,
+      consumed_tokens: requestConfig.requiredTokens,
+      analysis_mode: requestConfig.mode,
       current_tokens: Number(consumeRow?.current_tokens || 0),
       status_url: `/api/saju/request/${record.resultId}/status`,
       result_url: `/user/mypage/history/${record.resultId}`,

@@ -1,4 +1,8 @@
-const { TOKENS_PER_SAJU_REQUEST } = require('./token_constants');
+const {
+  TOKENS_PER_SAJU_REQUEST,
+  getRequiredTokensByMode,
+  normalizeAnalysisMode,
+} = require('./token_constants');
 const REQUIRED_TOKENS_PER_SAJU = TOKENS_PER_SAJU_REQUEST;
 const { getTokenSummary } = require('./token_wallet');
 
@@ -10,7 +14,11 @@ function getSessionLoginId(req) {
   }
 }
 
-async function guardSajuService(req) {
+async function guardSajuService(req, options = {}) {
+  const requestedMode = normalizeAnalysisMode(options.analysisMode || '');
+  const requiredTokens = Number.isInteger(Number(options.requiredTokens))
+    ? Math.max(1, Number(options.requiredTokens))
+    : getRequiredTokensByMode(requestedMode);
   const loginId = getSessionLoginId(req);
   if (!loginId) {
     return {
@@ -33,22 +41,23 @@ async function guardSajuService(req) {
   }
 
   const currentTokens = Number(summary.current_tokens || 0);
-  if (currentTokens < REQUIRED_TOKENS_PER_SAJU) {
+  if (currentTokens < requiredTokens) {
     return {
       ok: false,
       httpStatus: 402,
       respMessage: 'INSUFFICIENT_TOKENS',
       message: '토큰이 부족합니다.',
       current_tokens: currentTokens,
-      required_tokens: REQUIRED_TOKENS_PER_SAJU,
+      required_tokens: requiredTokens,
     };
   }
 
   return {
     ok: true,
     loginId,
+    analysis_mode: requestedMode,
     current_tokens: currentTokens,
-    required_tokens: REQUIRED_TOKENS_PER_SAJU,
+    required_tokens: requiredTokens,
   };
 }
 

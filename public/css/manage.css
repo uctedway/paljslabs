@@ -373,6 +373,24 @@ select.manage-input {
   color: #fff;
 }
 
+.manage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.manage-badge--danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
 .manage-alert {
   margin: 0 0 14px;
   padding: 10px 12px;

@@ -478,17 +478,52 @@ async function askAndSaveDirectInput(person) {
   }).catch(() => {});
 }
 
+function askTrialFallback(currentTokens, trialRequired = 3) {
+  const current = Number(currentTokens || 0);
+  if (!Number.isFinite(current) || current < trialRequired) {
+    alert('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.');
+    window.location.href = '/user/billing';
+    return false;
+  }
+  return window.confirm(
+    `프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
+  );
+}
+
 async function requestFortune(feature, payload) {
   GlobalLoading.show('요청을 접수하고 있습니다.', '분석을 시작합니다.');
 
   try {
-    const response = await fetch(`/api/fortune/${encodeURIComponent(feature)}/request`, {
+    const requestPayload = { ...(payload || {}), analysis_mode: 'PREMIUM' };
+    let response = await fetch(`/api/fortune/${encodeURIComponent(feature)}/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestPayload),
     });
-    const json = await response.json();
+    let json = await response.json();
+
+    if (!response.ok || json.resp !== 'OK') {
+      if (response.status === 402) {
+        const wantsTrial = askTrialFallback(json.current_tokens, 3);
+        if (wantsTrial) {
+          requestPayload.analysis_mode = 'TRIAL';
+          response = await fetch(`/api/fortune/${encodeURIComponent(feature)}/request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(requestPayload),
+          });
+          json = await response.json();
+        } else {
+          GlobalLoading.hide();
+          if (Number(json.current_tokens || 0) >= 3) {
+            window.location.href = '/user/billing';
+          }
+          return;
+        }
+      }
+    }
 
     if (!response.ok || json.resp !== 'OK') {
       GlobalLoading.hide();

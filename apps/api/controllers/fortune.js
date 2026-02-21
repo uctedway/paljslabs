@@ -6,7 +6,11 @@ const { beginApiRequest, finishApiRequest } = require('../utils/server');
 const db = require('../../core/utils/db');
 const { guardSajuService } = require('../services/saju_guard');
 const { consumeToken, refundToken } = require('../services/token_wallet');
-const { TOKENS_PER_SAJU_REQUEST } = require('../services/token_constants');
+const {
+  ANALYSIS_MODE_TRIAL,
+  normalizeAnalysisMode,
+  getRequiredTokensByMode,
+} = require('../services/token_constants');
 const { toErrorDisplay } = require('../utils/analysis_error');
 const {
   createSajuResultRecord,
@@ -50,6 +54,20 @@ function toPositiveInt(value) {
 
 function buildTokenReferenceId(featureKey) {
   return `FORTUNE-${featureKey}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getFortuneRequestConfig(featureKey, analysisMode) {
+  const mode = normalizeAnalysisMode(analysisMode);
+  const isTrial = mode === ANALYSIS_MODE_TRIAL;
+  const baseUsageCode = String(FEATURE_MAP[featureKey]?.usageCode || 'FORTUNE_VIEW').trim();
+  return {
+    mode,
+    isTrial,
+    requiredTokens: getRequiredTokensByMode(mode),
+    usageCode: isTrial ? `${baseUsageCode}_TRIAL` : baseUsageCode,
+    referenceType: isTrial ? 'FORTUNE_TRIAL_REQUEST' : 'FORTUNE_REQUEST',
+    maxTokens: isTrial ? 900 : 2048,
+  };
 }
 
 function mapGenderToApiDb(rawGender) {
@@ -139,9 +157,29 @@ function loadPromptCache() {
   return promptCache;
 }
 
-function buildClaudePrompt(featureKey, payload) {
+function buildClaudePrompt(featureKey, payload, analysisMode = 'PREMIUM') {
   const { basePrompt, typePrompts } = loadPromptCache();
   const typePrompt = typePrompts[featureKey] || '';
+  const mode = normalizeAnalysisMode(analysisMode);
+  if (mode === ANALYSIS_MODE_TRIAL) {
+    return `당신은 ${FEATURE_MAP[featureKey]?.label || '운세'} 맛보기 분석 도우미입니다.
+
+# 입력 정보
+\`\`\`json
+${JSON.stringify(payload || {}, null, 2)}
+\`\`\`
+
+# 출력 규칙
+- 짧고 명확한 한국어로 핵심만 작성한다.
+- 과장/단정 표현을 줄이고 참고 가능한 조언 중심으로 작성한다.
+- 아래 JSON 객체 형식으로만 응답한다.
+\`\`\`json
+{
+  "summary": "120자 이내 요약",
+  "body": "최대 5문장 본문"
+}
+\`\`\``;
+  }
 
   return `${basePrompt}
 
@@ -210,13 +248,19 @@ function parseClaudeStructuredResult(rawText, fallbackSummary = '') {
   };
 }
 
-async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
+async function requestClaudeFortuneResult({ featureKey, payload, featureRaw, analysisMode = 'PREMIUM' }) {
   const shortMode = isTruthyEnv(process.env.SAJU_CLAUDE_SANDBOX) || isTruthyEnv(process.env.CLAUDE_SHORT_TEST);
   const featureLabel = FEATURE_MAP[featureKey]?.label || '운세';
+  const runtimeConfig = getFortuneRequestConfig(featureKey, analysisMode);
   const runtimeTemplate = shortMode
     ? null
-    : await getPromptTemplate({ serviceCode: 'FORTUNE', featureKey, toneKey: '' });
-  const systemPrompt = runtimeTemplate?.systemPrompt || buildClaudePrompt(featureKey, payload);
+    : await getPromptTemplate({
+      serviceCode: 'FORTUNE',
+      featureKey,
+      toneKey: '',
+      analysisMode: runtimeConfig.mode,
+    });
+  const systemPrompt = runtimeTemplate?.systemPrompt || buildClaudePrompt(featureKey, payload, runtimeConfig.mode);
   const userPromptGuide = runtimeTemplate?.userPromptGuide || '';
 
   const requestBody = shortMode
@@ -224,14 +268,14 @@ async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 64,
       messages: [{ role: 'user', content: `${featureLabel} 결과를 한 문장으로만 알려줘.` }],
-    }
+      }
     : {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      max_tokens: runtimeConfig.maxTokens,
       system: systemPrompt,
       messages: [{
         role: 'user',
-        content: buildFortuneUserPrompt(featureRaw, payload, userPromptGuide),
+        content: buildFortuneUserPrompt(featureRaw || {}, payload, userPromptGuide),
       }],
     };
 
@@ -254,6 +298,7 @@ async function requestClaudeFortuneResult({ featureKey, payload, featureRaw }) {
     model: String(response?.data?.model || 'claude-sonnet-4-20250514'),
     sandboxMode: shortMode,
     preparedSystemPrompt: systemPrompt,
+    analysisMode: runtimeConfig.mode,
   };
 }
 
@@ -607,7 +652,31 @@ async function resolvePersonSajuData(loginId, person) {
   return { source, data, targetInfoChanged };
 }
 
-async function buildFeatureResult(featureKey, payload, loginId) {
+async function buildFeatureResult(featureKey, payload, loginId, analysisMode = 'PREMIUM') {
+  const mode = normalizeAnalysisMode(analysisMode);
+  const isTrial = mode === ANALYSIS_MODE_TRIAL;
+  if (isTrial) {
+    const claudeResp = await requestClaudeFortuneResult({
+      featureKey,
+      payload,
+      featureRaw: { trial: true },
+      analysisMode: mode,
+    });
+    const parsedResult = parseClaudeStructuredResult(claudeResp.text, `${FEATURE_MAP[featureKey]?.label || '운세'} 맛보기 요약`);
+    return {
+      resultText: parsedResult.body,
+      summary: parsedResult.summary,
+      noticeMessage: '맛보기 분석 결과입니다. 프리미엄 분석에서 더 자세한 내용을 확인할 수 있습니다.',
+      ablecityMeta: {
+        trialMode: true,
+      },
+      raw: {
+        trial_input: payload,
+      },
+      claude: claudeResp,
+    };
+  }
+
   if (featureKey === 'compatibility') {
     const person1 = {
       name: payload.person1Name,
@@ -637,6 +706,7 @@ async function buildFeatureResult(featureKey, payload, loginId) {
       featureKey,
       payload,
       featureRaw: { person1: p1.data, person2: p2.data },
+      analysisMode: mode,
     });
     const parsedResult = parseClaudeStructuredResult(claudeResp.text, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
     return {
@@ -673,6 +743,7 @@ async function buildFeatureResult(featureKey, payload, loginId) {
     featureKey,
     payload,
     featureRaw: { person1: resolved.data },
+    analysisMode: mode,
   });
   const parsedResult = parseClaudeStructuredResult(claudeResp.text, `${FEATURE_MAP[featureKey]?.label || '운세'} 핵심 요약`);
   return {
@@ -699,6 +770,7 @@ async function processFortuneJob(resultId) {
   if (!record) return;
 
   const payload = record.request || {};
+  const requestConfig = getFortuneRequestConfig(payload.featureKey, payload.analysis_mode);
   const featureKey = normalizeFeature(payload.featureKey);
   const featureMeta = FEATURE_MAP[featureKey];
   const loginId = String(record.loginId || '').trim();
@@ -733,6 +805,7 @@ async function processFortuneJob(resultId) {
         JSON.stringify({
           provider: 'FORTUNE',
           feature_key: featureKey,
+          analysis_mode: requestConfig.mode,
           input: payload,
         }),
         Number(payload?.relative_id || 0)
@@ -742,8 +815,8 @@ async function processFortuneJob(resultId) {
       console.error('[FORTUNE] beginApiRequest(CLAUDE) 실패:', logErr.message);
     }
 
-    const featureResult = await buildFeatureResult(featureKey, payload, loginId);
-    const claudePrompt = String(featureResult?.claude?.preparedSystemPrompt || buildClaudePrompt(featureKey, payload));
+    const featureResult = await buildFeatureResult(featureKey, payload, loginId, requestConfig.mode);
+    const claudePrompt = String(featureResult?.claude?.preparedSystemPrompt || buildClaudePrompt(featureKey, payload, requestConfig.mode));
     const claudeUsage = featureResult?.claude?.usage || {};
     const promptTokens = Number(claudeUsage?.input_tokens || 0);
     const completionTokens = Number(claudeUsage?.output_tokens || 0);
@@ -776,6 +849,7 @@ async function processFortuneJob(resultId) {
           provider: 'CLAUDE',
           model: featureResult?.claude?.model || 'claude-sonnet-4-20250514',
           sandbox_mode: !!featureResult?.claude?.sandboxMode,
+          analysis_mode: requestConfig.mode,
           feature_key: featureKey,
           result_length: String(featureResult?.resultText || '').length,
           usage: claudeUsage,
@@ -805,8 +879,8 @@ async function processFortuneJob(resultId) {
 
     await refundToken({
       loginId,
-      amount: TOKENS_PER_SAJU_REQUEST,
-      referenceType: 'FORTUNE_REQUEST',
+      amount: Number(payload.analysis_token_cost || requestConfig.requiredTokens),
+      referenceType: requestConfig.referenceType,
       referenceId: tokenUsageReferenceId,
       memo: `${featureMeta.label} 실패 자동환불`,
     }).catch((refundErr) => {
@@ -840,7 +914,11 @@ exports.createFortuneRequest = async (req, res) => {
     }
 
     const featureMeta = FEATURE_MAP[featureKey];
-    const guard = await guardSajuService(req);
+    const requestConfig = getFortuneRequestConfig(featureKey, req.body?.analysis_mode);
+    const guard = await guardSajuService(req, {
+      analysisMode: requestConfig.mode,
+      requiredTokens: requestConfig.requiredTokens,
+    });
     if (!guard.ok) {
       return res.status(guard.httpStatus || 403).json({
         resp: 'ERROR',
@@ -854,6 +932,8 @@ exports.createFortuneRequest = async (req, res) => {
     const payload = {
       featureKey,
       featureLabel: featureMeta.label,
+      analysis_mode: requestConfig.mode,
+      analysis_token_cost: requestConfig.requiredTokens,
       submittedAt: new Date().toISOString(),
       ...normalizePayloadByFeature(featureKey, req.body),
     };
@@ -887,11 +967,11 @@ exports.createFortuneRequest = async (req, res) => {
     const tokenUsageReferenceId = buildTokenReferenceId(featureKey);
     const consumeRow = await consumeToken({
       loginId: guard.loginId,
-      amount: TOKENS_PER_SAJU_REQUEST,
-      usageCode: featureMeta.usageCode,
-      referenceType: 'FORTUNE_REQUEST',
+      amount: requestConfig.requiredTokens,
+      usageCode: requestConfig.usageCode,
+      referenceType: requestConfig.referenceType,
       referenceId: tokenUsageReferenceId,
-      memo: `${featureMeta.label} 요청`,
+      memo: `${featureMeta.label} ${requestConfig.isTrial ? '체험' : ''} 요청`.trim(),
     });
 
     if (String(consumeRow?.resp || 'ERROR').toUpperCase() !== 'OK') {
@@ -901,7 +981,7 @@ exports.createFortuneRequest = async (req, res) => {
         resp_message: consumeRow?.resp_message || 'TOKEN_CONSUME_FAILED',
         message: '토큰 차감에 실패했습니다.',
         current_tokens: Number(consumeRow?.current_tokens || 0),
-        required_tokens: TOKENS_PER_SAJU_REQUEST,
+        required_tokens: requestConfig.requiredTokens,
       });
     }
 
@@ -917,10 +997,10 @@ exports.createFortuneRequest = async (req, res) => {
     } catch (createErr) {
       await refundToken({
         loginId: guard.loginId,
-        amount: TOKENS_PER_SAJU_REQUEST,
-        referenceType: 'FORTUNE_REQUEST',
+        amount: requestConfig.requiredTokens,
+        referenceType: requestConfig.referenceType,
         referenceId: tokenUsageReferenceId,
-        memo: `${featureMeta.label} 요청 생성 실패 자동환불`,
+        memo: `${featureMeta.label} ${requestConfig.isTrial ? '체험' : ''} 요청 생성 실패 자동환불`.trim(),
       }).catch(() => {});
       await releaseUserAnalysisSlot({ loginId: guard.loginId, resultId }).catch(() => {});
       throw createErr;
@@ -936,7 +1016,8 @@ exports.createFortuneRequest = async (req, res) => {
       resp: 'OK',
       resp_message: 'REQUEST_ACCEPTED',
       result_id: record.resultId,
-      consumed_tokens: TOKENS_PER_SAJU_REQUEST,
+      consumed_tokens: requestConfig.requiredTokens,
+      analysis_mode: requestConfig.mode,
       current_tokens: Number(consumeRow?.current_tokens || 0),
       status_url: `/api/fortune/${featureKey}/request/${record.resultId}/status`,
       result_url: `/fortune/result/${record.resultId}`,

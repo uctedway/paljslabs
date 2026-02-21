@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title><%= title || '48LAB Manage' %></title>
+  <link rel="stylesheet" href="/css/manage.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+  <div class="manage-shell">
+    <%- include('./partials/sidebar', { activeSub }) %>
+    <main class="manage-main">
+      <section class="manage-dashboard">
+        <h2 class="manage-title">탈퇴 회원</h2>
+        <p class="manage-desc">현재 상태가 WITHDRAWN 인 회원만 표시합니다. 시간은 모두 한국시간(KST) 기준입니다.</p>
+
+        <form method="get" action="/manage/users/withdrawals" class="manage-search-form">
+          <input
+            type="text"
+            name="q"
+            value="<%= withdrawalList?.keyword || '' %>"
+            class="manage-input"
+            placeholder="회원명, 이메일, 로그인ID 검색">
+          <input type="hidden" name="page_size" value="<%= withdrawalList?.pager?.pageSize || 20 %>">
+          <button type="submit" class="manage-btn manage-btn--mid manage-btn--brand">
+            <span class="material-symbols-outlined" style="font-size:18px;">search</span>
+            검색
+          </button>
+        </form>
+
+        <div class="manage-table-block">
+          <h3>검색 결과 <%= Number(withdrawalList?.pager?.totalRows || 0).toLocaleString('ko-KR') %>명</h3>
+          <div class="manage-table-wrap">
+            <table class="manage-table">
+              <thead>
+                <tr>
+                  <th>id</th>
+                  <th>provider</th>
+                  <th>회원명</th>
+                  <th>login_id</th>
+                  <th>email</th>
+                  <th>탈퇴일(KST)</th>
+                  <th>최근변경(KST)</th>
+                  <th>잔여토큰</th>
+                  <th>상태</th>
+                  <th>탈퇴사유</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (withdrawalList?.users || []).forEach(function (u) { %>
+                  <tr>
+                    <td><%= u.id %></td>
+                    <td><%= u.provider || '-' %></td>
+                    <td><%= u.user_name || '-' %></td>
+                    <td><%= u.login_id || '-' %></td>
+                    <td><%= u.email || '-' %></td>
+                    <td><%= u.withdrawn_at_kst || '-' %></td>
+                    <td><%= u.updated_at_kst || '-' %></td>
+                    <td><strong><%= Number(u.token_balance || 0).toLocaleString('ko-KR') %></strong></td>
+                    <td><span class="manage-badge manage-badge--danger"><%= u.status || 'WITHDRAWN' %></span></td>
+                    <td><%= u.withdraw_reason || '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="manage-pager">
+            <% if (withdrawalList?.pager?.hasPrev) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/users/withdrawals?q=<%= encodeURIComponent(withdrawalList.keyword || '') %>&page=<%= withdrawalList.pager.prevPage %>&page_size=<%= withdrawalList.pager.pageSize %>">이전</a>
+            <% } %>
+            <span>페이지 <%= withdrawalList?.pager?.page || 1 %> / <%= withdrawalList?.pager?.totalPages || 1 %></span>
+            <% if (withdrawalList?.pager?.hasNext) { %>
+              <a class="manage-btn manage-btn--small manage-btn--slate" href="/manage/users/withdrawals?q=<%= encodeURIComponent(withdrawalList.keyword || '') %>&page=<%= withdrawalList.pager.nextPage %>&page_size=<%= withdrawalList.pager.pageSize %>">다음</a>
+            <% } %>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -144,6 +144,10 @@ const PROMPT_SCOPE_OPTIONS = [
   { key: 'naming', label: '작명/개명 보조', serviceCode: 'FORTUNE', featureKey: 'naming' },
   { key: 'date-selection', label: '택일', serviceCode: 'FORTUNE', featureKey: 'date-selection' },
 ];
+const PROMPT_MODE_OPTIONS = [
+  { key: 'premium', value: 'PREMIUM', label: '프리미엄 (10토큰)' },
+  { key: 'trial', value: 'TRIAL', label: '맛보기 (3토큰)' },
+];
 
 let promptFileCache = null;
 
@@ -154,6 +158,15 @@ function normalizePromptScope(raw) {
 
 function getPromptScopeMeta(scopeKey) {
   return PROMPT_SCOPE_OPTIONS.find((item) => item.key === scopeKey) || PROMPT_SCOPE_OPTIONS[0];
+}
+
+function normalizePromptMode(raw) {
+  const v = String(raw || '').trim().toLowerCase();
+  return v === 'trial' ? 'trial' : 'premium';
+}
+
+function toPromptModeValue(modeKey) {
+  return modeKey === 'trial' ? 'TRIAL' : 'PREMIUM';
 }
 
 function loadPromptFileDefaults() {
@@ -178,16 +191,33 @@ function loadPromptFileDefaults() {
   return promptFileCache;
 }
 
-function buildDefaultSystemPromptByScope(serviceCode, featureKey, toneKey) {
+function buildDefaultSystemPromptByScope(serviceCode, featureKey, toneKey, modeValue = 'PREMIUM') {
   try {
     const defaults = loadPromptFileDefaults();
+    const isTrial = String(modeValue || '').toUpperCase() === 'TRIAL';
     if (serviceCode === 'SAJU') {
+      if (isTrial) {
+        return [
+          '당신은 사주 맛보기 분석 도우미입니다.',
+          '입력된 생년월일시와 성별만으로 핵심 흐름을 짧게 설명하세요.',
+          '출력은 반드시 JSON 객체(summary, body)만 반환하세요.',
+          'summary는 120자 이내, body는 5문장 이내로 작성하세요.',
+        ].join('\n');
+      }
       return String(defaults.sajuBase || '').trim();
     }
     if (serviceCode === 'SAJU_TONE') {
       return '';
     }
     const typePrompt = defaults.fortuneFeatures[featureKey] || defaults.fortuneFeatures.today || '';
+    if (isTrial) {
+      return [
+        `당신은 ${PROMPT_SCOPE_OPTIONS.find((it) => it.serviceCode === serviceCode && it.featureKey === featureKey)?.label || '운세'} 맛보기 분석 도우미입니다.`,
+        '입력 정보만 바탕으로 아주 간단한 요약을 제공합니다.',
+        '출력은 반드시 JSON 객체(summary, body)만 반환하세요.',
+        'summary는 120자 이내, body는 5문장 이내로 작성하세요.',
+      ].join('\n');
+    }
     return `${defaults.fortuneBase}\n\n# 분석 타입\n${typePrompt}`.trim();
   } catch (err) {
     console.error('[MANAGE PROMPT DEFAULT LOAD ERROR]', err.message);
@@ -577,16 +607,69 @@ async function loadUserList({ keyword, page, pageSize }) {
   };
 }
 
-async function loadPromptTemplate({ serviceCode, featureKey, toneKey }) {
+async function loadWithdrawnUserList({ keyword, page, pageSize }) {
+  const q = String(keyword || '').trim();
+  const qLike = db.convertQ(q);
+  const whereSql = q
+    ? `
+      AND (
+        u.login_id LIKE '%${qLike}%'
+        OR u.email LIKE '%${qLike}%'
+        OR ISNULL(u.user_name, N'') LIKE N'%${qLike}%'
+      )
+    `
+    : '';
+
+  const countRows = await db.query(`
+    SELECT COUNT(*) AS total_rows
+    FROM dbo.PJ_TB_USERS u WITH (NOLOCK)
+    WHERE u.[status] = 'WITHDRAWN'
+    ${whereSql}
+  `);
+  const pager = buildPager({ totalRows: countRows?.[0]?.total_rows, page, pageSize });
+
+  const users = await db.query(`
+    SELECT
+      u.id,
+      u.provider,
+      u.login_id,
+      u.email,
+      u.user_name,
+      u.token_balance,
+      u.[status],
+      u.withdraw_reason,
+      u.withdrawn_at,
+      u.updated_at
+    FROM dbo.PJ_TB_USERS u WITH (NOLOCK)
+    WHERE u.[status] = 'WITHDRAWN'
+    ${whereSql}
+    ORDER BY u.withdrawn_at DESC, u.id DESC
+    OFFSET ${pager.offset} ROWS FETCH NEXT ${pager.pageSize} ROWS ONLY
+  `);
+
+  return {
+    keyword: q,
+    pager,
+    users: (Array.isArray(users) ? users : []).map((row) => ({
+      ...row,
+      withdrawn_at_kst: formatKstDateTime(row.withdrawn_at),
+      updated_at_kst: formatKstDateTime(row.updated_at),
+    })),
+  };
+}
+
+async function loadPromptTemplate({ serviceCode, featureKey, toneKey, analysisMode = 'PREMIUM' }) {
   const qService = db.convertQ(serviceCode);
   const qFeature = db.convertQ(featureKey || '');
   const qTone = db.convertQ(toneKey || '');
+  const qMode = db.convertQ(String(analysisMode || 'PREMIUM').toUpperCase());
   const rs = await db.query(`
     SELECT TOP 1
       prompt_no,
       service_code,
       feature_key,
       tone_key,
+      analysis_mode,
       system_prompt,
       user_prompt_guide,
       updated_at
@@ -594,6 +677,7 @@ async function loadPromptTemplate({ serviceCode, featureKey, toneKey }) {
     WHERE service_code = '${qService}'
       AND ISNULL(feature_key, '') = '${qFeature}'
       AND ISNULL(tone_key, '') = '${qTone}'
+      AND ISNULL(analysis_mode, 'PREMIUM') = '${qMode}'
       AND is_active = 1
     ORDER BY updated_at DESC, prompt_no DESC
   `);
@@ -617,12 +701,14 @@ const promptsPage = async (req, res) => {
   try {
     const manageAdmin = await loadCurrentManageAdmin(req);
     const scopeKey = normalizePromptScope(req.query?.scope);
+    const modeKey = normalizePromptMode(req.query?.mode);
+    const analysisMode = toPromptModeValue(modeKey);
     const scopeMeta = getPromptScopeMeta(scopeKey);
     const serviceCode = scopeMeta.serviceCode;
     const featureKey = scopeMeta.featureKey;
     const toneKey = '';
-    const row = await loadPromptTemplate({ serviceCode, featureKey, toneKey });
-    const defaultSystemPrompt = buildDefaultSystemPromptByScope(serviceCode, featureKey, toneKey);
+    const row = await loadPromptTemplate({ serviceCode, featureKey, toneKey, analysisMode });
+    const defaultSystemPrompt = buildDefaultSystemPromptByScope(serviceCode, featureKey, toneKey, analysisMode);
     const systemPrompt = String(row?.system_prompt || '').trim() || defaultSystemPrompt;
     const userPromptGuide = String(row?.user_prompt_guide || '').trim();
     const tonePromptMap = serviceCode === 'SAJU_TONE'
@@ -644,11 +730,14 @@ const promptsPage = async (req, res) => {
       activeMain: 'admin',
       activeSub: 'prompts',
       scopeKey,
+      modeKey,
+      analysisMode,
       serviceCode,
       featureKey,
       promptMeta: {
         scopeOptions: PROMPT_SCOPE_OPTIONS,
         toneOptions: PROMPT_TONE_OPTIONS,
+        modeOptions: PROMPT_MODE_OPTIONS,
       },
       promptData: {
         promptNo: Number(row?.prompt_no || 0),
@@ -659,8 +748,8 @@ const promptsPage = async (req, res) => {
         applyScopeText: serviceCode === 'SAJU_TONE'
           ? '상담톤은 모든 서비스에서 공통으로 참조됩니다.'
           : serviceCode === 'SAJU'
-          ? '사주 공통 시스템 프롬프트입니다. 상담톤은 "상담톤" 메뉴에서 별도 관리합니다.'
-          : '현재 선택한 운세 서비스에만 적용됩니다.',
+          ? `${analysisMode === 'TRIAL' ? '사주 맛보기(3토큰)' : '사주 프리미엄(10토큰)'} 시스템 프롬프트입니다. 상담톤은 "상담톤" 메뉴에서 별도 관리합니다.`
+          : `현재 선택한 운세 서비스의 ${analysisMode === 'TRIAL' ? '맛보기(3토큰)' : '프리미엄(10토큰)'} 분석에만 적용됩니다.`,
         tonePromptMap,
         defaultTonePromptMap,
       },
@@ -675,10 +764,12 @@ const promptsPage = async (req, res) => {
 
 const savePrompt = async (req, res) => {
   const scopeKey = normalizePromptScope(req.body?.scope_key);
+  const modeKey = normalizePromptMode(req.body?.mode_key);
+  const analysisMode = toPromptModeValue(modeKey);
   const scopeMeta = getPromptScopeMeta(scopeKey);
   const serviceCode = scopeMeta.serviceCode;
   const featureKey = scopeMeta.featureKey;
-  const redirectBase = `/manage/prompts?scope=${encodeURIComponent(scopeKey)}`;
+  const redirectBase = `/manage/prompts?scope=${encodeURIComponent(scopeKey)}&mode=${encodeURIComponent(modeKey)}`;
 
   try {
     const manageAdmin = req.session?.manageAdmin || {};
@@ -696,6 +787,7 @@ const savePrompt = async (req, res) => {
     const qSystemPrompt = db.convertQ(systemPrompt);
     const qUserPromptGuide = db.convertQ(userPromptGuide);
     const qAdminId = db.convertQ(adminId);
+    const qAnalysisMode = db.convertQ(analysisMode);
     const toneScopes = [''];
     let totalAffected = 0;
 
@@ -713,6 +805,7 @@ const savePrompt = async (req, res) => {
             @service_code='SAJU_TONE',
             @feature_key='',
             @tone_key='${qTone}',
+            @analysis_mode='PREMIUM',
             @system_prompt=N'${qTonePrompt}',
             @user_prompt_guide=N'',
             @updated_by='${qAdminId}'
@@ -724,7 +817,7 @@ const savePrompt = async (req, res) => {
             targetType: 'PROMPT',
             targetId: `SAJU_TONE:${toneScope}`,
             resultStatus: 'FAILED',
-            requestData: { scopeKey, toneScope },
+            requestData: { scopeKey, toneScope, analysisMode: 'PREMIUM' },
             responseData: { reason: toneRow.resp_message || 'TONE_NOT_UPDATED' },
           });
           return res.redirect(`${redirectBase}&error=failed`);
@@ -739,6 +832,7 @@ const savePrompt = async (req, res) => {
             @service_code='${qService}',
             @feature_key='${qFeature}',
             @tone_key='${qTone}',
+            @analysis_mode='${qAnalysisMode}',
             @system_prompt=N'${qSystemPrompt}',
             @user_prompt_guide=N'${qUserPromptGuide}',
             @updated_by='${qAdminId}'
@@ -748,9 +842,9 @@ const savePrompt = async (req, res) => {
           await writeManageActionLog(req, {
             actionCode: 'PROMPT_TEMPLATE_SAVE',
             targetType: 'PROMPT',
-            targetId: `${scopeKey}:${toneScope || '-'}`,
+            targetId: `${scopeKey}:${analysisMode}:${toneScope || '-'}`,
             resultStatus: 'FAILED',
-            requestData: { scopeKey, serviceCode, featureKey, toneScope },
+            requestData: { scopeKey, serviceCode, featureKey, toneScope, analysisMode },
             responseData: { reason: row.resp_message || 'NOT_UPDATED' },
           });
           return res.redirect(`${redirectBase}&error=failed`);
@@ -763,12 +857,13 @@ const savePrompt = async (req, res) => {
     await writeManageActionLog(req, {
       actionCode: 'PROMPT_TEMPLATE_SAVE',
       targetType: 'PROMPT',
-      targetId: `${scopeKey}:${serviceCode === 'SAJU_TONE' ? 'ALL_TONES' : '-'}`,
+      targetId: `${scopeKey}:${serviceCode === 'SAJU_TONE' ? 'ALL_TONES' : analysisMode}`,
       resultStatus: 'SUCCESS',
       requestData: {
         scopeKey,
         serviceCode,
         featureKey,
+        analysisMode: serviceCode === 'SAJU_TONE' ? 'PREMIUM' : analysisMode,
         toneScopes: serviceCode === 'SAJU_TONE' ? PROMPT_TONE_OPTIONS.map((it) => it.key) : toneScopes,
         systemLength: systemPrompt.length,
         guideLength: userPromptGuide.length,
@@ -781,9 +876,9 @@ const savePrompt = async (req, res) => {
     await writeManageActionLog(req, {
       actionCode: 'PROMPT_TEMPLATE_SAVE',
       targetType: 'PROMPT',
-      targetId: `${scopeKey}:${serviceCode === 'SAJU_TONE' ? 'ALL_TONES' : '-'}`,
+      targetId: `${scopeKey}:${serviceCode === 'SAJU_TONE' ? 'ALL_TONES' : analysisMode}`,
       resultStatus: 'FAILED',
-      requestData: { scopeKey, serviceCode, featureKey },
+      requestData: { scopeKey, serviceCode, featureKey, analysisMode },
       responseData: { error: err.message || 'PROMPT SAVE FAILED' },
     });
     return res.redirect(`${redirectBase}&error=failed`);
@@ -922,6 +1017,27 @@ const usersPage = async (req, res) => {
     });
   } catch (err) {
     console.error('[MANAGE USERS PAGE ERROR]', err.message);
+    return res.redirect('/manage');
+  }
+};
+
+const userWithdrawalsPage = async (req, res) => {
+  try {
+    const manageAdmin = await loadCurrentManageAdmin(req);
+    const keyword = String(req.query?.q || '').trim();
+    const page = parsePositiveInt(req.query?.page, 1, 100000);
+    const pageSize = parsePositiveInt(req.query?.page_size, 20, 100);
+    const withdrawalList = await loadWithdrawnUserList({ keyword, page, pageSize });
+    return res.render('manage/pages/user_withdrawals', {
+      layout: false,
+      title: '48LAB Manage Withdrawals',
+      manageAdmin,
+      activeMain: 'members',
+      activeSub: 'withdrawals',
+      withdrawalList,
+    });
+  } catch (err) {
+    console.error('[MANAGE WITHDRAWALS PAGE ERROR]', err.message);
     return res.redirect('/manage');
   }
 };
@@ -1251,6 +1367,7 @@ module.exports = {
   callMonitoringPage,
   tokenMonitoringPage,
   usersPage,
+  userWithdrawalsPage,
   promptsPage,
   savePrompt,
   userDetailApi,

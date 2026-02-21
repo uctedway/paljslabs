@@ -11,6 +11,7 @@ router.get('/', requireManageAuth, controller.dashboard);
 router.get('/monitoring/calls', requireManageAuth, controller.callMonitoringPage);
 router.get('/monitoring/tokens', requireManageAuth, controller.tokenMonitoringPage);
 router.get('/users', requireManageAuth, controller.usersPage);
+router.get('/users/withdrawals', requireManageAuth, controller.userWithdrawalsPage);
 router.get('/prompts', requireManageAuth, controller.promptsPage);
 router.post('/prompts', requireManageAuth, controller.savePrompt);
 router.get('/users/:loginId/detail', requireManageAuth, controller.userDetailApi);

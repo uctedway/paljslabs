@@ -441,6 +441,7 @@ BEGIN
 		[service_code] [varchar](20) NOT NULL,
 		[feature_key] [varchar](40) NULL,
 		[tone_key] [varchar](40) NULL,
+		[analysis_mode] [varchar](20) NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_MODE] DEFAULT ('PREMIUM'),
 		[system_prompt] [nvarchar](max) NOT NULL,
 		[user_prompt_guide] [nvarchar](max) NULL,
 		[is_active] [bit] NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_ACTIVE] DEFAULT ((1)),
@@ -449,6 +450,29 @@ BEGIN
 		[updated_at] [datetime2](0) NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_UPDATED] DEFAULT (sysdatetime()),
 	 CONSTRAINT [PK_PJ_TB_PROMPT_TEMPLATES] PRIMARY KEY CLUSTERED ([prompt_no] ASC)
 	);
+END
+GO
+
+IF COL_LENGTH('dbo.PJ_TB_PROMPT_TEMPLATES', 'analysis_mode') IS NULL
+BEGIN
+	ALTER TABLE dbo.PJ_TB_PROMPT_TEMPLATES
+	ADD [analysis_mode] VARCHAR(20) NOT NULL CONSTRAINT [DF_PJ_TB_PROMPT_TEMPLATES_MODE] DEFAULT ('PREMIUM');
+END
+GO
+
+UPDATE dbo.PJ_TB_PROMPT_TEMPLATES
+SET analysis_mode = 'PREMIUM'
+WHERE analysis_mode IS NULL OR LTRIM(RTRIM(analysis_mode)) = '';
+GO
+
+IF EXISTS (
+	SELECT 1
+	FROM sys.indexes
+	WHERE object_id = OBJECT_ID('dbo.PJ_TB_PROMPT_TEMPLATES')
+	  AND name = 'UX_PJ_TB_PROMPT_TEMPLATES_SCOPE'
+)
+BEGIN
+	DROP INDEX [UX_PJ_TB_PROMPT_TEMPLATES_SCOPE] ON [dbo].[PJ_TB_PROMPT_TEMPLATES];
 END
 GO
 
@@ -463,7 +487,8 @@ BEGIN
 	ON [dbo].[PJ_TB_PROMPT_TEMPLATES] (
 		[service_code] ASC,
 		[feature_key] ASC,
-		[tone_key] ASC
+		[tone_key] ASC,
+		[analysis_mode] ASC
 	);
 END
 GO
@@ -477,7 +502,7 @@ IF NOT EXISTS (
 BEGIN
 	CREATE NONCLUSTERED INDEX [IX_PJ_TB_PROMPT_TEMPLATES_UPDATED]
 	ON [dbo].[PJ_TB_PROMPT_TEMPLATES] ([updated_at] DESC)
-	INCLUDE ([service_code], [feature_key], [tone_key], [is_active], [updated_by]);
+	INCLUDE ([service_code], [feature_key], [tone_key], [analysis_mode], [is_active], [updated_by]);
 END
 GO
 

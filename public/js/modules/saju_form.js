@@ -42,6 +42,18 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 		return v.slice(0, 8);
 	}
 
+	function askTrialFallback(currentTokens, trialRequired = 3) {
+		const current = Number(currentTokens || 0);
+		if (!Number.isFinite(current) || current < trialRequired) {
+			alert('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.');
+			window.location.href = '/user/billing';
+			return false;
+		}
+		return window.confirm(
+			`프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
+		);
+	}
+
 	sajuTargets = (sajuTargets || []).map((target) => ({
 		...target,
 		label: normalizeTargetLabel(target.label),
@@ -173,8 +185,9 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 		try {
 			const formData = new FormData(form);
 			const payload = Object.fromEntries(formData.entries());
+			payload.analysis_mode = 'PREMIUM';
 
-			const response = await fetch('/api/saju/request', {
+			let response = await fetch('/api/saju/request', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -182,7 +195,31 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 				body: JSON.stringify(payload),
 				credentials: 'same-origin'
 			});
-			const json = await response.json();
+			let json = await response.json();
+
+			if (!response.ok || json.resp !== 'OK') {
+				if (response.status === 402) {
+					const wantsTrial = askTrialFallback(json.current_tokens, 3);
+					if (wantsTrial) {
+						payload.analysis_mode = 'TRIAL';
+						response = await fetch('/api/saju/request', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify(payload),
+							credentials: 'same-origin'
+						});
+						json = await response.json();
+					} else {
+						GlobalLoading.hide();
+						if (Number(json.current_tokens || 0) >= 3) {
+							window.location.href = '/user/billing';
+						}
+						return;
+					}
+				}
+			}
 
 			if (!response.ok || json.resp !== 'OK') {
 				GlobalLoading.hide();

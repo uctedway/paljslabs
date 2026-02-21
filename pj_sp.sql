@@ -354,7 +354,8 @@ CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SELECT_PROMPT_TEMPLATE]
 (
 	@service_code VARCHAR(20) = '',
 	@feature_key  VARCHAR(40) = '',
-	@tone_key     VARCHAR(40) = ''
+	@tone_key     VARCHAR(40) = '',
+	@analysis_mode VARCHAR(20) = 'PREMIUM'
 )
 AS
 BEGIN
@@ -379,6 +380,7 @@ BEGIN
 		service_code,
 		feature_key,
 		tone_key,
+		analysis_mode,
 		system_prompt,
 		user_prompt_guide,
 		is_active,
@@ -389,6 +391,7 @@ BEGIN
 	WHERE service_code = @service_code
 	  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
 	  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '')
+	  AND ISNULL(analysis_mode, 'PREMIUM') = ISNULL(NULLIF(@analysis_mode, ''), 'PREMIUM')
 	  AND is_active = 1
 	ORDER BY updated_at DESC, prompt_no DESC;
 
@@ -411,6 +414,7 @@ CREATE OR ALTER PROCEDURE [dbo].[PJ_USP_SAVE_PROMPT_TEMPLATE]
 	@service_code      VARCHAR(20)   = '',
 	@feature_key       VARCHAR(40)   = '',
 	@tone_key          VARCHAR(40)   = '',
+	@analysis_mode     VARCHAR(20)   = 'PREMIUM',
 	@system_prompt     NVARCHAR(MAX) = N'',
 	@user_prompt_guide NVARCHAR(MAX) = N'',
 	@updated_by        VARCHAR(100)  = ''
@@ -442,6 +446,7 @@ BEGIN
 			WHERE service_code = @service_code
 			  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
 			  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '')
+			  AND ISNULL(analysis_mode, 'PREMIUM') = ISNULL(NULLIF(@analysis_mode, ''), 'PREMIUM')
 		)
 		BEGIN
 			UPDATE dbo.PJ_TB_PROMPT_TEMPLATES
@@ -453,7 +458,8 @@ BEGIN
 				updated_at = SYSDATETIME()
 			WHERE service_code = @service_code
 			  AND ISNULL(feature_key, '') = ISNULL(@feature_key, '')
-			  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '');
+			  AND ISNULL(tone_key, '') = ISNULL(@tone_key, '')
+			  AND ISNULL(analysis_mode, 'PREMIUM') = ISNULL(NULLIF(@analysis_mode, ''), 'PREMIUM');
 		END
 		ELSE
 		BEGIN
@@ -462,6 +468,7 @@ BEGIN
 				service_code,
 				feature_key,
 				tone_key,
+				analysis_mode,
 				system_prompt,
 				user_prompt_guide,
 				is_active,
@@ -474,6 +481,7 @@ BEGIN
 				@service_code,
 				NULLIF(@feature_key, ''),
 				NULLIF(@tone_key, ''),
+				ISNULL(NULLIF(@analysis_mode, ''), 'PREMIUM'),
 				@system_prompt,
 				@user_prompt_guide,
 				1,

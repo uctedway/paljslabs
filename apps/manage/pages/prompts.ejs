@@ -27,7 +27,7 @@
           <div class="manage-inline-subnav">
             <% (promptMeta?.scopeOptions || []).forEach(function (it) { %>
               <a
-                href="/manage/prompts?scope=<%= encodeURIComponent(it.key) %>"
+                href="/manage/prompts?scope=<%= encodeURIComponent(it.key) %><%= scopeKey === 'tone' || it.key === 'tone' ? '' : '&mode=' + encodeURIComponent(modeKey || 'premium') %>"
                 class="manage-btn manage-btn--small <%= scopeKey === it.key ? 'manage-btn--brand' : 'manage-btn--slate' %>"><%= it.label %></a>
             <% }) %>
           </div>
@@ -36,6 +36,17 @@
         <form method="post" action="/manage/prompts" class="manage-table-block">
           <h3>프롬프트 편집</h3>
           <input type="hidden" name="scope_key" value="<%= scopeKey %>">
+          <input type="hidden" name="mode_key" value="<%= modeKey || 'premium' %>">
+
+          <% if (scopeKey !== 'tone') { %>
+            <div class="manage-inline-subnav" style="margin-bottom:10px;">
+              <% (promptMeta?.modeOptions || []).forEach(function (mode) { %>
+                <a
+                  href="/manage/prompts?scope=<%= encodeURIComponent(scopeKey) %>&mode=<%= encodeURIComponent(mode.key) %>"
+                  class="manage-btn manage-btn--small <%= (modeKey || 'premium') === mode.key ? 'manage-btn--brand' : 'manage-btn--slate' %>"><%= mode.label %></a>
+              <% }) %>
+            </div>
+          <% } %>
 
           <p class="manage-desc">마지막 수정: <strong><%= promptData?.updatedAtKst || '-' %></strong></p>
           <p class="manage-desc"><strong><%= promptData?.applyScopeText || '' %></strong></p>
@@ -78,7 +89,7 @@
               저장
             </button>
             <a
-              href="/manage/prompts?scope=<%= encodeURIComponent(scopeKey) %>"
+              href="/manage/prompts?scope=<%= encodeURIComponent(scopeKey) %><%= scopeKey === 'tone' ? '' : '&mode=' + encodeURIComponent(modeKey || 'premium') %>"
               class="manage-btn manage-btn--mid manage-btn--slate">새로고침</a>
           </div>
         </form>
