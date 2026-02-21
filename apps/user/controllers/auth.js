@@ -394,7 +394,11 @@ function buildAppleClientSecret() {
   const signer = crypto.createSign('sha256');
   signer.update(data);
   signer.end();
-  const signature = signer.sign(privateKey);
+  // ES256 JWT signature must be JOSE-compatible R||S (P1363), not DER ASN.1.
+  const signature = signer.sign({ key: privateKey, dsaEncoding: 'ieee-p1363' });
+  if (!signature || signature.length !== 64) {
+    throw new Error('APPLE_CLIENT_SECRET_SIGN_FORMAT_INVALID');
+  }
   const encodedSig = signature.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   console.info('[APPLE CLIENT SECRET BUILT]', {
     team_id_tail: teamId ? teamId.slice(-4) : '(empty)',
