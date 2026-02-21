@@ -3,7 +3,36 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><%= typeof title !== 'undefined' ? title : '48LAB' %></title>
+	<%
+		const pageSeo = (typeof seo !== 'undefined' && seo) ? seo : {};
+		const pageTitle = String(pageSeo.title || title || '48LAB');
+		const pageDescription = String(pageSeo.description || '48LAB 서비스');
+		const pageKeywords = String(pageSeo.keywords || '');
+		const pageCanonical = String(pageSeo.canonical || '');
+		const pageRobots = String(pageSeo.robots || 'index, follow');
+		const pageImage = String(pageSeo.image || '');
+		const pageStructuredData = Array.isArray(pageSeo.structuredData) ? pageSeo.structuredData : [];
+	%>
+	<title><%= pageTitle %></title>
+	<meta name="description" content="<%= pageDescription %>">
+	<% if (pageKeywords) { %><meta name="keywords" content="<%= pageKeywords %>"><% } %>
+	<meta name="robots" content="<%= pageRobots %>">
+	<meta property="og:locale" content="ko_KR">
+	<meta property="og:type" content="<%= String(pageSeo.ogType || 'website') %>">
+	<meta property="og:site_name" content="48LAB">
+	<meta property="og:title" content="<%= pageTitle %>">
+	<meta property="og:description" content="<%= pageDescription %>">
+	<% if (pageCanonical) { %>
+	<link rel="canonical" href="<%= pageCanonical %>">
+	<meta property="og:url" content="<%= pageCanonical %>">
+	<% } %>
+	<% if (pageImage) { %>
+	<meta property="og:image" content="<%= pageImage %>">
+	<meta name="twitter:image" content="<%= pageImage %>">
+	<% } %>
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="<%= pageTitle %>">
+	<meta name="twitter:description" content="<%= pageDescription %>">
 	<script>
 	(function () {
 		try {
@@ -16,6 +45,9 @@
 	</script>
 	<link rel="stylesheet" href="/css/style.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+	<% pageStructuredData.forEach((schema) => { %>
+	<script type="application/ld+json"><%- JSON.stringify(schema) %></script>
+	<% }) %>
 </head>
 <body>
 	<div class="container">

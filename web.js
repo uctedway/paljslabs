@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 const { createClient } = require('redis');
+const { buildSeo } = require('./apps/core/utils/seo');
 let sass = null;
 try {
   // Render production 배포에서는 devDependencies가 설치되지 않을 수 있습니다.
@@ -141,6 +142,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session ? req.session.user : null;
   res.locals.manageAdmin = req.session ? req.session.manageAdmin : null;
   res.locals.buildLabel = BUILD_LABEL;
+  res.locals.seo = buildSeo(req);
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
@@ -177,7 +179,14 @@ app.use('/manage', manageRoutes);
 // Error handling
 // ============================================
 app.use((req, res, next) => {
-    res.status(404).send('페이지를 찾을 수 없습니다.');
+    res.status(404).render('home/pages/not_found', {
+      title: '404 - 페이지를 찾을 수 없습니다',
+      seo: buildSeo(req, {
+        title: '404 - 페이지를 찾을 수 없습니다 | 48LAB',
+        description: '요청하신 페이지를 찾을 수 없습니다. 48LAB 홈에서 다시 탐색해 주세요.',
+        noindex: true,
+      }),
+    });
 });
 
 app.use((err, req, res, next) => {
