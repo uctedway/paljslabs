@@ -63,6 +63,9 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
   const authIntent = normalizeAuthIntent(intent);
   const sessionRow = await loadUserSessionRow(provider, login_id);
   const sessionResp = String(sessionRow.resp || 'ERROR').toUpperCase();
+  const sessionRowId = Number(sessionRow.id || 0);
+  const sessionRowLoginId = String(sessionRow.login_id || '').trim();
+  const sessionRowProvider = String(sessionRow.provider || '').trim();
   if (sessionResp === 'OK') {
     if (authIntent === 'register') {
       return {
@@ -78,8 +81,13 @@ async function resolveAuthUser({ provider, login_id, email, user_name, referralC
     };
   }
 
-  const sessionMessage = String(sessionRow.resp_message || '').toUpperCase();
-  if (sessionMessage !== 'USER NOT FOUND') {
+  const sessionMessage = String(sessionRow.resp_message || '').trim().toUpperCase();
+  const isUserNotFound = (
+    sessionMessage === 'USER NOT FOUND'
+    || sessionMessage.includes('NOT FOUND')
+    || (sessionRowId <= 0 && !sessionRowLoginId && !sessionRowProvider)
+  );
+  if (!isUserNotFound) {
     return {
       ok: false,
       stage: 'session',
