@@ -6,9 +6,6 @@
 	  <p class="login-kicker">48LAB ACCOUNT</p>
 	  <h1 class="login-title"><%= mode === 'register' ? '48LAB 회원가입' : '48LAB 로그인' %></h1>
 	  <p class="login-lead">원하는 소셜 계정으로 빠르게 시작하세요.</p>
-	  <% if (loginErrorMessage) { %>
-		<p class="login-error"><%= loginErrorMessage %></p>
-	  <% } %>
 	  <% if (mode === 'register') { %>
 		<section class="signup-consent-section">
 		  <h2 class="signup-consent-title">회원가입 약관 동의</h2>
@@ -95,6 +92,10 @@
 		window.socialAuthIntent = '<%= mode %>';
 		window.googleHandleCredentialResponse = googleHandleCredentialResponse;
 		initSignupConsentGate();
+		const loginErrorMessage = <%- JSON.stringify(String(loginErrorMessage || '')) %>;
+		if (loginErrorMessage && window.AppToast && typeof window.AppToast.show === 'function') {
+			window.AppToast.show(loginErrorMessage, { type: 'warning', duration: 2800 });
+		}
 	  </script>
 	</div>
   </section>

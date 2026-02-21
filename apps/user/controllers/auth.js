@@ -232,6 +232,37 @@ function getAppleDebugContext(req) {
   };
 }
 
+function readCookie(req, name) {
+  const target = String(name || '').trim();
+  if (!target) return '';
+  const rawCookie = String(req?.headers?.cookie || '');
+  if (!rawCookie) return '';
+  const pairs = rawCookie.split(';');
+  for (const pair of pairs) {
+    const idx = pair.indexOf('=');
+    if (idx < 0) continue;
+    const key = pair.slice(0, idx).trim();
+    if (key !== target) continue;
+    const value = pair.slice(idx + 1).trim();
+    try {
+      return decodeURIComponent(value);
+    } catch (e) {
+      return value;
+    }
+  }
+  return '';
+}
+
+function getAppleStateCookieOptions() {
+  const isProd = String(process.env.NODE_ENV || '').trim() === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/user',
+  };
+}
+
 function buildNaverAuthorizeUrl(req, state) {
   const clientId = String(process.env.NAVER_LOGIN_CLIENT_ID || '').trim();
   if (!clientId) return '';
@@ -798,15 +829,26 @@ const appleAuthCallback = async (req, res) => {
     }
     const code = String(req.body?.code || req.query?.code || '').trim();
     const state = String(req.body?.state || req.query?.state || '').trim();
-    const expectedState = String(req.session?.appleLoginState || '').trim();
+    const expectedStateFromSession = String(req.session?.appleLoginState || '').trim();
+    const expectedStateFromCookie = String(readCookie(req, 'apple_login_state') || '').trim();
+    const expectedState = expectedStateFromSession || expectedStateFromCookie;
     console.info('[APPLE CALLBACK RECEIVED]', {
       ...getAppleDebugContext(req),
       has_code: !!code,
       has_state: !!state,
       has_expected_state: !!expectedState,
+      has_expected_state_session: !!expectedStateFromSession,
+      has_expected_state_cookie: !!expectedStateFromCookie,
       auth_intent: authIntent,
     });
     if (!code || !state || !expectedState || state !== expectedState) {
+      res.clearCookie('apple_login_state', getAppleStateCookieOptions());
+      console.warn('[APPLE STATE MISMATCH]', {
+        has_code: !!code,
+        has_state: !!state,
+        state_prefix: state.slice(0, 8),
+        expected_prefix: expectedState.slice(0, 8),
+      });
       return res.redirect(`${fallbackPath}?error=apple_state`);
     }
 
@@ -841,6 +883,7 @@ const appleAuthCallback = async (req, res) => {
     delete req.session.signupConsentAgreed;
     delete req.session.appleLoginState;
     delete req.session.appleAuthIntent;
+    res.clearCookie('apple_login_state', getAppleStateCookieOptions());
     await setUserSession(req, authResult.row);
     if (!authResult.isNew) {
       delete req.session.welcomeContext;
