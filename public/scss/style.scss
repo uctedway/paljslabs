@@ -200,6 +200,14 @@ html.theme-dark .header {
     border-bottom-color: #253247;
 }
 
+html.theme-dark .header .logo .theme-logo-light {
+    display: none;
+}
+
+html.theme-dark .header .logo .theme-logo-dark {
+    display: block;
+}
+
 html.theme-dark .header .desktop-shortcuts a,
 html.theme-dark .header .desktop-shortcuts .desktop-user-name,
 html.theme-dark .header .desktop-shortcuts .theme-toggle-btn,

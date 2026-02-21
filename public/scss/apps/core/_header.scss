@@ -23,10 +23,14 @@
 			display: inline-flex;
 			align-items: center;
 			
-			img {
+			.theme-logo {
 				display: block;
 				height: 40px;
 				width: auto;
+			}
+
+			.theme-logo-dark {
+				display: none;
 			}
 			
 			&:hover {
@@ -272,7 +276,7 @@
 		.logo {
 			min-width: 0;
 
-			a img {
+			a .theme-logo {
 				height: 32px;
 			}
 		}

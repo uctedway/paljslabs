@@ -23,10 +23,13 @@
   display: inline-flex;
   align-items: center;
 }
-.header .logo a img {
+.header .logo a .theme-logo {
   display: block;
   height: 40px;
   width: auto;
+}
+.header .logo a .theme-logo-dark {
+  display: none;
 }
 .header .logo a:hover {
   color: var(--color-primary-dark);
@@ -239,7 +242,7 @@
   .header .logo {
     min-width: 0;
   }
-  .header .logo a img {
+  .header .logo a .theme-logo {
     height: 32px;
   }
   .header .analysis-status-badge {
@@ -3381,6 +3384,14 @@ html.theme-dark .header {
   border-bottom-color: #253247;
 }
 
+html.theme-dark .header .logo .theme-logo-light {
+  display: none;
+}
+
+html.theme-dark .header .logo .theme-logo-dark {
+  display: block;
+}
+
 html.theme-dark .header .desktop-shortcuts a,
 html.theme-dark .header .desktop-shortcuts .desktop-user-name,
 html.theme-dark .header .desktop-shortcuts .theme-toggle-btn,
@@ -3782,5 +3793,3 @@ html.theme-dark #fortuneForm .btn-manage-relative:hover {
     border-color: rgba(148, 163, 184, 0.22);
   }
 }
-
-/*# sourceMappingURL=style.css.map */
