@@ -3,7 +3,7 @@
   <div class="hero-slider swiper" id="heroSlider">
     <div class="swiper-wrapper">
       <article class="hero-slide swiper-slide" data-theme="saju">
-        <div class="hero-slide-bg"></div>
+        <div class="hero-slide-bg <%= locale === 'en' ? 'hero-slide-bg-saju-en' : '' %>"></div>
         <div class="hero-slide-content">
           <p class="hero-kicker">48LAB</p>
           <h2><%- L('당신의 흐름을 읽는<br>프리미엄 사주 분석', 'Premium Saju analysis<br>to read your flow') %></h2>

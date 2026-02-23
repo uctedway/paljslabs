@@ -1,0 +1,46 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1220"/>
+      <stop offset="0.5" stop-color="#15253B"/>
+      <stop offset="1" stop-color="#23374D"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1390 250) rotate(90) scale(300)">
+      <stop stop-color="#EEC885" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#EEC885" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="hanji" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.55" fill="#F7E6C4" fill-opacity="0.1"/>
+      <circle cx="8" cy="10" r="0.45" fill="#F7E6C4" fill-opacity="0.08"/>
+      <circle cx="13" cy="5" r="0.5" fill="#F7E6C4" fill-opacity="0.09"/>
+    </pattern>
+    <linearGradient id="ground" x1="0" y1="0" x2="1920" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D65A44" stop-opacity="0.48"/>
+      <stop offset="0.52" stop-color="#E6C88F" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#2E6A7D" stop-opacity="0.45"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#hanji)"/>
+  <circle cx="1390" cy="250" r="300" fill="url(#sun)"/>
+
+  <g opacity="0.35">
+    <circle cx="360" cy="260" r="120" stroke="#E6C98D" stroke-width="2.6"/>
+    <circle cx="360" cy="260" r="80" stroke="#E6C98D" stroke-width="1.8"/>
+    <path d="M240 260H480M360 140V380" stroke="#E6C98D" stroke-opacity="0.72" stroke-width="1.8"/>
+  </g>
+
+  <g fill="#0D1A2C" fill-opacity="0.85">
+    <path d="M120 760C190 730 250 660 320 600C390 660 450 730 520 760V820H120V760Z"/>
+    <path d="M180 730C238 710 280 660 320 615C360 660 402 710 460 730C412 750 372 774 320 774C268 774 228 750 180 730Z" fill="#132740"/>
+
+    <path d="M580 800C750 770 860 690 980 590C1100 690 1210 770 1380 800V885H580V800Z"/>
+    <path d="M650 770C780 745 875 680 980 575C1085 680 1180 745 1310 770C1200 802 1110 834 980 834C850 834 760 802 650 770Z" fill="#142A44"/>
+
+    <path d="M1440 770C1510 740 1570 670 1640 610C1710 670 1770 740 1840 770V830H1440V770Z"/>
+    <path d="M1500 740C1558 720 1600 670 1640 625C1680 670 1722 720 1780 740C1732 760 1692 784 1640 784C1588 784 1548 760 1500 740Z" fill="#132740"/>
+  </g>
+
+  <path d="M-80 860C180 780 380 930 620 890C840 854 1050 760 1310 830C1540 892 1710 838 2000 900V1080H-80V860Z" fill="url(#ground)"/>
+</svg>

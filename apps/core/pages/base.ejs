@@ -61,6 +61,35 @@
 	<% }) %>
 </head>
 <body>
+	<%
+		const currentRoute = String(currentPath || '/');
+		const showBetaModalOnThisPage = !currentRoute.startsWith('/manage');
+	%>
+	<% if (showBetaModalOnThisPage) { %>
+	<div class="beta-notice-modal" id="betaNoticeModal" role="dialog" aria-modal="true" aria-labelledby="betaNoticeTitle" aria-hidden="true">
+		<div class="beta-notice-backdrop" data-beta-close></div>
+		<div class="beta-notice-panel">
+			<div class="beta-notice-icon-wrap" aria-hidden="true">
+				<img class="beta-notice-icon" src="/images/icons/material/fact_check.svg" alt="">
+			</div>
+			<h2 id="betaNoticeTitle"><%= locale === 'en' ? 'Beta Notice' : '베타 테스트 안내' %></h2>
+			<p>
+				<%= locale === 'en'
+					? '48LAB is currently in beta and under active development. Current outputs are preview-level and are not final real analysis.'
+					: '48LAB는 현재 베타 테스트 및 개발 진행 중입니다. 현재 제공되는 결과는 미리보기 수준이며 실제 최종 분석이 아닙니다.' %>
+			</p>
+			<p class="beta-notice-coming"><%= locale === 'en' ? 'Coming Soon!' : '커밍순!' %></p>
+			<div class="beta-notice-actions">
+				<button type="button" class="beta-notice-btn beta-notice-btn--ghost" data-beta-hide-today>
+					<%= locale === 'en' ? "Don't show today" : '오늘 보지 않기' %>
+				</button>
+				<button type="button" class="beta-notice-btn" data-beta-close>
+					<%= locale === 'en' ? 'Close' : '확인' %>
+				</button>
+			</div>
+		</div>
+	</div>
+	<% } %>
 	<div class="container">
 		<%- include('header') %>
 		
@@ -73,6 +102,56 @@
 	<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 	<script src="/js/modules/global_toast.js"></script>
 	<script type="module" src="/js/modules/theme_mode.js"></script>
+	<% if (showBetaModalOnThisPage) { %>
+	<script>
+	(function () {
+		var modal = document.getElementById('betaNoticeModal');
+		if (!modal) return;
+		var closeEls = modal.querySelectorAll('[data-beta-close]');
+		var hideTodayEl = modal.querySelector('[data-beta-hide-today]');
+		var storageKey = 'beta_notice_hide_date';
+		var now = new Date();
+		var yyyy = String(now.getFullYear());
+		var mm = String(now.getMonth() + 1).padStart(2, '0');
+		var dd = String(now.getDate()).padStart(2, '0');
+		var today = yyyy + '-' + mm + '-' + dd;
+
+		function closeModal() {
+			modal.classList.remove('is-open');
+			modal.setAttribute('aria-hidden', 'true');
+			document.body.classList.remove('beta-notice-open');
+		}
+
+		function openModal() {
+			modal.classList.add('is-open');
+			modal.setAttribute('aria-hidden', 'false');
+			document.body.classList.add('beta-notice-open');
+		}
+
+		try {
+			var hiddenDate = localStorage.getItem(storageKey);
+			if (hiddenDate === today) return;
+		} catch (_) {}
+
+		openModal();
+		closeEls.forEach(function (el) {
+			el.addEventListener('click', closeModal);
+		});
+		if (hideTodayEl) {
+			hideTodayEl.addEventListener('click', function () {
+				try {
+					localStorage.setItem(storageKey, today);
+				} catch (_) {}
+				closeModal();
+			});
+		}
+		window.addEventListener('keydown', function (e) {
+			if (!modal.classList.contains('is-open')) return;
+			if (e.key === 'Escape') closeModal();
+		});
+	})();
+	</script>
+	<% } %>
 	<%- script %>
 </body>
 </html>
