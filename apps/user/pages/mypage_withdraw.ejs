@@ -1,45 +1,46 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
 
   <div class="mypage-content">
     <article class="mypage-card withdraw-card">
-      <h3>회원탈퇴</h3>
+      <h3><%= L('회원탈퇴', 'Withdraw Account') %></h3>
       <p class="mypage-desc">
-        탈퇴를 진행하면 계정 상태가 비활성화되며, 동일 계정 재가입 시 가입 보너스는 다시 지급되지 않습니다.
+        <%= L('탈퇴를 진행하면 계정 상태가 비활성화되며, 동일 계정 재가입 시 가입 보너스는 다시 지급되지 않습니다.', 'After withdrawal, your account is deactivated. Signup bonus is not reissued on re-registration with the same account.') %>
       </p>
 
       <ul class="withdraw-warnings">
-        <li>보유 토큰은 소멸되며 복구되지 않습니다.</li>
-        <li>마이페이지 접근 및 결제 기능이 즉시 중단됩니다.</li>
-        <li>원국/상담 이력은 운영 및 법적 목적에 따라 별도 보관될 수 있습니다.</li>
+        <li><%= L('보유 토큰은 소멸되며 복구되지 않습니다.', 'Remaining tokens are forfeited and cannot be recovered.') %></li>
+        <li><%= L('마이페이지 접근 및 결제 기능이 즉시 중단됩니다.', 'My Page access and payment features are stopped immediately.') %></li>
+        <li><%= L('원국/상담 이력은 운영 및 법적 목적에 따라 별도 보관될 수 있습니다.', 'Chart/consultation records may be retained for operations and legal requirements.') %></li>
       </ul>
 
-      <form method="POST" data-action="/user/mypage/withdraw" data-confirm="정말 회원탈퇴를 진행하시겠습니까?">
+      <form method="POST" data-action="/user/mypage/withdraw" data-confirm="<%= L('정말 회원탈퇴를 진행하시겠습니까?', 'Are you sure you want to withdraw your account?') %>">
         <label class="mypage-textarea">
-          <span>탈퇴 사유 (선택)</span>
-          <textarea name="withdraw_reason" maxlength="500" placeholder="탈퇴 사유를 입력해주세요."></textarea>
+          <span><%= L('탈퇴 사유 (선택)', 'Reason (Optional)') %></span>
+          <textarea name="withdraw_reason" maxlength="500" placeholder="<%= L('탈퇴 사유를 입력해주세요.', 'Enter reason for withdrawal.') %>"></textarea>
         </label>
 
         <label class="withdraw-confirm-text">
-          <span>확인 문구 입력 (필수)</span>
+          <span><%= L('확인 문구 입력 (필수)', 'Confirmation Text (Required)') %></span>
           <input
             type="text"
             name="confirm_text"
             class="mustInput"
-            data-alert="확인 문구를 입력해주세요."
-            placeholder="탈퇴"
+            data-alert="<%= L('확인 문구를 입력해주세요.', 'Please enter the confirmation text.') %>"
+            placeholder="<%= L('탈퇴', 'WITHDRAW') %>"
             maxlength="10"
             autocomplete="off">
         </label>
 
         <label class="withdraw-confirm-check">
-          <input type="checkbox" class="mustInput" name="confirm_agree" value="1" data-alert="안내사항을 확인하고 동의해주세요.">
-          <span>안내사항을 모두 확인했으며, 탈퇴 후 복구가 제한될 수 있음에 동의합니다.</span>
+          <input type="checkbox" class="mustInput" name="confirm_agree" value="1" data-alert="<%= L('안내사항을 확인하고 동의해주세요.', 'Please confirm and agree to the notice.') %>">
+          <span><%= L('안내사항을 모두 확인했으며, 탈퇴 후 복구가 제한될 수 있음에 동의합니다.', 'I have reviewed all notices and agree that recovery may be limited after withdrawal.') %></span>
         </label>
 
         <div class="mypage-actions">
-          <button type="submit" class="mypage-btn danger">회원탈퇴 진행</button>
-          <a href="/user/mypage" class="mypage-btn">취소</a>
+          <button type="submit" class="mypage-btn danger"><%= L('회원탈퇴 진행', 'Proceed Withdrawal') %></button>
+          <a href="/user/mypage" class="mypage-btn"><%= L('취소', 'Cancel') %></a>
         </div>
       </form>
     </article>

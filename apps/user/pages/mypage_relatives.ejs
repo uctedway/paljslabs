@@ -1,18 +1,19 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
   <% const currentYear = new Date().getFullYear(); %>
 
   <div class="mypage-content">
     <article class="mypage-card" id="relative-create">
-      <h3>지인추가하기</h3>
-      <p class="mypage-desc">배우자, 자녀, 친구, 연인 등 지인 정보를 새로 등록합니다.</p>
+      <h3><%= L('지인추가하기', 'Add Contact') %></h3>
+      <p class="mypage-desc"><%= L('배우자, 자녀, 친구, 연인 등 지인 정보를 새로 등록합니다.', 'Register spouse, child, friend, partner, and other contacts.') %></p>
 
-      <form method="POST" data-action="/user/mypage/relatives/create" data-confirm="입력한 정보로 지인을 등록하시겠습니까?">
+      <form method="POST" data-action="/user/mypage/relatives/create" data-confirm="<%= L('입력한 정보로 지인을 등록하시겠습니까?', 'Register this contact with entered information?') %>">
         <div class="mypage-grid">
           <label>
-            <span>관계</span>
-            <select name="relationType" class="mustInput" data-alert="관계를 선택해주세요.">
-              <option value="">선택</option>
+            <span><%= L('관계', 'Relation') %></span>
+            <select name="relationType" class="mustInput" data-alert="<%= L('관계를 선택해주세요.', 'Please select relation.') %>">
+              <option value=""><%= L('선택', 'Select') %></option>
               <% relationOptions.forEach(function(item) { %>
                 <option value="<%= item.code %>"><%= item.label %></option>
               <% }); %>
@@ -20,80 +21,80 @@
           </label>
 
           <label>
-            <span>이름</span>
-            <input type="text" name="name" class="mustInput" placeholder="이름 입력" data-alert="이름을 입력해주세요.">
+            <span><%= L('이름', 'Name') %></span>
+            <input type="text" name="name" class="mustInput" placeholder="<%= L('이름 입력', 'Enter name') %>" data-alert="<%= L('이름을 입력해주세요.', 'Please enter name.') %>">
           </label>
 
           <label>
-            <span>생년월일</span>
+            <span><%= L('생년월일', 'Birth Date') %></span>
             <div class="mypage-birth-selects">
-              <select name="birthYear" class="mustInput" data-alert="생년(연도)을 선택해주세요.">
-                <option value="">연도</option>
+              <select name="birthYear" class="mustInput" data-alert="<%= L('생년(연도)을 선택해주세요.', 'Please select birth year.') %>">
+                <option value=""><%= L('연도', 'Year') %></option>
                 <% for (let y = currentYear; y >= 1900; y--) { %>
-                  <option value="<%= y %>"><%= y %>년</option>
+                  <option value="<%= y %>"><%= locale === 'en' ? y : `${y}년` %></option>
                 <% } %>
               </select>
-              <select name="birthMonth" class="mustInput" data-alert="생월(월)을 선택해주세요.">
-                <option value="">월</option>
+              <select name="birthMonth" class="mustInput" data-alert="<%= L('생월(월)을 선택해주세요.', 'Please select birth month.') %>">
+                <option value=""><%= L('월', 'Month') %></option>
                 <% for (let m = 1; m <= 12; m++) { %>
-                  <option value="<%= m %>"><%= m %>월</option>
+                  <option value="<%= m %>"><%= locale === 'en' ? m : `${m}월` %></option>
                 <% } %>
               </select>
-              <select name="birthDay" class="mustInput" data-alert="생일(일)을 선택해주세요.">
-                <option value="">일</option>
+              <select name="birthDay" class="mustInput" data-alert="<%= L('생일(일)을 선택해주세요.', 'Please select birth day.') %>">
+                <option value=""><%= L('일', 'Day') %></option>
                 <% for (let d = 1; d <= 31; d++) { %>
-                  <option value="<%= d %>"><%= d %>일</option>
+                  <option value="<%= d %>"><%= locale === 'en' ? d : `${d}일` %></option>
                 <% } %>
               </select>
             </div>
           </label>
 
           <label>
-            <span>태어난 시간</span>
-            <select name="birthTime" class="mustInput" data-alert="태어난 시간을 선택해주세요.">
-              <option value="">시간 선택</option>
-              <option value="00:30:00">자시 (23:30~01:30)</option>
-              <option value="02:30:00">축시 (01:30~03:30)</option>
-              <option value="04:30:00">인시 (03:30~05:30)</option>
-              <option value="06:30:00">묘시 (05:30~07:30)</option>
-              <option value="08:30:00">진시 (07:30~09:30)</option>
-              <option value="10:30:00">사시 (09:30~11:30)</option>
-              <option value="12:30:00">오시 (11:30~13:30)</option>
-              <option value="14:30:00">미시 (13:30~15:30)</option>
-              <option value="16:30:00">신시 (15:30~17:30)</option>
-              <option value="18:30:00">유시 (17:30~19:30)</option>
-              <option value="20:30:00">술시 (19:30~21:30)</option>
-              <option value="22:30:00">해시 (21:30~23:30)</option>
-              <option value="99:99:99">모름</option>
+            <span><%= L('태어난 시간', 'Birth Time') %></span>
+            <select name="birthTime" class="mustInput" data-alert="<%= L('태어난 시간을 선택해주세요.', 'Please select birth time.') %>">
+              <option value=""><%= L('시간 선택', 'Select Time') %></option>
+              <option value="00:30:00"><%= L('자시', 'Zi') %> (23:30~01:30)</option>
+              <option value="02:30:00"><%= L('축시', 'Chou') %> (01:30~03:30)</option>
+              <option value="04:30:00"><%= L('인시', 'Yin') %> (03:30~05:30)</option>
+              <option value="06:30:00"><%= L('묘시', 'Mao') %> (05:30~07:30)</option>
+              <option value="08:30:00"><%= L('진시', 'Chen') %> (07:30~09:30)</option>
+              <option value="10:30:00"><%= L('사시', 'Si') %> (09:30~11:30)</option>
+              <option value="12:30:00"><%= L('오시', 'Wu') %> (11:30~13:30)</option>
+              <option value="14:30:00"><%= L('미시', 'Wei') %> (13:30~15:30)</option>
+              <option value="16:30:00"><%= L('신시', 'Shen') %> (15:30~17:30)</option>
+              <option value="18:30:00"><%= L('유시', 'You') %> (17:30~19:30)</option>
+              <option value="20:30:00"><%= L('술시', 'Xu') %> (19:30~21:30)</option>
+              <option value="22:30:00"><%= L('해시', 'Hai') %> (21:30~23:30)</option>
+              <option value="99:99:99"><%= L('모름', 'Unknown') %></option>
             </select>
           </label>
         </div>
 
         <fieldset class="mypage-radio-group">
-          <legend>성별</legend>
+          <legend><%= L('성별', 'Gender') %></legend>
           <label>
-            <input type="radio" name="gender" value="male" class="mustInput" data-alert="성별을 선택해주세요.">
-            <span>남성</span>
+            <input type="radio" name="gender" value="male" class="mustInput" data-alert="<%= L('성별을 선택해주세요.', 'Please select gender.') %>">
+            <span><%= L('남성', 'Male') %></span>
           </label>
           <label>
-            <input type="radio" name="gender" value="female" class="mustInput" data-alert="성별을 선택해주세요.">
-            <span>여성</span>
+            <input type="radio" name="gender" value="female" class="mustInput" data-alert="<%= L('성별을 선택해주세요.', 'Please select gender.') %>">
+            <span><%= L('여성', 'Female') %></span>
           </label>
         </fieldset>
 
         <label class="mypage-textarea">
-          <span>메모 (선택)</span>
-          <textarea name="memo" rows="3" placeholder="특이사항 메모"></textarea>
+          <span><%= L('메모 (선택)', 'Memo (Optional)') %></span>
+          <textarea name="memo" rows="3" placeholder="<%= L('특이사항 메모', 'Additional note') %>"></textarea>
         </label>
 
-        <button type="submit" class="mypage-btn primary">지인 등록</button>
+        <button type="submit" class="mypage-btn primary"><%= L('지인 등록', 'Register Contact') %></button>
       </form>
     </article>
 
     <article class="mypage-card">
-      <h3>등록된 지인</h3>
+      <h3><%= L('등록된 지인', 'Registered Contacts') %></h3>
       <% if (!relatives || relatives.length === 0) { %>
-        <p class="mypage-empty">등록된 지인이 없습니다.</p>
+        <p class="mypage-empty"><%= L('등록된 지인이 없습니다.', 'No contacts registered.') %></p>
       <% } %>
 
       <% (relatives || []).forEach(function(item) { %>
@@ -102,14 +103,14 @@
         <% const selectedBirthMonth = birthParts[1] || ''; %>
         <% const selectedBirthDay = birthParts[2] || ''; %>
         <article class="relative-item" id="relative-<%= item.localId %>">
-          <h3><%= item.relationLabel || item.relationType %> · <%= item.name %> 수정</h3>
+          <h3><%= item.relationLabel || item.relationType %> · <%= item.name %> <%= L('수정', 'Edit') %></h3>
           <form method="POST" data-action="/user/mypage/relatives/update">
             <input type="hidden" name="localId" value="<%= item.localId %>">
 
             <div class="mypage-grid">
               <label>
-                <span>관계</span>
-                <select name="relationType" class="mustInput" data-alert="관계를 선택해주세요.">
+                <span><%= L('관계', 'Relation') %></span>
+                <select name="relationType" class="mustInput" data-alert="<%= L('관계를 선택해주세요.', 'Please select relation.') %>">
                   <% relationOptions.forEach(function(option) { %>
                     <option value="<%= option.code %>" <%= item.relationType === option.code ? 'selected' : '' %>><%= option.label %></option>
                   <% }); %>
@@ -117,82 +118,82 @@
               </label>
 
               <label>
-                <span>이름</span>
-                <input type="text" name="name" class="mustInput" value="<%= item.name %>" data-alert="이름을 입력해주세요.">
+                <span><%= L('이름', 'Name') %></span>
+                <input type="text" name="name" class="mustInput" value="<%= item.name %>" data-alert="<%= L('이름을 입력해주세요.', 'Please enter name.') %>">
               </label>
 
               <label>
-                <span>생년월일</span>
+                <span><%= L('생년월일', 'Birth Date') %></span>
                 <div class="mypage-birth-selects">
-                  <select name="birthYear" class="mustInput" data-alert="생년(연도)을 선택해주세요.">
-                    <option value="">연도</option>
+                  <select name="birthYear" class="mustInput" data-alert="<%= L('생년(연도)을 선택해주세요.', 'Please select birth year.') %>">
+                    <option value=""><%= L('연도', 'Year') %></option>
                     <% for (let y = currentYear; y >= 1900; y--) { %>
-                      <option value="<%= y %>" <%= String(y) === selectedBirthYear ? 'selected' : '' %>><%= y %>년</option>
+                      <option value="<%= y %>" <%= String(y) === selectedBirthYear ? 'selected' : '' %>><%= locale === 'en' ? y : `${y}년` %></option>
                     <% } %>
                   </select>
-                  <select name="birthMonth" class="mustInput" data-alert="생월(월)을 선택해주세요.">
-                    <option value="">월</option>
+                  <select name="birthMonth" class="mustInput" data-alert="<%= L('생월(월)을 선택해주세요.', 'Please select birth month.') %>">
+                    <option value=""><%= L('월', 'Month') %></option>
                     <% for (let m = 1; m <= 12; m++) { %>
                       <% const mv = String(m).padStart(2, '0'); %>
-                      <option value="<%= m %>" <%= mv === selectedBirthMonth ? 'selected' : '' %>><%= m %>월</option>
+                      <option value="<%= m %>" <%= mv === selectedBirthMonth ? 'selected' : '' %>><%= locale === 'en' ? m : `${m}월` %></option>
                     <% } %>
                   </select>
-                  <select name="birthDay" class="mustInput" data-alert="생일(일)을 선택해주세요.">
-                    <option value="">일</option>
+                  <select name="birthDay" class="mustInput" data-alert="<%= L('생일(일)을 선택해주세요.', 'Please select birth day.') %>">
+                    <option value=""><%= L('일', 'Day') %></option>
                     <% for (let d = 1; d <= 31; d++) { %>
                       <% const dv = String(d).padStart(2, '0'); %>
-                      <option value="<%= d %>" <%= dv === selectedBirthDay ? 'selected' : '' %>><%= d %>일</option>
+                      <option value="<%= d %>" <%= dv === selectedBirthDay ? 'selected' : '' %>><%= locale === 'en' ? d : `${d}일` %></option>
                     <% } %>
                   </select>
                 </div>
               </label>
 
               <label>
-                <span>태어난 시간</span>
-                <select name="birthTime" class="mustInput" data-alert="태어난 시간을 선택해주세요.">
-                  <option value="">시간 선택</option>
-                  <option value="00:30:00" <%= item.birthTime === '00:30:00' ? 'selected' : '' %>>자시 (23:30~01:30)</option>
-                  <option value="02:30:00" <%= item.birthTime === '02:30:00' ? 'selected' : '' %>>축시 (01:30~03:30)</option>
-                  <option value="04:30:00" <%= item.birthTime === '04:30:00' ? 'selected' : '' %>>인시 (03:30~05:30)</option>
-                  <option value="06:30:00" <%= item.birthTime === '06:30:00' ? 'selected' : '' %>>묘시 (05:30~07:30)</option>
-                  <option value="08:30:00" <%= item.birthTime === '08:30:00' ? 'selected' : '' %>>진시 (07:30~09:30)</option>
-                  <option value="10:30:00" <%= item.birthTime === '10:30:00' ? 'selected' : '' %>>사시 (09:30~11:30)</option>
-                  <option value="12:30:00" <%= item.birthTime === '12:30:00' ? 'selected' : '' %>>오시 (11:30~13:30)</option>
-                  <option value="14:30:00" <%= item.birthTime === '14:30:00' ? 'selected' : '' %>>미시 (13:30~15:30)</option>
-                  <option value="16:30:00" <%= item.birthTime === '16:30:00' ? 'selected' : '' %>>신시 (15:30~17:30)</option>
-                  <option value="18:30:00" <%= item.birthTime === '18:30:00' ? 'selected' : '' %>>유시 (17:30~19:30)</option>
-                  <option value="20:30:00" <%= item.birthTime === '20:30:00' ? 'selected' : '' %>>술시 (19:30~21:30)</option>
-                  <option value="22:30:00" <%= item.birthTime === '22:30:00' ? 'selected' : '' %>>해시 (21:30~23:30)</option>
-                  <option value="99:99:99" <%= item.birthTime === '99:99:99' ? 'selected' : '' %>>모름</option>
+                <span><%= L('태어난 시간', 'Birth Time') %></span>
+                <select name="birthTime" class="mustInput" data-alert="<%= L('태어난 시간을 선택해주세요.', 'Please select birth time.') %>">
+                  <option value=""><%= L('시간 선택', 'Select Time') %></option>
+                  <option value="00:30:00" <%= item.birthTime === '00:30:00' ? 'selected' : '' %>><%= L('자시', 'Zi') %> (23:30~01:30)</option>
+                  <option value="02:30:00" <%= item.birthTime === '02:30:00' ? 'selected' : '' %>><%= L('축시', 'Chou') %> (01:30~03:30)</option>
+                  <option value="04:30:00" <%= item.birthTime === '04:30:00' ? 'selected' : '' %>><%= L('인시', 'Yin') %> (03:30~05:30)</option>
+                  <option value="06:30:00" <%= item.birthTime === '06:30:00' ? 'selected' : '' %>><%= L('묘시', 'Mao') %> (05:30~07:30)</option>
+                  <option value="08:30:00" <%= item.birthTime === '08:30:00' ? 'selected' : '' %>><%= L('진시', 'Chen') %> (07:30~09:30)</option>
+                  <option value="10:30:00" <%= item.birthTime === '10:30:00' ? 'selected' : '' %>><%= L('사시', 'Si') %> (09:30~11:30)</option>
+                  <option value="12:30:00" <%= item.birthTime === '12:30:00' ? 'selected' : '' %>><%= L('오시', 'Wu') %> (11:30~13:30)</option>
+                  <option value="14:30:00" <%= item.birthTime === '14:30:00' ? 'selected' : '' %>><%= L('미시', 'Wei') %> (13:30~15:30)</option>
+                  <option value="16:30:00" <%= item.birthTime === '16:30:00' ? 'selected' : '' %>><%= L('신시', 'Shen') %> (15:30~17:30)</option>
+                  <option value="18:30:00" <%= item.birthTime === '18:30:00' ? 'selected' : '' %>><%= L('유시', 'You') %> (17:30~19:30)</option>
+                  <option value="20:30:00" <%= item.birthTime === '20:30:00' ? 'selected' : '' %>><%= L('술시', 'Xu') %> (19:30~21:30)</option>
+                  <option value="22:30:00" <%= item.birthTime === '22:30:00' ? 'selected' : '' %>><%= L('해시', 'Hai') %> (21:30~23:30)</option>
+                  <option value="99:99:99" <%= item.birthTime === '99:99:99' ? 'selected' : '' %>><%= L('모름', 'Unknown') %></option>
                 </select>
               </label>
             </div>
 
             <fieldset class="mypage-radio-group">
-              <legend>성별</legend>
+              <legend><%= L('성별', 'Gender') %></legend>
               <label>
-                <input type="radio" name="gender" value="male" class="mustInput" data-alert="성별을 선택해주세요." <%= item.gender === 'male' ? 'checked' : '' %>>
-                <span>남성</span>
+                <input type="radio" name="gender" value="male" class="mustInput" data-alert="<%= L('성별을 선택해주세요.', 'Please select gender.') %>" <%= item.gender === 'male' ? 'checked' : '' %>>
+                <span><%= L('남성', 'Male') %></span>
               </label>
               <label>
-                <input type="radio" name="gender" value="female" class="mustInput" data-alert="성별을 선택해주세요." <%= item.gender === 'female' ? 'checked' : '' %>>
-                <span>여성</span>
+                <input type="radio" name="gender" value="female" class="mustInput" data-alert="<%= L('성별을 선택해주세요.', 'Please select gender.') %>" <%= item.gender === 'female' ? 'checked' : '' %>>
+                <span><%= L('여성', 'Female') %></span>
               </label>
             </fieldset>
 
             <label class="mypage-textarea">
-              <span>메모</span>
+              <span><%= L('메모', 'Memo') %></span>
               <textarea name="memo" rows="2"><%= item.memo || '' %></textarea>
             </label>
 
             <div class="mypage-actions">
-              <button type="submit" class="mypage-btn">수정</button>
+              <button type="submit" class="mypage-btn"><%= L('수정', 'Update') %></button>
             </div>
           </form>
 
-          <form method="POST" data-action="/user/mypage/relatives/delete" data-confirm="정말 삭제하시겠습니까?">
+          <form method="POST" data-action="/user/mypage/relatives/delete" data-confirm="<%= L('정말 삭제하시겠습니까?', 'Are you sure you want to delete?') %>">
             <input type="hidden" name="localId" value="<%= item.localId %>">
-            <button type="submit" class="mypage-btn danger">삭제</button>
+            <button type="submit" class="mypage-btn danger"><%= L('삭제', 'Delete') %></button>
           </form>
         </article>
       <% }); %>

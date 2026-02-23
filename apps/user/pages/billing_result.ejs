@@ -1,18 +1,19 @@
 <%
+  const L = (ko, en) => tt(ko, en);
   const map = {
     success: {
-      title: '결제가 완료되었습니다',
-      desc: '토큰 충전이 정상 반영되었습니다.',
+      title: L('결제가 완료되었습니다', 'Payment completed'),
+      desc: L('토큰 충전이 정상 반영되었습니다.', 'Token top-up was applied successfully.'),
       tone: 'success',
     },
     canceled: {
-      title: '결제가 취소되었습니다',
-      desc: '결제가 취소되어 토큰이 충전되지 않았습니다.',
+      title: L('결제가 취소되었습니다', 'Payment canceled'),
+      desc: L('결제가 취소되어 토큰이 충전되지 않았습니다.', 'Payment was canceled and tokens were not added.'),
       tone: 'canceled',
     },
     failed: {
-      title: '결제에 실패했습니다',
-      desc: '결제를 다시 시도해주세요.',
+      title: L('결제에 실패했습니다', 'Payment failed'),
+      desc: L('결제를 다시 시도해주세요.', 'Please try again.'),
       tone: 'failed',
     },
   };
@@ -26,17 +27,17 @@
     <p class="billing-result-desc"><%= view.desc %></p>
 
     <% if (paymentId) { %>
-      <p class="billing-result-meta">결제 ID: <strong><%= paymentId %></strong></p>
+      <p class="billing-result-meta"><%= L('결제 ID', 'Payment ID') %>: <strong><%= paymentId %></strong></p>
     <% } %>
 
     <% if (typeof currentTokens === 'number' && currentTokens >= 0) { %>
-      <p class="billing-result-meta">현재 토큰: <strong><%= Number(currentTokens).toLocaleString('ko-KR') %></strong></p>
+      <p class="billing-result-meta"><%= L('현재 토큰', 'Current Tokens') %>: <strong><%= Number(currentTokens).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %></strong></p>
     <% } %>
 
     <div class="billing-result-actions">
-      <a class="billing-result-btn primary" href="/saju">사주 보러가기</a>
-      <a class="billing-result-btn" href="/user/billing">토큰 충전</a>
-      <a class="billing-result-btn" href="/user/purchase-history">결제 내역</a>
+      <a class="billing-result-btn primary" href="/saju"><%= L('사주 보러가기', 'Go to Saju') %></a>
+      <a class="billing-result-btn" href="/user/billing"><%= L('토큰 충전', 'Token Top-up') %></a>
+      <a class="billing-result-btn" href="/user/purchase-history"><%= L('결제 내역', 'Payment History') %></a>
     </div>
   </article>
 </section>

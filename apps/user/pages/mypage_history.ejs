@@ -1,17 +1,18 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
 
   <div class="mypage-content">
     <article class="mypage-card data-grid-shell">
       <div class="history-head data-grid-head">
         <div>
-          <h2>내 상담내역</h2>
-          <p class="data-grid-desc">요청/완료/실패 상태를 확인하고 결과 화면으로 바로 이동할 수 있습니다.</p>
+          <h2><%= L('내 상담내역', 'Consultation History') %></h2>
+          <p class="data-grid-desc"><%= L('요청/완료/실패 상태를 확인하고 결과 화면으로 바로 이동할 수 있습니다.', 'Check request/completed/failed status and jump to result page.') %></p>
         </div>
       </div>
 
       <% if (!consultationHistory || consultationHistory.length === 0) { %>
-        <div class="history-empty data-grid-empty">상담 내역이 없습니다.</div>
+        <div class="history-empty data-grid-empty"><%= L('상담 내역이 없습니다.', 'No consultation history.') %></div>
       <% } else { %>
         <%
           function formatDateOnly(v) {
@@ -25,23 +26,23 @@
           function buildHistoryTitle(item) {
             const req = item && item.request ? item.request : {};
             if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
-              const p1 = String(req.person1Name || '').trim() || '사람1';
-              const p2 = String(req.person2Name || '').trim() || '사람2';
-              return `${p1}, ${p2} 궁합`;
+              const p1 = String(req.person1Name || '').trim() || L('사람1', 'Person 1');
+              const p2 = String(req.person2Name || '').trim() || L('사람2', 'Person 2');
+              return locale === 'en' ? `${p1}, ${p2} Compatibility` : `${p1}, ${p2} 궁합`;
             }
-            const name = String(req.name || '').trim() || '고객';
-            return `${name} 사주팔자`;
+            const name = String(req.name || '').trim() || L('고객', 'Customer');
+            return locale === 'en' ? `${name} Saju` : `${name} 사주팔자`;
           }
         %>
         <div class="history-table-wrap data-grid-wrap">
           <table class="history-table data-grid-table">
             <thead>
               <tr>
-                <th>요청일</th>
-                <th>상담 제목</th>
-                <th>상태</th>
-                <th>결과 ID</th>
-                <th>이동</th>
+                <th><%= L('요청일', 'Requested') %></th>
+                <th><%= L('상담 제목', 'Title') %></th>
+                <th><%= L('상태', 'Status') %></th>
+                <th><%= L('결과 ID', 'Result ID') %></th>
+                <th><%= L('이동', 'Action') %></th>
               </tr>
             </thead>
             <tbody>
@@ -51,14 +52,14 @@
                   const statusLabel = String(item.statusText || item.status || '-');
                 %>
                 <tr>
-                  <td data-label="요청일"><%= formatDateOnly(item.createdAt) %></td>
-                  <td data-label="상담 제목"><strong><%= buildHistoryTitle(item) %></strong></td>
-                  <td data-label="상태"><span class="data-grid-badge status-<%= statusRaw || 'unknown' %>"><%= statusLabel %></span></td>
-                  <td data-label="결과 ID"><span class="data-grid-code"><%= item.resultId %></span></td>
-                  <td data-label="이동">
+                  <td data-label="<%= L('요청일', 'Requested') %>"><%= formatDateOnly(item.createdAt) %></td>
+                  <td data-label="<%= L('상담 제목', 'Title') %>"><strong><%= buildHistoryTitle(item) %></strong></td>
+                  <td data-label="<%= L('상태', 'Status') %>"><span class="data-grid-badge status-<%= statusRaw || 'unknown' %>"><%= statusLabel %></span></td>
+                  <td data-label="<%= L('결과 ID', 'Result ID') %>"><span class="data-grid-code"><%= item.resultId %></span></td>
+                  <td data-label="<%= L('이동', 'Action') %>">
                     <div class="data-grid-actions">
-                      <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
-                      <a class="mypage-btn primary" href="/user/mypage/history/<%= item.resultId %>">결과보기</a>
+                      <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>"><%= L('상세보기', 'Detail') %></a>
+                      <a class="mypage-btn primary" href="/user/mypage/history/<%= item.resultId %>"><%= L('결과보기', 'Result') %></a>
                     </div>
                   </td>
                 </tr>

@@ -1,20 +1,21 @@
 <main class="login-page">
   <section class="login-hero">
     <div class="login-card login-card--email">
+      <% const L = (ko, en) => tt(ko, en); %>
       <p class="login-kicker">48LAB ACCOUNT</p>
-      <h1 class="login-title">이메일 회원가입</h1>
-      <p class="login-lead">이메일 계정을 새로 만들어 시작하세요.</p>
+      <h1 class="login-title"><%= L('이메일 회원가입', 'Email Sign Up') %></h1>
+      <p class="login-lead"><%= L('이메일 계정을 새로 만들어 시작하세요.', 'Create a new email account to get started.') %></p>
       <section class="signup-consent-section">
-        <h2 class="signup-consent-title">회원가입 약관 동의</h2>
+        <h2 class="signup-consent-title"><%= L('회원가입 약관 동의', 'Sign-up Consent') %></h2>
         <div class="signup-consent-grid">
           <div class="signup-consent-panel">
-            <p class="signup-consent-panel-title">이용약관</p>
+            <p class="signup-consent-panel-title"><%= L('이용약관', 'Terms') %></p>
             <div class="signup-consent-scroll">
               <%- include('../../core/pages/partials/legal_terms_content') %>
             </div>
           </div>
           <div class="signup-consent-panel">
-            <p class="signup-consent-panel-title">개인정보처리방침</p>
+            <p class="signup-consent-panel-title"><%= L('개인정보처리방침', 'Privacy Policy') %></p>
             <div class="signup-consent-scroll">
               <%- include('../../core/pages/partials/legal_privacy_content') %>
             </div>
@@ -26,37 +27,37 @@
         <% if (pendingReferralCode) { %>
           <input type="hidden" name="referral_code" value="<%= pendingReferralCode %>">
         <% } %>
-        <label class="email-auth-label" for="email-register-id">이메일</label>
+        <label class="email-auth-label" for="email-register-id"><%= L('이메일', 'Email') %></label>
         <input id="email-register-id" class="email-auth-input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
 
-        <label class="email-auth-label" for="email-register-name">이름</label>
-        <input id="email-register-name" class="email-auth-input" type="text" name="name" placeholder="이름 입력" autocomplete="name" required>
+        <label class="email-auth-label" for="email-register-name"><%= L('이름', 'Name') %></label>
+        <input id="email-register-name" class="email-auth-input" type="text" name="name" placeholder="<%= L('이름 입력', 'Enter name') %>" autocomplete="name" required>
 
-        <label class="email-auth-label" for="email-register-password">비밀번호</label>
-        <input id="email-register-password" class="email-auth-input" type="password" name="password" placeholder="비밀번호 입력" autocomplete="new-password" required>
+        <label class="email-auth-label" for="email-register-password"><%= L('비밀번호', 'Password') %></label>
+        <input id="email-register-password" class="email-auth-input" type="password" name="password" placeholder="<%= L('비밀번호 입력', 'Enter password') %>" autocomplete="new-password" required>
 
-        <label class="email-auth-label" for="email-register-password-confirm">비밀번호 확인</label>
-        <input id="email-register-password-confirm" class="email-auth-input" type="password" name="password_confirm" placeholder="비밀번호 재입력" autocomplete="new-password" required>
-        <label class="signup-consent-check"><input type="checkbox" id="agree-terms" name="terms_agreed" value="1"> 이용약관에 동의합니다. (필수)</label>
-        <label class="signup-consent-check"><input type="checkbox" id="agree-privacy" name="privacy_agreed" value="1"> 개인정보처리방침에 동의합니다. (필수)</label>
+        <label class="email-auth-label" for="email-register-password-confirm"><%= L('비밀번호 확인', 'Confirm Password') %></label>
+        <input id="email-register-password-confirm" class="email-auth-input" type="password" name="password_confirm" placeholder="<%= L('비밀번호 재입력', 'Re-enter password') %>" autocomplete="new-password" required>
+        <label class="signup-consent-check"><input type="checkbox" id="agree-terms" name="terms_agreed" value="1"> <%= L('이용약관에 동의합니다. (필수)', 'I agree to the Terms. (Required)') %></label>
+        <label class="signup-consent-check"><input type="checkbox" id="agree-privacy" name="privacy_agreed" value="1"> <%= L('개인정보처리방침에 동의합니다. (필수)', 'I agree to the Privacy Policy. (Required)') %></label>
 
-        <button type="submit" class="email-auth-submit">회원가입</button>
+        <button type="submit" class="email-auth-submit"><%= L('회원가입', 'Sign Up') %></button>
       </form>
 
       <p class="login-subtext">
-        이미 이메일 계정이 있으신가요? <a href="/user/email-login">이메일 로그인</a>
+        <%= L('이미 이메일 계정이 있으신가요?', 'Already have an email account?') %> <a href="/user/email-login"><%= L('이메일 로그인', 'Email Login') %></a>
       </p>
 
       <script type="module">
         import { bindEmailAuthForm } from '/js/modules/apps/user/email_auth_form.js';
 
         bindEmailAuthForm('.email-auth-form', [
-          { selector: '#email-register-id', message: '이메일을 입력해주세요.' },
-          { selector: '#email-register-name', message: '이름을 입력해주세요.' },
-          { selector: '#email-register-password', message: '비밀번호를 입력해주세요.' },
-          { selector: '#email-register-password-confirm', message: '비밀번호 확인을 입력해주세요.' },
-          { selector: '#agree-terms', message: '이용약관에 동의해주세요.' },
-          { selector: '#agree-privacy', message: '개인정보처리방침에 동의해주세요.' },
+          { selector: '#email-register-id', message: <%- JSON.stringify(tt('이메일을 입력해주세요.', 'Please enter your email.')) %> },
+          { selector: '#email-register-name', message: <%- JSON.stringify(tt('이름을 입력해주세요.', 'Please enter your name.')) %> },
+          { selector: '#email-register-password', message: <%- JSON.stringify(tt('비밀번호를 입력해주세요.', 'Please enter your password.')) %> },
+          { selector: '#email-register-password-confirm', message: <%- JSON.stringify(tt('비밀번호 확인을 입력해주세요.', 'Please confirm your password.')) %> },
+          { selector: '#agree-terms', message: <%- JSON.stringify(tt('이용약관에 동의해주세요.', 'Please agree to the Terms.')) %> },
+          { selector: '#agree-privacy', message: <%- JSON.stringify(tt('개인정보처리방침에 동의해주세요.', 'Please agree to the Privacy Policy.')) %> },
         ]);
 
       </script>

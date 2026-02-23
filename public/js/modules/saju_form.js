@@ -5,16 +5,18 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 	const form = document.getElementById('sajuForm');
 	if (!form) return;
 
+	const isEn = String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
+	const L = (ko, en) => (isEn ? en : ko);
 	const relationDisplayMap = {
-		SPOUSE: '배우자',
-		PARENT: '부모',
-		GRANDPARENT: '조부모',
-		SON: '아들',
-		DAUGHTER: '딸',
-		SIBLING: '형제자매',
-		FAMILY: '가족',
-		FRIEND: '친구',
-		OTHER: '기타',
+		SPOUSE: L('배우자', 'Spouse'),
+		PARENT: L('부모', 'Parent'),
+		GRANDPARENT: L('조부모', 'Grandparent'),
+		SON: L('아들', 'Son'),
+		DAUGHTER: L('딸', 'Daughter'),
+		SIBLING: L('형제자매', 'Sibling'),
+		FAMILY: L('가족', 'Family'),
+		FRIEND: L('친구', 'Friend'),
+		OTHER: L('기타', 'Other'),
 	};
 
 	function normalizeTargetLabel(label) {
@@ -42,15 +44,27 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 		return v.slice(0, 8);
 	}
 
+	function getCurrentLocale() {
+		const docLang = String(document?.documentElement?.lang || '').trim().toLowerCase();
+		const navLang = String((navigator.language || '')).trim().toLowerCase();
+		const raw = docLang || navLang || 'ko';
+		if (raw.startsWith('en')) return 'en';
+		if (raw.startsWith('ja')) return 'ja';
+		if (raw.startsWith('zh')) return 'zh';
+		return 'ko';
+	}
+
 	function askTrialFallback(currentTokens, trialRequired = 3) {
 		const current = Number(currentTokens || 0);
 		if (!Number.isFinite(current) || current < trialRequired) {
-			alert('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.');
+			alert(L('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.', 'Insufficient tokens. Please top up and try premium analysis.'));
 			window.location.href = '/user/billing';
 			return false;
 		}
 		return window.confirm(
-			`프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
+			isEn
+				? `Premium analysis requires 10 tokens.\nYou have ${current} tokens. Proceed with trial analysis (${trialRequired} tokens)?`
+				: `프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
 		);
 	}
 
@@ -73,7 +87,7 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 	for (let year = currentYear; year >= 1920; year--) {
 		const option = document.createElement('option');
 		option.value = year;
-		option.textContent = year + '년';
+		option.textContent = isEn ? String(year) : year + '년';
 		yearSelect.appendChild(option);
 	}
 	
@@ -81,7 +95,7 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 	for (let month = 1; month <= 12; month++) {
 		const option = document.createElement('option');
 		option.value = String(month).padStart(2, '0');
-		option.textContent = month + '월';
+		option.textContent = isEn ? String(month) : month + '월';
 		monthSelect.appendChild(option);
 	}
 	
@@ -92,12 +106,12 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 		const daysInMonth = new Date(year, month, 0).getDate();
 		
 		const currentDay = daySelect.value;
-		daySelect.innerHTML = '<option value="">일</option>';
+		daySelect.innerHTML = `<option value="">${L('일', 'Day')}</option>`;
 		
 		for (let day = 1; day <= daysInMonth; day++) {
 			const option = document.createElement('option');
 			option.value = String(day).padStart(2, '0');
-			option.textContent = day + '일';
+			option.textContent = isEn ? String(day) : day + '일';
 			daySelect.appendChild(option);
 		}
 		
@@ -125,7 +139,7 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 
 			const normalizedBirthTime = normalizeBirthTimeValue(target.birthTime) || '99:99:99';
 			if (!target.birthDate) {
-				alert('선택한 대상의 생년월일시 정보가 없습니다. 마이페이지에서 먼저 입력해주세요.');
+				alert(L('선택한 대상의 생년월일시 정보가 없습니다. 마이페이지에서 먼저 입력해주세요.', 'Selected target has no birth data. Please update it in My Page first.'));
 				targetSelect.value = '';
 				if (relativeIdInput) relativeIdInput.value = '0';
 				return;
@@ -133,7 +147,7 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 
 			const [year, month, day] = String(target.birthDate).split('-');
 			if (!year || !month || !day) {
-				alert('선택한 대상의 생년월일 형식이 올바르지 않습니다.');
+				alert(L('선택한 대상의 생년월일 형식이 올바르지 않습니다.', 'Selected target birth date format is invalid.'));
 				targetSelect.value = '';
 				if (relativeIdInput) relativeIdInput.value = '0';
 				return;
@@ -180,11 +194,12 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 			}
 		}
 
-		GlobalLoading.show('요청을 접수하고 있습니다.', '사주 분석을 시작합니다.');
+		GlobalLoading.show(L('요청을 접수하고 있습니다.', 'Request received.'), L('사주 분석을 시작합니다.', 'Starting Saju analysis.'));
 
 		try {
 			const formData = new FormData(form);
 			const payload = Object.fromEntries(formData.entries());
+			payload.locale = getCurrentLocale();
 			payload.analysis_mode = 'PREMIUM';
 
 			let response = await fetch('/api/saju/request', {
@@ -223,19 +238,19 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 
 			if (!response.ok || json.resp !== 'OK') {
 				GlobalLoading.hide();
-				alert(json.message || json.resp_message || '요청 처리 중 오류가 발생했습니다.');
+				alert(json.message || json.resp_message || L('요청 처리 중 오류가 발생했습니다.', 'An error occurred while processing your request.'));
 				return;
 			}
 
 			if (typeof json.current_tokens === 'number') {
 				const headerTokenEl = document.getElementById('headerTokenBalance');
 				if (headerTokenEl) {
-					headerTokenEl.textContent = Number(json.current_tokens || 0).toLocaleString('ko-KR');
+					headerTokenEl.textContent = Number(json.current_tokens || 0).toLocaleString(isEn ? 'en-US' : 'ko-KR');
 				}
 			}
 			GlobalLoading.setMessage(
-				'분석을 시작합니다.',
-				'분석이 완료되면 알려드리겠습니다.'
+				L('분석을 시작합니다.', 'Analysis started.'),
+				L('분석이 완료되면 알려드리겠습니다.', 'We will notify you when it is complete.')
 			);
 			window.dispatchEvent(new CustomEvent('analysis:started', {
 				detail: {
@@ -248,7 +263,7 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 		} catch (err) {
 			console.error('[SAJU REQUEST ERROR]', err);
 			GlobalLoading.hide();
-			alert('요청 처리 중 오류가 발생했습니다.');
+			alert(L('요청 처리 중 오류가 발생했습니다.', 'An error occurred while processing your request.'));
 		}
 	});
 
@@ -313,28 +328,28 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 			box.style.padding = '18px';
 			box.style.boxShadow = '0 18px 50px rgba(0, 0, 0, 0.2)';
 			box.innerHTML = `
-				<h3 style="margin:0 0 8px;font-size:18px;">입력 정보 저장</h3>
-				<p style="margin:0 0 12px;color:#475569;line-height:1.5;">이 정보를 다음 상담을 위해 내정보 또는 지인정보에 추가하시겠습니까?</p>
+				<h3 style="margin:0 0 8px;font-size:18px;">${L('입력 정보 저장', 'Save Input Data')}</h3>
+				<p style="margin:0 0 12px;color:#475569;line-height:1.5;">${L('이 정보를 다음 상담을 위해 내정보 또는 지인정보에 추가하시겠습니까?', 'Save this data to profile or contact for next consultation?')}</p>
 				<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-					<button type="button" id="saveToProfileBtn" style="padding:8px 12px;">내정보에 저장</button>
-					<button type="button" id="saveToRelativeBtn" style="padding:8px 12px;">지인으로 저장</button>
-					<button type="button" id="skipSaveBtn" style="padding:8px 12px;">건너뛰기</button>
+					<button type="button" id="saveToProfileBtn" style="padding:8px 12px;">${L('내정보에 저장', 'Save to Profile')}</button>
+					<button type="button" id="saveToRelativeBtn" style="padding:8px 12px;">${L('지인으로 저장', 'Save as Contact')}</button>
+					<button type="button" id="skipSaveBtn" style="padding:8px 12px;">${L('건너뛰기', 'Skip')}</button>
 				</div>
 				<div id="relativeSelectWrap" style="display:none;margin-top:8px;">
-					<label for="relationSelect" style="display:block;margin-bottom:6px;">관계 선택</label>
+					<label for="relationSelect" style="display:block;margin-bottom:6px;">${L('관계 선택', 'Select Relation')}</label>
 					<select id="relationSelect" style="width:100%;padding:8px;">
-						<option value="FRIEND">친구</option>
-						<option value="SPOUSE">배우자</option>
-						<option value="PARENT">부모</option>
-						<option value="SON">아들</option>
-						<option value="DAUGHTER">딸</option>
-						<option value="SIBLING">형제자매</option>
-						<option value="FAMILY">가족</option>
-						<option value="GRANDPARENT">조부모</option>
-						<option value="OTHER">기타</option>
+						<option value="FRIEND">${L('친구', 'Friend')}</option>
+						<option value="SPOUSE">${L('배우자', 'Spouse')}</option>
+						<option value="PARENT">${L('부모', 'Parent')}</option>
+						<option value="SON">${L('아들', 'Son')}</option>
+						<option value="DAUGHTER">${L('딸', 'Daughter')}</option>
+						<option value="SIBLING">${L('형제자매', 'Sibling')}</option>
+						<option value="FAMILY">${L('가족', 'Family')}</option>
+						<option value="GRANDPARENT">${L('조부모', 'Grandparent')}</option>
+						<option value="OTHER">${L('기타', 'Other')}</option>
 					</select>
 					<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
-						<button type="button" id="confirmRelativeSaveBtn" style="padding:8px 12px;">확정</button>
+						<button type="button" id="confirmRelativeSaveBtn" style="padding:8px 12px;">${L('확정', 'Confirm')}</button>
 					</div>
 				</div>
 			`;
@@ -375,13 +390,13 @@ export function initSajuFormContainer({ sajuTargets = [] } = {}) {
 	function validateForm() {
 		const errors = [];
 		
-		if (!document.getElementById('name').value.trim()) errors.push('이름을 입력해주세요.');
-		if (!document.getElementById('counselingType').value) errors.push('상담유형을 선택해주세요.');
-		if (!yearSelect.value) errors.push('년도를 선택해주세요.');
-		if (!monthSelect.value) errors.push('월을 선택해주세요.');
-		if (!daySelect.value) errors.push('일을 선택해주세요.');
-		if (!document.getElementById('birthTime').value) errors.push('태어난 시간을 선택해주세요.');
-		if (!document.querySelector('input[name="gender"]:checked')) errors.push('성별을 선택해주세요.');
+		if (!document.getElementById('name').value.trim()) errors.push(L('이름을 입력해주세요.', 'Please enter your name.'));
+		if (!document.getElementById('counselingType').value) errors.push(L('상담유형을 선택해주세요.', 'Please select counseling tone.'));
+		if (!yearSelect.value) errors.push(L('년도를 선택해주세요.', 'Please select year.'));
+		if (!monthSelect.value) errors.push(L('월을 선택해주세요.', 'Please select month.'));
+		if (!daySelect.value) errors.push(L('일을 선택해주세요.', 'Please select day.'));
+		if (!document.getElementById('birthTime').value) errors.push(L('태어난 시간을 선택해주세요.', 'Please select birth time.'));
+		if (!document.querySelector('input[name="gender"]:checked')) errors.push(L('성별을 선택해주세요.', 'Please select gender.'));
 		
 		if (errors.length > 0) {
 			alert(errors.join('\n'));

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= String(locale || 'ko') %>">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,7 @@
 	<meta name="description" content="<%= pageDescription %>">
 	<% if (pageKeywords) { %><meta name="keywords" content="<%= pageKeywords %>"><% } %>
 	<meta name="robots" content="<%= pageRobots %>">
-	<meta property="og:locale" content="ko_KR">
+	<meta property="og:locale" content="<%= String(ogLocale || 'ko_KR') %>">
 	<meta property="og:type" content="<%= String(pageSeo.ogType || 'website') %>">
 	<meta property="og:site_name" content="48LAB">
 	<meta property="og:title" content="<%= pageTitle %>">

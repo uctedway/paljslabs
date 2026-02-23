@@ -1,3 +1,4 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <% if (pageMode !== 'form') { %>
 <section class="fortune-intro service-intro-<%= feature.key %>">
   <div class="fortune-intro-hero">
@@ -7,7 +8,7 @@
     <p class="fortune-intro-description"><%= feature.introDescription || '' %></p>
     <div class="fortune-intro-cta-row">
       <a class="btn-service-primary" href="/fortune/<%= feature.key %>?view=form"><%= feature.cta %></a>
-      <a class="btn-service-secondary" href="/fortune">다른 운세 메뉴 보기</a>
+      <a class="btn-service-secondary" href="/fortune"><%= L('다른 운세 메뉴 보기', 'Browse Other Services') %></a>
     </div>
   </div>
 
@@ -21,11 +22,11 @@
   </div>
 
   <aside class="fortune-intro-note">
-    <h4>이 서비스는 이런 분께 추천합니다</h4>
+    <h4><%= L('이 서비스는 이런 분께 추천합니다', 'Recommended for users who') %></h4>
     <ul>
-      <li>운세 용어를 모르는 상태에서도 이해 가능한 설명형 리포트를 원하는 분</li>
-      <li>결정의 정답보다 상황별 선택 기준과 타이밍 가이드를 원하는 분</li>
-      <li>관계, 일정, 이름, 하루 계획을 실제 행동으로 연결하고 싶은 분</li>
+      <li><%= L('운세 용어를 모르는 상태에서도 이해 가능한 설명형 리포트를 원하는 분', 'Want explanation-first reports without requiring fortune terminology.') %></li>
+      <li><%= L('결정의 정답보다 상황별 선택 기준과 타이밍 가이드를 원하는 분', 'Need decision criteria and timing guidance rather than fixed answers.') %></li>
+      <li><%= L('관계, 일정, 이름, 하루 계획을 실제 행동으로 연결하고 싶은 분', 'Want to turn relationship/date/naming/daily plans into action.') %></li>
     </ul>
   </aside>
 </section>
@@ -36,15 +37,15 @@
 
   <%
     const relationCodeToLabel = {
-      SPOUSE: '배우자',
-      PARENT: '부모',
-      GRANDPARENT: '조부모',
-      SON: '아들',
-      DAUGHTER: '딸',
-      SIBLING: '형제자매',
-      FAMILY: '가족',
-      FRIEND: '친구',
-      OTHER: '기타',
+      SPOUSE: L('배우자', 'Spouse'),
+      PARENT: L('부모', 'Parent'),
+      GRANDPARENT: L('조부모', 'Grandparent'),
+      SON: L('아들', 'Son'),
+      DAUGHTER: L('딸', 'Daughter'),
+      SIBLING: L('형제자매', 'Sibling'),
+      FAMILY: L('가족', 'Family'),
+      FRIEND: L('친구', 'Friend'),
+      OTHER: L('기타', 'Other'),
     };
     function normalizeTargetLabel(rawLabel) {
       const raw = String(rawLabel || '').trim();
@@ -62,95 +63,95 @@
   <form id="fortuneForm" method="POST" data-feature="<%= feature.key %>">
     <% if (feature.key === 'compatibility') { %>
       <div class="form-group">
-        <label for="relationship">관계</label>
+        <label for="relationship"><%= L('관계', 'Relationship') %></label>
         <select id="relationship" name="relationship" required class="mustInput">
-          <option value="">선택</option>
-          <option value="SPOUSE">배우자</option>
-          <option value="PARENT">부모</option>
-          <option value="GRANDPARENT">조부모</option>
-          <option value="SON">아들</option>
-          <option value="DAUGHTER">딸</option>
-          <option value="SIBLING">형제자매</option>
-          <option value="FAMILY">가족</option>
-          <option value="FRIEND">친구</option>
-          <option value="OTHER">기타</option>
+          <option value=""><%= L('선택', 'Select') %></option>
+          <option value="SPOUSE"><%= L('배우자', 'Spouse') %></option>
+          <option value="PARENT"><%= L('부모', 'Parent') %></option>
+          <option value="GRANDPARENT"><%= L('조부모', 'Grandparent') %></option>
+          <option value="SON"><%= L('아들', 'Son') %></option>
+          <option value="DAUGHTER"><%= L('딸', 'Daughter') %></option>
+          <option value="SIBLING"><%= L('형제자매', 'Sibling') %></option>
+          <option value="FAMILY"><%= L('가족', 'Family') %></option>
+          <option value="FRIEND"><%= L('친구', 'Friend') %></option>
+          <option value="OTHER"><%= L('기타', 'Other') %></option>
         </select>
         <p id="relationshipAutoHint" class="section-desc" style="margin-top:8px;font-size:13px;"></p>
       </div>
 
       <div class="form-group">
-        <label>입력 대상</label>
+        <label><%= L('입력 대상', 'Input Target') %></label>
         <div class="radio-group">
-          <button type="button" class="btn-manage-relative tab-btn active" data-tab-target="person1Panel">사람 1</button>
-          <button type="button" class="btn-manage-relative tab-btn" data-tab-target="person2Panel">사람 2</button>
+          <button type="button" class="btn-manage-relative tab-btn active" data-tab-target="person1Panel"><%= L('사람 1', 'Person 1') %></button>
+          <button type="button" class="btn-manage-relative tab-btn" data-tab-target="person2Panel"><%= L('사람 2', 'Person 2') %></button>
         </div>
       </div>
 
       <div id="person1Panel" class="compat-panel">
-        <h3>사람 1</h3>
+        <h3><%= L('사람 1', 'Person 1') %></h3>
         <%- include('./partials/person_form_block', { prefix: 'person1', sajuTargets, normalizeTargetLabel }) %>
       </div>
 
       <div id="person2Panel" class="compat-panel" style="display:none;">
-        <h3>사람 2</h3>
+        <h3><%= L('사람 2', 'Person 2') %></h3>
         <%- include('./partials/person_form_block', { prefix: 'person2', sajuTargets, normalizeTargetLabel }) %>
       </div>
     <% } else { %>
       <div class="compat-panel">
-        <h3>대상 정보</h3>
+        <h3><%= L('대상 정보', 'Target Info') %></h3>
         <%- include('./partials/person_form_block', { prefix: 'single', sajuTargets, normalizeTargetLabel }) %>
       </div>
     <% } %>
 
     <% if (feature.key === 'today') { %>
       <div class="form-group">
-        <label for="focusArea">집중 영역</label>
+        <label for="focusArea"><%= L('집중 영역', 'Focus Area') %></label>
         <select id="focusArea" name="focusArea" required class="mustInput">
-          <option value="">선택</option>
-          <option value="종합">종합</option>
-          <option value="연애">연애</option>
-          <option value="일/사업">일/사업</option>
-          <option value="금전">금전</option>
-          <option value="건강">건강</option>
+          <option value=""><%= L('선택', 'Select') %></option>
+          <option value="종합"><%= L('종합', 'Overall') %></option>
+          <option value="연애"><%= L('연애', 'Romance') %></option>
+          <option value="일/사업"><%= L('일/사업', 'Work/Business') %></option>
+          <option value="금전"><%= L('금전', 'Money') %></option>
+          <option value="건강"><%= L('건강', 'Health') %></option>
         </select>
       </div>
     <% } %>
 
     <% if (feature.key === 'flow') { %>
       <div class="form-group">
-        <label for="targetPeriod">대상 기간</label>
+        <label for="targetPeriod"><%= L('대상 기간', 'Target Period') %></label>
         <select id="targetPeriod" name="targetPeriod" required class="mustInput">
-          <option value="">선택</option>
-          <option value="3개월">3개월</option>
-          <option value="6개월">6개월</option>
-          <option value="12개월">12개월</option>
+          <option value=""><%= L('선택', 'Select') %></option>
+          <option value="3개월"><%= L('3개월', '3 months') %></option>
+          <option value="6개월"><%= L('6개월', '6 months') %></option>
+          <option value="12개월"><%= L('12개월', '12 months') %></option>
         </select>
       </div>
     <% } %>
 
     <% if (feature.key === 'naming') { %>
       <div class="form-group">
-        <label for="candidateName">검토할 이름 후보</label>
-        <input type="text" id="candidateName" name="candidateName" required class="mustInput" placeholder="예: 이도윤">
+        <label for="candidateName"><%= L('검토할 이름 후보', 'Name Candidate') %></label>
+        <input type="text" id="candidateName" name="candidateName" required class="mustInput" placeholder="<%= L('예: 이도윤', 'e.g., Ethan Lee') %>">
       </div>
     <% } %>
 
     <% if (feature.key === 'date-selection') { %>
       <div class="form-group">
-        <label for="eventType">목적</label>
+        <label for="eventType"><%= L('목적', 'Purpose') %></label>
         <select id="eventType" name="eventType" required class="mustInput">
-          <option value="">선택</option>
-          <option value="계약">계약</option>
-          <option value="이사">이사</option>
-          <option value="개업">개업</option>
-          <option value="결혼">결혼</option>
-          <option value="수술">수술</option>
-          <option value="기타">기타</option>
+          <option value=""><%= L('선택', 'Select') %></option>
+          <option value="계약"><%= L('계약', 'Contract') %></option>
+          <option value="이사"><%= L('이사', 'Moving') %></option>
+          <option value="개업"><%= L('개업', 'Opening') %></option>
+          <option value="결혼"><%= L('결혼', 'Wedding') %></option>
+          <option value="수술"><%= L('수술', 'Surgery') %></option>
+          <option value="기타"><%= L('기타', 'Other') %></option>
         </select>
       </div>
 
       <div class="form-group">
-        <label for="candidateDate">후보 일시</label>
+        <label for="candidateDate"><%= L('후보 일시', 'Candidate DateTimes') %></label>
         <input type="text" id="candidateDate" name="candidateDate" required class="mustInput" placeholder="2026-03-15 10:00:00, 2026-03-20 14:00:00">
       </div>
     <% } %>

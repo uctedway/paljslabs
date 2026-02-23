@@ -93,6 +93,17 @@
 			font-family: inherit;
 		}
 
+		.lang-shortcut {
+			min-width: 36px;
+			justify-content: center;
+
+			&.is-active {
+				border-color: #3b82f6;
+				background: #e8f1ff;
+				color: #1d4ed8;
+			}
+		}
+
 		.token-shortcut strong {
 			margin-left: 4px;
 		}
@@ -423,6 +434,28 @@
 					display: inline-flex;
 					align-items: center;
 					gap: 6px;
+				}
+
+				.mobile-lang-link {
+					display: inline-flex;
+					align-items: center;
+					justify-content: center;
+					min-width: 34px;
+					height: 34px;
+					padding: 0 8px;
+					border: 1px solid #dbe5f3;
+					border-radius: 10px;
+					background: #fff;
+					color: #0f172a;
+					font-size: 12px;
+					font-weight: 700;
+					text-decoration: none;
+
+					&.is-active {
+						border-color: #3b82f6;
+						background: #e8f1ff;
+						color: #1d4ed8;
+					}
 				}
 
 				.mobile-theme-toggle-btn {

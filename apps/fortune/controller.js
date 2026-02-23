@@ -1,6 +1,6 @@
 const path = require('path');
 const db = require('../core/utils/db');
-const { getRelationLabel } = require('../core/utils/relation_codes');
+const { getRelationLabel, getRequestLocale } = require('../core/utils/relation_codes');
 const { getSajuResultRecord } = require('../api/services/saju_result_store');
 
 const FORTUNE_FEATURES = {
@@ -126,6 +126,74 @@ const FORTUNE_FEATURES = {
   },
 };
 
+const FORTUNE_FEATURES_EN = {
+  compatibility: {
+    title: 'Compatibility',
+    description: 'Analyze relationship flow and interaction points for two people.',
+    cta: 'Analyze Compatibility',
+    introTitle: 'Compatibility is not a yes/no verdict. It reads relationship rhythm.',
+    introDescription: 'It compares two personality structures and timing flow to identify friction and synergy in practical terms.',
+    introHighlights: [
+      { title: 'What is analyzed?', text: 'Emotion expression, conflict patterns, recovery points, and collaboration synergy.' },
+      { title: 'Why is it useful?', text: 'It helps you operate relationships better, rather than forcing a binary judgment.' },
+      { title: 'How to use it?', text: 'Apply it to communication style, important scheduling, and role division.' },
+    ],
+  },
+  today: {
+    title: 'Today Fortune',
+    description: 'Get key daily flow and practical priorities.',
+    cta: 'View Today Fortune',
+    introTitle: 'Today Fortune suggests focus points, not a full-day prophecy.',
+    introDescription: 'It helps you quickly set priorities across work, money, relationships, and health.',
+    introHighlights: [
+      { title: 'What is analyzed?', text: 'Favorable actions, fatigue windows, and timing for communication and decisions.' },
+      { title: 'Why is it useful?', text: 'It reduces trial-and-error and improves energy allocation in daily plans.' },
+      { title: 'How to use it?', text: 'Use it for meeting schedule, contact priority, and spending timing.' },
+    ],
+  },
+  flow: {
+    title: 'Luck Flow',
+    description: 'Plan timing strategy with monthly/yearly trend.',
+    cta: 'View Luck Flow',
+    introTitle: 'Luck Flow is a long-term strategy tool for cycles and turning points.',
+    introDescription: 'It helps planning with long-term trends, not short-term emotion.',
+    introHighlights: [
+      { title: 'What is analyzed?', text: 'Expansion/maintenance/transition phases and risk-control points.' },
+      { title: 'Why is it useful?', text: 'Useful for timing-sensitive decisions like career, business, and investment.' },
+      { title: 'How to use it?', text: 'Separate preparation timing from execution timing for better decisions.' },
+    ],
+  },
+  naming: {
+    title: 'Naming Support',
+    description: 'Evaluate name candidates with chart-balance direction.',
+    cta: 'Request Naming Support',
+    introTitle: 'Naming Support compares direction and fit, not a single “best name.”',
+    introDescription: 'It reviews pronunciation, usability, image, and chart-balance together.',
+    introHighlights: [
+      { title: 'What is analyzed?', text: 'Tone, meaning, support direction, and practical usability by candidate.' },
+      { title: 'Why is it useful?', text: 'It gives clear criteria beyond pure intuition.' },
+      { title: 'How to use it?', text: 'Narrow to 2–3 finalists and use as an objective discussion reference.' },
+    ],
+  },
+  'date-selection': {
+    title: 'Date Selection',
+    description: 'Compare fitness of date/time candidates by purpose.',
+    cta: 'Analyze Date Selection',
+    introTitle: 'Date Selection compares suitability by purpose, not simple good/bad labels.',
+    introDescription: 'Different events need different criteria. Compare candidates side by side for execution stability.',
+    introHighlights: [
+      { title: 'What is analyzed?', text: 'Purpose-time fit, collision risks, and preparation margin.' },
+      { title: 'Why is it useful?', text: 'It reduces uncertainty from convenience-only scheduling.' },
+      { title: 'How to use it?', text: 'Prioritize candidates and prepare fallback schedule options.' },
+    ],
+  },
+};
+
+function resolveLocale(req, res) {
+  const raw = String(res?.locals?.locale || req?.query?.lang || req?.session?.locale || getRequestLocale(req) || 'ko').toLowerCase();
+  return raw.startsWith('en') ? 'en' : 'ko';
+}
+
 function getFeature(featureKey) {
   return FORTUNE_FEATURES[String(featureKey || '').trim().toLowerCase()] || null;
 }
@@ -166,9 +234,9 @@ function normalizeTimeForInput(rawTime, birthTimeUnknown = 0) {
 }
 
 async function buildSajuTargets(req) {
+  const locale = resolveLocale(req);
   const sessionUser = req.session && req.session.user ? req.session.user : null;
   const profile = req.session && req.session.mypageProfile ? req.session.mypageProfile : {};
-  const locale = 'ko';
   let relatives = [];
 
   if (sessionUser && sessionUser.login_id) {
@@ -191,7 +259,7 @@ async function buildSajuTargets(req) {
     sajuTargets.push({
       type: 'self',
       id: 'self',
-      label: `본인 · ${sessionUser.user_name || sessionUser.login_id || '회원'}`,
+      label: `${locale === 'en' ? 'Me' : '본인'} · ${sessionUser.user_name || sessionUser.login_id || (locale === 'en' ? 'Member' : '회원')}`,
       name: sessionUser.user_name || '',
       birthDate: profile.birthDate || '',
       birthTime: profile.birthTime || '',
@@ -206,7 +274,7 @@ async function buildSajuTargets(req) {
     sajuTargets.push({
       type: 'relative',
       id: String(relative.relative_id),
-      label: `${relationLabel} · ${relative.relative_name || '이름없음'}`,
+      label: `${relationLabel} · ${relative.relative_name || (locale === 'en' ? 'No Name' : '이름없음')}`,
       name: relative.relative_name || '',
       birthDate: normalizeDateForInput(relative.relative_birth_date),
       birthTime: normalizeTimeForInput(relative.relative_birth_time, relative.birth_time_unknown),
@@ -220,23 +288,31 @@ async function buildSajuTargets(req) {
 }
 
 const index = (req, res) => {
+  const locale = resolveLocale(req, res);
+  const features = Object.values(FORTUNE_FEATURES).map((feature) => {
+    if (locale !== 'en') return feature;
+    const en = FORTUNE_FEATURES_EN[feature.key] || {};
+    return { ...feature, ...en };
+  });
   res.render(path.join(__dirname, './pages/index.ejs'), {
-    features: Object.values(FORTUNE_FEATURES),
+    features,
   });
 };
 
 const featurePage = async (req, res) => {
+  const locale = resolveLocale(req, res);
   const feature = getFeature(req.params?.feature);
   if (!feature) {
     return res.status(404).send('존재하지 않는 메뉴입니다.');
   }
+  const localizedFeature = locale === 'en' ? { ...feature, ...(FORTUNE_FEATURES_EN[feature.key] || {}) } : feature;
 
   const view = String(req.query?.view || '').trim().toLowerCase();
   const isFormView = view === 'form';
   const sajuTargets = isFormView ? await buildSajuTargets(req) : [];
 
   return res.render(path.join(__dirname, './pages/feature.ejs'), {
-    feature,
+    feature: localizedFeature,
     pageMode: isFormView ? 'form' : 'intro',
     sajuTargets,
   });

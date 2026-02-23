@@ -5,6 +5,8 @@ const GlobalLoading = (function() {
 	let messageEl = null;
 	let detailEl = null;
 	let styleInjected = false;
+	const isEn = String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
+	const L = (ko, en) => (isEn ? en : ko);
 
 	function injectStyle() {
 		if (styleInjected) return;
@@ -66,8 +68,8 @@ const GlobalLoading = (function() {
 		el.innerHTML = `
 			<div class="global-loading-card">
 				<div class="global-loading-spinner"></div>
-				<div class="global-loading-message">요청을 준비하고 있습니다.</div>
-				<div class="global-loading-detail">잠시만 기다려주세요.</div>
+				<div class="global-loading-message">${L('요청을 준비하고 있습니다.', 'Preparing request...')}</div>
+				<div class="global-loading-detail">${L('잠시만 기다려주세요.', 'Please wait a moment.')}</div>
 			</div>
 		`;
 		messageEl = el.querySelector('.global-loading-message');
@@ -76,7 +78,7 @@ const GlobalLoading = (function() {
 	}
 
 	return {
-		show(message = '요청을 처리하고 있습니다.', detail = '잠시만 기다려주세요.') {
+		show(message = L('요청을 처리하고 있습니다.', 'Processing request...'), detail = L('잠시만 기다려주세요.', 'Please wait a moment.')) {
 			if (overlay) return;
 			injectStyle();
 			overlay = createOverlay();

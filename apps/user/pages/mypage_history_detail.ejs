@@ -1,31 +1,32 @@
 <section class="mypage-shell mypage-history-detail-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
   <%
     const req = record && record.request ? record.request : {};
     const isCompatibility = String(req.featureKey || '').toLowerCase() === 'compatibility';
     const featureLabel = req.featureLabel || req.counselingType || '-';
     const targetName = isCompatibility
-      ? `${String(req.person1Name || '').trim() || '사람1'} × ${String(req.person2Name || '').trim() || '사람2'}`
+      ? `${String(req.person1Name || '').trim() || L('사람1', 'Person 1')} × ${String(req.person2Name || '').trim() || L('사람2', 'Person 2')}`
       : (req.name || '-');
 
     function toGenderLabel(v) {
       const x = String(v || '').trim().toLowerCase();
-      if (x === 'male' || x === 'm') return '남성';
-      if (x === 'female' || x === 'f') return '여성';
+      if (x === 'male' || x === 'm') return L('남성', 'Male');
+      if (x === 'female' || x === 'f') return L('여성', 'Female');
       return v || '-';
     }
     function toRelationLabel(v) {
       const x = String(v || '').trim().toUpperCase();
       const map = {
-        SPOUSE: '배우자',
-        PARENT: '부모',
-        GRANDPARENT: '조부모',
-        SON: '아들',
-        DAUGHTER: '딸',
-        SIBLING: '형제자매',
-        FAMILY: '가족',
-        FRIEND: '친구',
-        OTHER: '기타',
+        SPOUSE: L('배우자', 'Spouse'),
+        PARENT: L('부모', 'Parent'),
+        GRANDPARENT: L('조부모', 'Grandparent'),
+        SON: L('아들', 'Son'),
+        DAUGHTER: L('딸', 'Daughter'),
+        SIBLING: L('형제자매', 'Sibling'),
+        FAMILY: L('가족', 'Family'),
+        FRIEND: L('친구', 'Friend'),
+        OTHER: L('기타', 'Other'),
       };
       return map[x] || v || '-';
     }
@@ -33,19 +34,19 @@
 
   <div class="mypage-content">
     <article class="mypage-card">
-      <h3>상담 상세</h3>
-      <p class="mypage-desc">결과 ID: <strong><%= record.resultId %></strong></p>
+      <h3><%= L('상담 상세', 'Consultation Detail') %></h3>
+      <p class="mypage-desc"><%= L('결과 ID', 'Result ID') %>: <strong><%= record.resultId %></strong></p>
 
       <div class="mypage-history-meta-grid">
-        <p><strong>상태</strong> <span><%= record.statusText %></span></p>
-        <p><strong>요청일시</strong> <span><%= record.createdAt || '-' %></span></p>
-        <p><strong>상담유형</strong> <span><%= featureLabel %></span></p>
-        <p><strong>대상명</strong> <span><%= targetName %></span></p>
+        <p><strong><%= L('상태', 'Status') %></strong> <span><%= record.statusText %></span></p>
+        <p><strong><%= L('요청일시', 'Requested At') %></strong> <span><%= record.createdAt || '-' %></span></p>
+        <p><strong><%= L('상담유형', 'Type') %></strong> <span><%= featureLabel %></span></p>
+        <p><strong><%= L('대상명', 'Target') %></strong> <span><%= targetName %></span></p>
       </div>
 
       <div class="mypage-share-box">
-        <p class="mypage-desc">이 상담 결과만 외부에 공유할 수 있습니다.</p>
-        <button type="button" class="mypage-btn primary" id="shareCopyBtn">공유하기</button>
+        <p class="mypage-desc"><%= L('이 상담 결과만 외부에 공유할 수 있습니다.', 'Only this consultation result can be shared externally.') %></p>
+        <button type="button" class="mypage-btn primary" id="shareCopyBtn"><%= L('공유하기', 'Share') %></button>
         <div class="mypage-share-link-wrap" id="shareLinkWrap" <%= record.share && record.share.enabled && record.share.token ? '' : 'style="display:none"' %>>
           <input
             id="shareLinkInput"
@@ -59,38 +60,38 @@
     </article>
 
     <article class="mypage-card">
-      <h3>요청 정보</h3>
+      <h3><%= L('요청 정보', 'Request Data') %></h3>
       <% if (isCompatibility) { %>
         <div class="mypage-history-meta-grid">
-          <p><strong>관계</strong><span><%= toRelationLabel(req.relationship) %></span></p>
-          <p><strong>사람1</strong><span><%= req.person1Name || '-' %></span></p>
-          <p><strong>사람1 생년월일</strong><span><%= [req.person1BirthYear, req.person1BirthMonth, req.person1BirthDay].filter(Boolean).join('-') || '-' %></span></p>
-          <p><strong>사람1 출생시</strong><span><%= req.person1BirthTime || '-' %></span></p>
-          <p><strong>사람1 성별</strong><span><%= toGenderLabel(req.person1Gender) %></span></p>
-          <p><strong>사람2</strong><span><%= req.person2Name || '-' %></span></p>
-          <p><strong>사람2 생년월일</strong><span><%= [req.person2BirthYear, req.person2BirthMonth, req.person2BirthDay].filter(Boolean).join('-') || '-' %></span></p>
-          <p><strong>사람2 출생시</strong><span><%= req.person2BirthTime || '-' %></span></p>
-          <p><strong>사람2 성별</strong><span><%= toGenderLabel(req.person2Gender) %></span></p>
+          <p><strong><%= L('관계', 'Relationship') %></strong><span><%= toRelationLabel(req.relationship) %></span></p>
+          <p><strong><%= L('사람1', 'Person 1') %></strong><span><%= req.person1Name || '-' %></span></p>
+          <p><strong><%= L('사람1 생년월일', 'Person 1 Birth Date') %></strong><span><%= [req.person1BirthYear, req.person1BirthMonth, req.person1BirthDay].filter(Boolean).join('-') || '-' %></span></p>
+          <p><strong><%= L('사람1 출생시', 'Person 1 Birth Time') %></strong><span><%= req.person1BirthTime || '-' %></span></p>
+          <p><strong><%= L('사람1 성별', 'Person 1 Gender') %></strong><span><%= toGenderLabel(req.person1Gender) %></span></p>
+          <p><strong><%= L('사람2', 'Person 2') %></strong><span><%= req.person2Name || '-' %></span></p>
+          <p><strong><%= L('사람2 생년월일', 'Person 2 Birth Date') %></strong><span><%= [req.person2BirthYear, req.person2BirthMonth, req.person2BirthDay].filter(Boolean).join('-') || '-' %></span></p>
+          <p><strong><%= L('사람2 출생시', 'Person 2 Birth Time') %></strong><span><%= req.person2BirthTime || '-' %></span></p>
+          <p><strong><%= L('사람2 성별', 'Person 2 Gender') %></strong><span><%= toGenderLabel(req.person2Gender) %></span></p>
         </div>
       <% } else { %>
         <div class="mypage-history-meta-grid">
-          <p><strong>생년</strong><span><%= req.birthYear || '-' %></span></p>
-          <p><strong>생월</strong><span><%= req.birthMonth || '-' %></span></p>
-          <p><strong>생일</strong><span><%= req.birthDay || '-' %></span></p>
-          <p><strong>출생시</strong><span><%= req.birthTime || '-' %></span></p>
-          <p><strong>성별</strong><span><%= toGenderLabel(req.gender) %></span></p>
-          <p><strong>상담대상</strong><span><%= req.targetType || '-' %></span></p>
+          <p><strong><%= L('생년', 'Birth Year') %></strong><span><%= req.birthYear || '-' %></span></p>
+          <p><strong><%= L('생월', 'Birth Month') %></strong><span><%= req.birthMonth || '-' %></span></p>
+          <p><strong><%= L('생일', 'Birth Day') %></strong><span><%= req.birthDay || '-' %></span></p>
+          <p><strong><%= L('출생시', 'Birth Time') %></strong><span><%= req.birthTime || '-' %></span></p>
+          <p><strong><%= L('성별', 'Gender') %></strong><span><%= toGenderLabel(req.gender) %></span></p>
+          <p><strong><%= L('상담대상', 'Target Type') %></strong><span><%= req.targetType || '-' %></span></p>
         </div>
       <% } %>
     </article>
 
     <article class="mypage-card">
-      <h3>상담 결과</h3>
+      <h3><%= L('상담 결과', 'Result') %></h3>
       <div class="mypage-history-result">
         <% if (record.result && record.result.claudeResult) { %>
           <pre class="mypage-code"><%= record.result.claudeResult %></pre>
         <% } else { %>
-          <p class="mypage-empty">아직 결과가 없습니다.</p>
+          <p class="mypage-empty"><%= L('아직 결과가 없습니다.', 'No result yet.') %></p>
         <% } %>
       </div>
     </article>
@@ -129,8 +130,8 @@
     if (!navigator.share) return { supported: false, shared: false };
     try {
       await navigator.share({
-        title: '상담 결과 공유',
-        text: '상담 결과를 공유합니다.',
+        title: <%- JSON.stringify(tt('상담 결과 공유', 'Share Consultation Result')) %>,
+        text: <%- JSON.stringify(tt('상담 결과를 공유합니다.', 'Sharing consultation result.')) %>,
         url
       });
       return { supported: true, shared: true };
@@ -145,7 +146,7 @@
   shareCopyBtn.addEventListener('click', async () => {
     shareCopyBtn.disabled = true;
     const original = shareCopyBtn.textContent;
-    shareCopyBtn.textContent = '준비 중...';
+    shareCopyBtn.textContent = <%- JSON.stringify(tt('준비 중...', 'Preparing...')) %>;
 
     try {
       let shareUrl = input.value ? toAbsolute(input.value) : '';
@@ -157,7 +158,7 @@
         });
         const json = await res.json();
         if (!res.ok || json.resp !== 'OK') {
-          alert(json.resp_message || '공유 링크 생성에 실패했습니다.');
+          alert(json.resp_message || <%- JSON.stringify(tt('공유 링크 생성에 실패했습니다.', 'Failed to create share link.')) %>);
           return;
         }
 
@@ -171,12 +172,14 @@
 
       const copied = await writeClipboard(shareUrl);
       if (copied) {
-        alert(shared.canceled ? '공유를 취소하여 링크를 복사했습니다.' : '공유 링크를 복사했습니다.');
+        alert(shared.canceled
+          ? <%- JSON.stringify(tt('공유를 취소하여 링크를 복사했습니다.', 'Share canceled. Link copied instead.')) %>
+          : <%- JSON.stringify(tt('공유 링크를 복사했습니다.', 'Share link copied.')) %>);
       } else {
-        alert('공유/복사에 실패했습니다. 링크를 수동으로 복사해주세요.');
+        alert(<%- JSON.stringify(tt('공유/복사에 실패했습니다. 링크를 수동으로 복사해주세요.', 'Share/copy failed. Please copy the link manually.')) %>);
       }
     } catch (err) {
-      alert('공유 링크 처리 중 오류가 발생했습니다.');
+      alert(<%- JSON.stringify(tt('공유 링크 처리 중 오류가 발생했습니다.', 'Error while processing share link.')) %>);
     } finally {
       shareCopyBtn.disabled = false;
       shareCopyBtn.textContent = original;

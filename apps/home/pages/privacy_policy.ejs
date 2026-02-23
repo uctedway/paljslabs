@@ -1,8 +1,9 @@
 <section class="legal-page">
+  <% const L = (ko, en) => tt(ko, en); %>
   <div class="legal-inner">
     <header class="legal-header">
-      <h1>48LAB 개인정보처리방침</h1>
-      <p>시행일: <%= effectiveDate %></p>
+      <h1><%= L('48LAB 개인정보처리방침', '48LAB Privacy Policy') %></h1>
+      <p><%= L('시행일', 'Effective Date') %>: <%= effectiveDate %></p>
     </header>
 
     <%- include('../../core/pages/partials/legal_privacy_content') %>

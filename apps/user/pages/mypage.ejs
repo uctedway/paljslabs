@@ -1,40 +1,41 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', { currentMenu, consultationHistory, relatives }) %>
 
   <div class="mypage-content">
     <article class="mypage-card">
-      <h3>요약 대시보드</h3>
-      <p class="mypage-desc">마이페이지 주요 정보를 한눈에 확인하세요.</p>
+      <h3><%= L('요약 대시보드', 'Dashboard') %></h3>
+      <p class="mypage-desc"><%= L('마이페이지 주요 정보를 한눈에 확인하세요.', 'Check key account information at a glance.') %></p>
 
       <div class="mypage-dashboard-grid">
         <div class="mypage-dashboard-item">
-          <p>보유 토큰</p>
-          <strong><%= Number(currentTokens || 0).toLocaleString('ko-KR') %></strong>
+          <p><%= L('보유 토큰', 'Current Tokens') %></p>
+          <strong><%= Number(currentTokens || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %></strong>
         </div>
         <div class="mypage-dashboard-item">
-          <p>등록된 지인</p>
-          <strong><%= (relatives || []).length %>명</strong>
+          <p><%= L('등록된 지인', 'Contacts') %></p>
+          <strong><%= (relatives || []).length %><%= L('명', '') %></strong>
         </div>
         <div class="mypage-dashboard-item">
-          <p>상담 내역</p>
-          <strong><%= (consultationHistory || []).length %>건</strong>
+          <p><%= L('상담 내역', 'Consultations') %></p>
+          <strong><%= (consultationHistory || []).length %><%= L('건', '') %></strong>
         </div>
       </div>
     </article>
 
     <article class="mypage-card">
-      <h3>빠른 이동</h3>
+      <h3><%= L('빠른 이동', 'Quick Links') %></h3>
       <div class="mypage-quick-links">
-        <a class="mypage-btn" href="/user/mypage/profile">내 정보수정</a>
-        <a class="mypage-btn" href="/user/mypage/relatives">지인관리</a>
-        <a class="mypage-btn" href="/user/mypage/history">내 상담내역</a>
-        <a class="mypage-btn" href="/user/billing">토큰충전</a>
+        <a class="mypage-btn" href="/user/mypage/profile"><%= L('내 정보수정', 'Edit Profile') %></a>
+        <a class="mypage-btn" href="/user/mypage/relatives"><%= L('지인관리', 'Contacts') %></a>
+        <a class="mypage-btn" href="/user/mypage/history"><%= L('내 상담내역', 'Consultation History') %></a>
+        <a class="mypage-btn" href="/user/billing"><%= L('토큰충전', 'Token Top-up') %></a>
       </div>
     </article>
 
     <article class="mypage-card">
-      <h3>추천인 초대</h3>
-      <p class="mypage-desc">초대링크로 신규 가입이 완료되면 추천인에게 3토큰이 적립됩니다.</p>
+      <h3><%= L('추천인 초대', 'Referral Invite') %></h3>
+      <p class="mypage-desc"><%= L('초대링크로 신규 가입이 완료되면 추천인에게 3토큰이 적립됩니다.', 'When a signup is completed through your invite link, you receive 3 tokens.') %></p>
       <div class="mypage-share-link-wrap" style="display:flex;">
         <input
           type="text"
@@ -42,16 +43,16 @@
           id="referralLinkInput"
           value="<%= referralLink || '' %>"
           readonly>
-        <button type="button" class="mypage-btn" id="referralCopyBtn">링크 복사</button>
-        <button type="button" class="mypage-btn" id="referralShareBtn">공유하기</button>
+        <button type="button" class="mypage-btn" id="referralCopyBtn"><%= L('링크 복사', 'Copy Link') %></button>
+        <button type="button" class="mypage-btn" id="referralShareBtn"><%= L('공유하기', 'Share') %></button>
       </div>
-      <p class="mypage-desc">복사한 링크를 카카오톡/문자/메일에 붙여 보내면 됩니다.</p>
+      <p class="mypage-desc"><%= L('복사한 링크를 카카오톡/문자/메일에 붙여 보내면 됩니다.', 'Paste the copied link into KakaoTalk/SMS/Email to share.') %></p>
     </article>
 
     <article class="mypage-card">
-      <h3>최근 상담</h3>
+      <h3><%= L('최근 상담', 'Recent Consultations') %></h3>
       <% if (!recentHistory || recentHistory.length === 0) { %>
-        <p class="mypage-empty">최근 상담 내역이 없습니다.</p>
+        <p class="mypage-empty"><%= L('최근 상담 내역이 없습니다.', 'No recent consultations.') %></p>
       <% } else { %>
         <%
           function formatDateOnly(v) {
@@ -64,12 +65,12 @@
           function buildHistoryTitle(item) {
             const req = item && item.request ? item.request : {};
             if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
-              const p1 = String(req.person1Name || '').trim() || '사람1';
-              const p2 = String(req.person2Name || '').trim() || '사람2';
-              return `${p1}, ${p2} 궁합`;
+              const p1 = String(req.person1Name || '').trim() || L('사람1', 'Person 1');
+              const p2 = String(req.person2Name || '').trim() || L('사람2', 'Person 2');
+              return locale === 'en' ? `${p1}, ${p2} Compatibility` : `${p1}, ${p2} 궁합`;
             }
-            const name = String(req.name || '').trim() || '고객';
-            return `${name} 사주팔자`;
+            const name = String(req.name || '').trim() || L('고객', 'Customer');
+            return locale === 'en' ? `${name} Saju` : `${name} 사주팔자`;
           }
         %>
         <div class="mypage-history-list">
@@ -81,7 +82,7 @@
                 <p class="mypage-history-status <%= item.status %>"><%= item.statusText %></p>
               </div>
               <div class="mypage-history-actions">
-                <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>">상세보기</a>
+                <a class="mypage-btn" href="/user/mypage/history/<%= item.resultId %>"><%= L('상세보기', 'Detail') %></a>
               </div>
             </article>
           <% }); %>
@@ -101,32 +102,32 @@
   button.addEventListener('click', async () => {
     const value = String(input.value || '').trim();
     if (!value) {
-      alert('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      alert(<%- JSON.stringify(tt('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.', 'Failed to generate invite link. Please try again.')) %>);
       return;
     }
 
     try {
       await navigator.clipboard.writeText(value);
-      alert('초대링크를 복사했습니다.');
+      alert(<%- JSON.stringify(tt('초대링크를 복사했습니다.', 'Invite link copied.')) %>);
     } catch (_) {
       input.focus();
       input.select();
-      alert('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.');
+      alert(<%- JSON.stringify(tt('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.', 'Link selected. Press Ctrl+C to copy.')) %>);
     }
   });
 
   shareButton.addEventListener('click', async () => {
     const value = String(input.value || '').trim();
     if (!value) {
-      alert('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      alert(<%- JSON.stringify(tt('초대링크를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.', 'Failed to generate invite link. Please try again.')) %>);
       return;
     }
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: '48LAB 초대링크',
-          text: '초대링크로 가입하면 추천인 보상이 적용됩니다.',
+          title: <%- JSON.stringify(tt('48LAB 초대링크', '48LAB Invite Link')) %>,
+          text: <%- JSON.stringify(tt('초대링크로 가입하면 추천인 보상이 적용됩니다.', 'Signup through this invite link to apply referral reward.')) %>,
           url: value,
         });
         return;
@@ -135,11 +136,11 @@
 
     try {
       await navigator.clipboard.writeText(value);
-      alert('공유 기능을 지원하지 않아 링크를 복사했습니다.');
+      alert(<%- JSON.stringify(tt('공유 기능을 지원하지 않아 링크를 복사했습니다.', 'Sharing is not supported; link copied instead.')) %>);
     } catch (_) {
       input.focus();
       input.select();
-      alert('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.');
+      alert(<%- JSON.stringify(tt('링크를 선택했습니다. 복사(Ctrl+C) 해주세요.', 'Link selected. Press Ctrl+C to copy.')) %>);
     }
   });
 })();

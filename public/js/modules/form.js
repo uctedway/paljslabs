@@ -10,6 +10,7 @@
  */
 export function initFormContainer(root = document) {
 	console.log('initFormContainer');
+  const isEn = String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
   const forms = root.querySelectorAll('form[data-action]');
 
   forms.forEach((form) => {
@@ -23,7 +24,7 @@ export function initFormContainer(root = document) {
 	  // 1) 필수검증
 	  const invalid = findFirstInvalidMustInput(form);
 	  if (invalid) {
-		const msg = invalid.el.getAttribute('data-alert') || '필수 입력 항목을 확인해주세요.';
+		const msg = invalid.el.getAttribute('data-alert') || (isEn ? 'Please check required fields.' : '필수 입력 항목을 확인해주세요.');
 		alert(msg);
 		focusElement(invalid.el);
 		return;
@@ -62,7 +63,7 @@ export function initFormContainer(root = document) {
 		// 4) 결과 파싱/액션 수행
 		parseFormResurtJson(json);
 	  } catch (err) {
-		alert('요청 처리 중 오류가 발생했습니다.');
+		alert(isEn ? 'An error occurred while processing your request.' : '요청 처리 중 오류가 발생했습니다.');
 		// 필요하면 콘솔 확인용
 		console.error(err);
 	  }

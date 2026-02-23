@@ -1,32 +1,33 @@
 <section class="welcome-shell">
   <article class="welcome-card">
+    <% const L = (ko, en) => tt(ko, en); %>
     <p class="welcome-kicker">WELCOME TO 48LAB</p>
-    <h1 class="welcome-title"><%= userName %>님, 가입을 축하합니다.</h1>
-    <p class="welcome-lead">계정 생성이 완료되었고 바로 서비스를 이용할 수 있습니다.</p>
+    <h1 class="welcome-title"><%= locale === 'en' ? `Welcome, ${userName}.` : `${userName}님, 가입을 축하합니다.` %></h1>
+    <p class="welcome-lead"><%= L('계정 생성이 완료되었고 바로 서비스를 이용할 수 있습니다.', 'Your account is ready. You can start using the service now.') %></p>
 
     <div class="welcome-reward-row">
       <div class="welcome-reward-item is-highlight">
-        <span class="welcome-reward-label">가입 보너스</span>
+        <span class="welcome-reward-label"><%= L('가입 보너스', 'Signup Bonus') %></span>
         <strong class="welcome-reward-value">+3 TOKENS</strong>
       </div>
       <div class="welcome-reward-item">
-        <span class="welcome-reward-label">추천 보상</span>
-        <strong class="welcome-reward-value"><%= referralApplied ? '적용됨' : '미적용' %></strong>
+        <span class="welcome-reward-label"><%= L('추천 보상', 'Referral Reward') %></span>
+        <strong class="welcome-reward-value"><%= referralApplied ? L('적용됨', 'Applied') : L('미적용', 'Not applied') %></strong>
       </div>
     </div>
 
     <% if (referralApplied) { %>
-      <p class="welcome-note">추천인 링크로 가입이 완료되어 추천인에게도 3토큰이 적립되었습니다.</p>
+      <p class="welcome-note"><%= L('추천인 링크로 가입이 완료되어 추천인에게도 3토큰이 적립되었습니다.', 'Signup via referral completed. The referrer also received 3 tokens.') %></p>
     <% } else { %>
-      <p class="welcome-note">토큰 내역과 지인관리, 상담내역은 마이페이지에서 바로 확인할 수 있습니다.</p>
+      <p class="welcome-note"><%= L('토큰 내역과 지인관리, 상담내역은 마이페이지에서 바로 확인할 수 있습니다.', 'You can check token history, contacts, and consultation history in My Page.') %></p>
     <% } %>
 
     <div class="welcome-actions">
-      <a class="mypage-btn primary" href="/user/mypage">마이페이지로 이동</a>
-      <a class="mypage-btn" href="/user/token-usage-history">토큰내역 보기</a>
-      <a class="mypage-btn" href="/saju">사주 보러가기</a>
+      <a class="mypage-btn primary" href="/user/mypage"><%= L('마이페이지로 이동', 'Go to My Page') %></a>
+      <a class="mypage-btn" href="/user/token-usage-history"><%= L('토큰내역 보기', 'View Token History') %></a>
+      <a class="mypage-btn" href="/saju"><%= L('사주 보러가기', 'Go to Saju') %></a>
     </div>
 
-    <p class="welcome-redirect">원할 때 버튼으로 이동해 주세요.</p>
+    <p class="welcome-redirect"><%= L('원할 때 버튼으로 이동해 주세요.', 'Use the buttons to continue when ready.') %></p>
   </article>
 </section>

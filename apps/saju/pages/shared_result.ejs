@@ -1,6 +1,7 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <section class="result-container shared-result-container">
   <div class="result-header">
-    <h1><%= name %>님의 공유된 상담 결과</h1>
+    <h1><%= locale === 'en' ? `${name}'s shared result` : `${name}님의 공유된 상담 결과` %></h1>
     <p class="birth-info"><%= birthInfo %></p>
   </div>
 
@@ -9,7 +10,7 @@
   </div>
 
   <div class="result-share-footnote">
-    <p>이 페이지는 공유 링크를 통해서만 확인할 수 있습니다.</p>
-    <a href="/">48LAB 홈으로 이동</a>
+    <p><%= L('이 페이지는 공유 링크를 통해서만 확인할 수 있습니다.', 'This page is accessible only via a shared link.') %></p>
+    <a href="/"><%= L('48LAB 홈으로 이동', 'Go to 48LAB Home') %></a>
   </div>
 </section>

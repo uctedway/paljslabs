@@ -1,7 +1,8 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <div class="form-group">
-  <label for="<%= prefix %>Target">나/지인 선택</label>
+  <label for="<%= prefix %>Target"><%= L('나/지인 선택', 'Me/Contact') %></label>
   <select id="<%= prefix %>Target" name="<%= prefix %>Target">
-    <option value="">직접 입력</option>
+    <option value=""><%= L('직접 입력', 'Manual Input') %></option>
     <% (sajuTargets || []).forEach(function(target) { %>
       <option value="<%= target.type %>:<%= String(target.id) %>"><%= normalizeTargetLabel(target.label) %></option>
     <% }) %>
@@ -10,41 +11,41 @@
 <input type="hidden" id="<%= prefix %>RelativeId" name="<%= prefix %>RelativeId" value="0">
 
 <div class="form-group">
-  <label for="<%= prefix %>Name">이름</label>
-  <input type="text" id="<%= prefix %>Name" name="<%= prefix %>Name" required class="mustInput" placeholder="이름">
+  <label for="<%= prefix %>Name"><%= L('이름', 'Name') %></label>
+  <input type="text" id="<%= prefix %>Name" name="<%= prefix %>Name" required class="mustInput" placeholder="<%= L('이름', 'Name') %>">
 </div>
 <div class="form-group">
-  <label for="<%= prefix %>BirthYear">생년월일</label>
+  <label for="<%= prefix %>BirthYear"><%= L('생년월일', 'Birth Date') %></label>
   <div class="date-select-group">
-    <select id="<%= prefix %>BirthYear" name="<%= prefix %>BirthYear" required class="mustInput"><option value="">년도</option></select>
-    <select id="<%= prefix %>BirthMonth" name="<%= prefix %>BirthMonth" required class="mustInput"><option value="">월</option></select>
-    <select id="<%= prefix %>BirthDay" name="<%= prefix %>BirthDay" required class="mustInput"><option value="">일</option></select>
+    <select id="<%= prefix %>BirthYear" name="<%= prefix %>BirthYear" required class="mustInput"><option value=""><%= L('년도', 'Year') %></option></select>
+    <select id="<%= prefix %>BirthMonth" name="<%= prefix %>BirthMonth" required class="mustInput"><option value=""><%= L('월', 'Month') %></option></select>
+    <select id="<%= prefix %>BirthDay" name="<%= prefix %>BirthDay" required class="mustInput"><option value=""><%= L('일', 'Day') %></option></select>
   </div>
 </div>
 <div class="form-group">
-  <label for="<%= prefix %>BirthTime">태어난 시간</label>
+  <label for="<%= prefix %>BirthTime"><%= L('태어난 시간', 'Birth Time') %></label>
   <select id="<%= prefix %>BirthTime" name="<%= prefix %>BirthTime" required class="mustInput">
-    <option value="">시간 선택</option>
-    <option value="00:30:00">자시 (23:30~01:30)</option>
-    <option value="02:30:00">축시 (01:30~03:30)</option>
-    <option value="04:30:00">인시 (03:30~05:30)</option>
-    <option value="06:30:00">묘시 (05:30~07:30)</option>
-    <option value="08:30:00">진시 (07:30~09:30)</option>
-    <option value="10:30:00">사시 (09:30~11:30)</option>
-    <option value="12:30:00">오시 (11:30~13:30)</option>
-    <option value="14:30:00">미시 (13:30~15:30)</option>
-    <option value="16:30:00">신시 (15:30~17:30)</option>
-    <option value="18:30:00">유시 (17:30~19:30)</option>
-    <option value="20:30:00">술시 (19:30~21:30)</option>
-    <option value="22:30:00">해시 (21:30~23:30)</option>
-    <option value="99:99:99">모름</option>
+    <option value=""><%= L('시간 선택', 'Select Time') %></option>
+    <option value="00:30:00"><%= L('자시', 'Zi') %> (23:30~01:30)</option>
+    <option value="02:30:00"><%= L('축시', 'Chou') %> (01:30~03:30)</option>
+    <option value="04:30:00"><%= L('인시', 'Yin') %> (03:30~05:30)</option>
+    <option value="06:30:00"><%= L('묘시', 'Mao') %> (05:30~07:30)</option>
+    <option value="08:30:00"><%= L('진시', 'Chen') %> (07:30~09:30)</option>
+    <option value="10:30:00"><%= L('사시', 'Si') %> (09:30~11:30)</option>
+    <option value="12:30:00"><%= L('오시', 'Wu') %> (11:30~13:30)</option>
+    <option value="14:30:00"><%= L('미시', 'Wei') %> (13:30~15:30)</option>
+    <option value="16:30:00"><%= L('신시', 'Shen') %> (15:30~17:30)</option>
+    <option value="18:30:00"><%= L('유시', 'You') %> (17:30~19:30)</option>
+    <option value="20:30:00"><%= L('술시', 'Xu') %> (19:30~21:30)</option>
+    <option value="22:30:00"><%= L('해시', 'Hai') %> (21:30~23:30)</option>
+    <option value="99:99:99"><%= L('모름', 'Unknown') %></option>
   </select>
 </div>
 <div class="form-group">
-  <label for="<%= prefix %>Gender">성별</label>
+  <label for="<%= prefix %>Gender"><%= L('성별', 'Gender') %></label>
   <select id="<%= prefix %>Gender" name="<%= prefix %>Gender" required class="mustInput">
-    <option value="">선택</option>
-    <option value="male">남성</option>
-    <option value="female">여성</option>
+    <option value=""><%= L('선택', 'Select') %></option>
+    <option value="male"><%= L('남성', 'Male') %></option>
+    <option value="female"><%= L('여성', 'Female') %></option>
   </select>
 </div>

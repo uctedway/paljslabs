@@ -1,16 +1,17 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <div class="result-container">
 	<div class="result-header">
-		<h1><%= name %>님의 사주 상담 결과</h1>
+		<h1><%= locale === 'en' ? `${name} - Saju Result` : `${name}님의 사주 상담 결과` %></h1>
 		<p class="birth-info"><%= birthInfo %></p>
 		<% if (typeof resultId !== 'undefined' && resultId) { %>
-			<p class="birth-info">결과 ID: <%= resultId %></p>
+			<p class="birth-info"><%= L('결과 ID', 'Result ID') %>: <%= resultId %></p>
 		<% } %>
 	</div>
 	
 	<div id="result-content" class="result-content"></div>
 	
 	<div class="result-actions">
-		<a href="/saju" class="btn-home">다시 보기</a>
+		<a href="/saju" class="btn-home"><%= L('다시 보기', 'Try Again') %></a>
 	</div>
 </div>
 

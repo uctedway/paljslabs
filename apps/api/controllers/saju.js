@@ -339,6 +339,26 @@ function normalizeTargetType(rawTarget, relativeIdNum) {
   return 'new';
 }
 
+function normalizePromptLocale(rawLocale, req) {
+  const input = String(rawLocale || '').trim().toLowerCase();
+  const header = String(req?.headers?.['accept-language'] || '').trim().toLowerCase();
+  const source = input || header;
+  if (source.startsWith('en')) return 'en';
+  if (source.startsWith('ja')) return 'ja';
+  if (source.startsWith('zh')) return 'zh';
+  return 'ko';
+}
+
+function getLocaleRuleText(locale) {
+  const c = String(locale || 'ko').toLowerCase();
+  const labelMap = { ko: '한국어', en: 'English', ja: '日本語', zh: '中文' };
+  const label = labelMap[c] || labelMap.ko;
+  return `출력 언어 규칙(필수):
+- 응답 본문은 반드시 ${label}(${c})로만 작성한다.
+- JSON 키 이름(summary, body)은 변경하지 않는다.
+- 다른 언어 문장을 섞지 않는다.`;
+}
+
 function getSajuRequestConfig(analysisMode) {
   const mode = normalizeAnalysisMode(analysisMode);
   const isTrial = mode === ANALYSIS_MODE_TRIAL;
@@ -457,7 +477,10 @@ ${JSON.stringify(sajuData.data?.daewoon || {}, null, 2)}
 }
 \`\`\`
 - summary는 줄바꿈 최소화, 220자 이내 권장
-- body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성${guideBlock}`;
+- body는 마크다운으로 섹션/목록을 활용해 가독성 있게 작성
+
+# 언어 강제 규칙
+${getLocaleRuleText(payload?.locale)}${guideBlock}`;
 }
 
 function buildSajuTrialUserPrompt(payload, normalizedGender, counselingLabel, age, lifeStage, extraGuide = '') {
@@ -475,7 +498,10 @@ function buildSajuTrialUserPrompt(payload, normalizedGender, counselingLabel, ag
 요청:
 - 위 정보만으로 핵심 흐름을 간단히 해석해줘.
 - summary는 120자 이내, body는 5문장 이내로 작성해줘.
-- 단정적 결론보다 참고 가능한 조언 중심으로 작성해줘.${guideBlock}`;
+- 단정적 결론보다 참고 가능한 조언 중심으로 작성해줘.
+
+언어 강제 규칙:
+${getLocaleRuleText(payload?.locale)}${guideBlock}`;
 }
 
 function extractJsonBlock(rawText) {
@@ -906,6 +932,7 @@ exports.createSajuFortuneRequest = async (req, res) => {
       relative_id: relativeIdNum,
       targetType: normalizeTargetType(rawSajuTarget, relativeIdNum),
       counselingType: normalizeCounselingType(req.body?.counselingType),
+      locale: normalizePromptLocale(req.body?.locale, req),
       analysis_mode: requestConfig.mode,
       analysis_token_cost: requestConfig.requiredTokens,
     };

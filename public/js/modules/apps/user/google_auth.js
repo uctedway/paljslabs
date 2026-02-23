@@ -35,6 +35,9 @@ console.log(JSON.stringify(response));
  */
 export async function googleHandleCredentialResponse(response) {
   console.log('googleHandleCredentialResponse called');
+  const isEn = String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
+  const consentMsg = isEn ? 'Please agree to Terms and Privacy Policy.' : '이용약관과 개인정보처리방침에 동의해주세요.';
+  const consentSaveFailMsg = isEn ? 'Failed to save consent. Please try again.' : '동의 상태 저장에 실패했습니다. 다시 시도해주세요.';
   try {
     if (String(window.socialAuthIntent || '').toLowerCase() === 'register') {
       const canProceed = typeof window.isSignupConsentAccepted === 'function'
@@ -42,9 +45,9 @@ export async function googleHandleCredentialResponse(response) {
         : false;
       if (!canProceed) {
         if (window.AppToast && typeof window.AppToast.show === 'function') {
-          window.AppToast.show('이용약관과 개인정보처리방침에 동의해주세요.', { type: 'warning', duration: 2400 });
+          window.AppToast.show(consentMsg, { type: 'warning', duration: 2400 });
         } else {
-          alert('이용약관과 개인정보처리방침에 동의해주세요.');
+          alert(consentMsg);
         }
         return;
       }
@@ -52,9 +55,9 @@ export async function googleHandleCredentialResponse(response) {
         const synced = await window.syncSignupConsentToSession();
         if (!synced) {
           if (window.AppToast && typeof window.AppToast.show === 'function') {
-            window.AppToast.show('동의 상태 저장에 실패했습니다. 다시 시도해주세요.', { type: 'warning', duration: 2400 });
+            window.AppToast.show(consentSaveFailMsg, { type: 'warning', duration: 2400 });
           } else {
-            alert('동의 상태 저장에 실패했습니다. 다시 시도해주세요.');
+            alert(consentSaveFailMsg);
           }
           return;
         }
@@ -67,9 +70,9 @@ export async function googleHandleCredentialResponse(response) {
     const code = String(result?.resp_message || '').toUpperCase();
     if (resp !== 'OK' && code === 'CONSENT_REQUIRED') {
       if (window.AppToast && typeof window.AppToast.show === 'function') {
-        window.AppToast.show('이용약관과 개인정보처리방침에 동의해주세요.', { type: 'warning', duration: 2400 });
+        window.AppToast.show(consentMsg, { type: 'warning', duration: 2400 });
       } else {
-        alert('이용약관과 개인정보처리방침에 동의해주세요.');
+        alert(consentMsg);
       }
       return;
     }

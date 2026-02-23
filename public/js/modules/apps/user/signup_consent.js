@@ -8,6 +8,10 @@ function showToast(message) {
   window.alert(text);
 }
 
+function isEn() {
+  return String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
+}
+
 function isChecked(selector) {
   const el = document.querySelector(selector);
   return !!(el && el.checked);
@@ -53,13 +57,13 @@ function bindSocialProviderLinks() {
     link.addEventListener('click', async (e) => {
       if (!canProceed()) {
         e.preventDefault();
-        showToast('이용약관과 개인정보처리방침에 동의해주세요.');
+        showToast(isEn() ? 'Please agree to Terms and Privacy Policy.' : '이용약관과 개인정보처리방침에 동의해주세요.');
         return;
       }
       e.preventDefault();
       const ok = await syncConsentToSession();
       if (!ok) {
-        showToast('동의 상태 저장에 실패했습니다. 다시 시도해주세요.');
+        showToast(isEn() ? 'Failed to save consent. Please try again.' : '동의 상태 저장에 실패했습니다. 다시 시도해주세요.');
         return;
       }
       window.location.href = link.getAttribute('href') || '#';

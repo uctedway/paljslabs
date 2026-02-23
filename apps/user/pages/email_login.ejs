@@ -1,30 +1,31 @@
 <main class="login-page">
   <section class="login-hero">
     <div class="login-card login-card--email">
+      <% const L = (ko, en) => tt(ko, en); %>
       <p class="login-kicker">48LAB ACCOUNT</p>
-      <h1 class="login-title">이메일 로그인</h1>
-      <p class="login-lead">이메일 계정으로 로그인하세요.</p>
+      <h1 class="login-title"><%= L('이메일 로그인', 'Email Login') %></h1>
+      <p class="login-lead"><%= L('이메일 계정으로 로그인하세요.', 'Login with your email account.') %></p>
 
       <form class="email-auth-form" action="/user/email-login" method="post" novalidate>
-        <label class="email-auth-label" for="email-login-id">이메일</label>
+        <label class="email-auth-label" for="email-login-id"><%= L('이메일', 'Email') %></label>
         <input id="email-login-id" class="email-auth-input" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
 
-        <label class="email-auth-label" for="email-login-password">비밀번호</label>
-        <input id="email-login-password" class="email-auth-input" type="password" name="password" placeholder="비밀번호 입력" autocomplete="current-password" required>
+        <label class="email-auth-label" for="email-login-password"><%= L('비밀번호', 'Password') %></label>
+        <input id="email-login-password" class="email-auth-input" type="password" name="password" placeholder="<%= L('비밀번호 입력', 'Enter password') %>" autocomplete="current-password" required>
 
-        <button type="submit" class="email-auth-submit">로그인</button>
+        <button type="submit" class="email-auth-submit"><%= L('로그인', 'Login') %></button>
       </form>
 
       <p class="login-subtext">
-        아직 이메일 계정이 없으신가요? <a href="/user/email-register">이메일 회원가입</a>
+        <%= L('아직 이메일 계정이 없으신가요?', "Don't have an email account?") %> <a href="/user/email-register"><%= L('이메일 회원가입', 'Email Sign Up') %></a>
       </p>
 
       <script type="module">
         import { bindEmailAuthForm } from '/js/modules/apps/user/email_auth_form.js';
 
         bindEmailAuthForm('.email-auth-form', [
-          { selector: '#email-login-id', message: '이메일을 입력해주세요.' },
-          { selector: '#email-login-password', message: '비밀번호를 입력해주세요.' },
+          { selector: '#email-login-id', message: <%- JSON.stringify(tt('이메일을 입력해주세요.', 'Please enter your email.')) %> },
+          { selector: '#email-login-password', message: <%- JSON.stringify(tt('비밀번호를 입력해주세요.', 'Please enter your password.')) %> },
         ]);
 
       </script>

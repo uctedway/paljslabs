@@ -1,15 +1,17 @@
 import GlobalLoading from './global_loading.js';
 
+const IS_EN = String(document?.documentElement?.lang || '').toLowerCase().startsWith('en');
+const L = (ko, en) => (IS_EN ? en : ko);
 const RELATION_LABEL_MAP = {
-  SPOUSE: '배우자',
-  PARENT: '부모',
-  GRANDPARENT: '조부모',
-  SON: '아들',
-  DAUGHTER: '딸',
-  SIBLING: '형제자매',
-  FAMILY: '가족',
-  FRIEND: '친구',
-  OTHER: '기타',
+  SPOUSE: L('배우자', 'Spouse'),
+  PARENT: L('부모', 'Parent'),
+  GRANDPARENT: L('조부모', 'Grandparent'),
+  SON: L('아들', 'Son'),
+  DAUGHTER: L('딸', 'Daughter'),
+  SIBLING: L('형제자매', 'Sibling'),
+  FAMILY: L('가족', 'Family'),
+  FRIEND: L('친구', 'Friend'),
+  OTHER: L('기타', 'Other'),
 };
 
 function normalizeBirthTimeValue(raw) {
@@ -107,30 +109,30 @@ function validateSinglePerson(feature, person) {
     if (!input) continue;
     if (!String(input.value || '').trim()) {
       input.focus();
-      alert('필수값을 모두 입력해주세요.');
+      alert(L('필수값을 모두 입력해주세요.', 'Please fill in all required fields.'));
       return false;
     }
   }
 
   if (feature === 'today' && !String(document.getElementById('focusArea')?.value || '').trim()) {
-    alert('집중 영역을 선택해주세요.');
+    alert(L('집중 영역을 선택해주세요.', 'Please select focus area.'));
     return false;
   }
   if (feature === 'flow' && !String(document.getElementById('targetPeriod')?.value || '').trim()) {
-    alert('대상 기간을 선택해주세요.');
+    alert(L('대상 기간을 선택해주세요.', 'Please select target period.'));
     return false;
   }
   if (feature === 'naming' && !String(document.getElementById('candidateName')?.value || '').trim()) {
-    alert('검토할 이름 후보를 입력해주세요.');
+    alert(L('검토할 이름 후보를 입력해주세요.', 'Please enter a name candidate.'));
     return false;
   }
   if (feature === 'date-selection') {
     if (!String(document.getElementById('eventType')?.value || '').trim()) {
-      alert('목적을 선택해주세요.');
+      alert(L('목적을 선택해주세요.', 'Please select purpose.'));
       return false;
     }
     if (!String(document.getElementById('candidateDate')?.value || '').trim()) {
-      alert('후보 일시를 입력해주세요.');
+      alert(L('후보 일시를 입력해주세요.', 'Please enter candidate date/time.'));
       return false;
     }
   }
@@ -177,12 +179,17 @@ function initCompatibilityForm(form, sajuTargets) {
       const relative = p1?.type === 'relative' ? p1 : p2;
       if (relative?.relationCode) {
         relationshipSelect.value = relative.relationCode;
-        relationshipAutoHint.textContent = `나와 지인 궁합으로 관계가 자동 설정되었습니다: ${toRelationLabel(relative.relationLabel || relative.relationCode)}`;
+        relationshipAutoHint.textContent = IS_EN
+          ? `Relationship auto-selected from me/contact pair: ${toRelationLabel(relative.relationLabel || relative.relationCode)}`
+          : `나와 지인 궁합으로 관계가 자동 설정되었습니다: ${toRelationLabel(relative.relationLabel || relative.relationCode)}`;
         return;
       }
     }
 
-    relationshipAutoHint.textContent = '지인-지인 또는 직접입력 조합이면 관계를 직접 선택해주세요.';
+    relationshipAutoHint.textContent = L(
+      '지인-지인 또는 직접입력 조합이면 관계를 직접 선택해주세요.',
+      'If both are contacts or manual inputs, please select relationship manually.'
+    );
   }
 }
 
@@ -208,14 +215,14 @@ function setupDateSelects(person, currentYear) {
   for (let year = currentYear; year >= 1920; year--) {
     const option = document.createElement('option');
     option.value = String(year);
-    option.textContent = `${year}년`;
+    option.textContent = IS_EN ? String(year) : `${year}년`;
     person.yearSelect.appendChild(option);
   }
 
   for (let month = 1; month <= 12; month++) {
     const option = document.createElement('option');
     option.value = String(month).padStart(2, '0');
-    option.textContent = `${month}월`;
+    option.textContent = IS_EN ? String(month) : `${month}월`;
     person.monthSelect.appendChild(option);
   }
 
@@ -224,12 +231,12 @@ function setupDateSelects(person, currentYear) {
     const month = parseInt(person.monthSelect.value || '1', 10);
     const daysInMonth = new Date(year, month, 0).getDate();
     const currentDay = person.daySelect.value;
-    person.daySelect.innerHTML = '<option value="">일</option>';
+    person.daySelect.innerHTML = `<option value="">${L('일', 'Day')}</option>`;
 
     for (let day = 1; day <= daysInMonth; day++) {
       const option = document.createElement('option');
       option.value = String(day).padStart(2, '0');
-      option.textContent = `${day}일`;
+      option.textContent = IS_EN ? String(day) : `${day}일`;
       person.daySelect.appendChild(option);
     }
 
@@ -268,7 +275,7 @@ function setupTargetAutoFill(person, sajuTargets, afterChange) {
     }
 
     if (!target.birthDate) {
-      alert('선택한 대상의 생년월일시 정보가 없습니다. 마이페이지에서 먼저 입력해주세요.');
+      alert(L('선택한 대상의 생년월일시 정보가 없습니다. 마이페이지에서 먼저 입력해주세요.', 'Selected target has no birth data. Please update it in My Page first.'));
       person.targetSelect.value = '';
       person.currentTarget = null;
       if (person.relativeIdInput) person.relativeIdInput.value = '0';
@@ -326,7 +333,7 @@ function validateCompatibility(panels, relationshipSelect) {
     if (!input) continue;
     if (!String(input.value || '').trim()) {
       input.focus();
-      alert('필수값을 모두 입력해주세요.');
+      alert(L('필수값을 모두 입력해주세요.', 'Please fill in all required fields.'));
       return false;
     }
   }
@@ -378,12 +385,12 @@ function askRelationCodeWithModal(name) {
     box.style.boxShadow = '0 18px 50px rgba(0,0,0,0.2)';
 
     const title = document.createElement('h3');
-    title.textContent = '지인 등록';
+    title.textContent = L('지인 등록', 'Add Contact');
     title.style.margin = '0 0 8px';
     title.style.fontSize = '18px';
 
     const desc = document.createElement('p');
-    desc.textContent = `${name}님의 관계를 선택해주세요.`;
+    desc.textContent = IS_EN ? `Select relation for ${name}.` : `${name}님의 관계를 선택해주세요.`;
     desc.style.margin = '0 0 12px';
     desc.style.color = '#475569';
 
@@ -409,12 +416,12 @@ function askRelationCodeWithModal(name) {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
-    cancelBtn.textContent = '취소';
+    cancelBtn.textContent = L('취소', 'Cancel');
     cancelBtn.style.padding = '8px 12px';
 
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
-    confirmBtn.textContent = '저장';
+    confirmBtn.textContent = L('저장', 'Save');
     confirmBtn.style.padding = '8px 12px';
 
     actions.appendChild(cancelBtn);
@@ -453,7 +460,7 @@ async function askAndSaveDirectInput(person) {
   const gender = String(person.genderSelect?.value || '').trim();
   if (!name || !birthYear || !birthMonth || !birthDay || !birthTime || !gender) return;
 
-  const shouldSave = window.confirm(`${name} 정보를 지인으로 저장하시겠습니까?`);
+  const shouldSave = window.confirm(IS_EN ? `Save ${name} as a contact?` : `${name} 정보를 지인으로 저장하시겠습니까?`);
   if (!shouldSave) return;
 
   const relationCode = await askRelationCodeWithModal(name);
@@ -481,20 +488,32 @@ async function askAndSaveDirectInput(person) {
 function askTrialFallback(currentTokens, trialRequired = 3) {
   const current = Number(currentTokens || 0);
   if (!Number.isFinite(current) || current < trialRequired) {
-    alert('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.');
+    alert(L('토큰이 부족합니다. 토큰 충전 후 프리미엄 분석을 이용해주세요.', 'Insufficient tokens. Please top up and try premium analysis.'));
     window.location.href = '/user/billing';
     return false;
   }
   return window.confirm(
-    `프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
+    IS_EN
+      ? `Premium analysis requires 10 tokens.\nYou have ${current} tokens. Proceed with trial analysis (${trialRequired} tokens)?`
+      : `프리미엄 분석(10토큰)이 부족합니다.\n현재 ${current}토큰으로 체험 분석(${trialRequired}토큰)을 진행할까요?`
   );
 }
 
+function getCurrentLocale() {
+  const docLang = String(document?.documentElement?.lang || '').trim().toLowerCase();
+  const navLang = String((navigator.language || '')).trim().toLowerCase();
+  const raw = docLang || navLang || 'ko';
+  if (raw.startsWith('en')) return 'en';
+  if (raw.startsWith('ja')) return 'ja';
+  if (raw.startsWith('zh')) return 'zh';
+  return 'ko';
+}
+
 async function requestFortune(feature, payload) {
-  GlobalLoading.show('요청을 접수하고 있습니다.', '분석을 시작합니다.');
+  GlobalLoading.show(L('요청을 접수하고 있습니다.', 'Request received.'), L('분석을 시작합니다.', 'Starting analysis.'));
 
   try {
-    const requestPayload = { ...(payload || {}), analysis_mode: 'PREMIUM' };
+    const requestPayload = { ...(payload || {}), analysis_mode: 'PREMIUM', locale: getCurrentLocale() };
     let response = await fetch(`/api/fortune/${encodeURIComponent(feature)}/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -527,20 +546,20 @@ async function requestFortune(feature, payload) {
 
     if (!response.ok || json.resp !== 'OK') {
       GlobalLoading.hide();
-      alert(json.message || json.resp_message || '요청 처리 중 오류가 발생했습니다.');
+      alert(json.message || json.resp_message || L('요청 처리 중 오류가 발생했습니다.', 'An error occurred while processing your request.'));
       return;
     }
 
     if (typeof json.current_tokens === 'number') {
       const headerTokenEl = document.getElementById('headerTokenBalance');
       if (headerTokenEl) {
-        headerTokenEl.textContent = Number(json.current_tokens || 0).toLocaleString('ko-KR');
+        headerTokenEl.textContent = Number(json.current_tokens || 0).toLocaleString(IS_EN ? 'en-US' : 'ko-KR');
       }
     }
 
     GlobalLoading.setMessage(
-      '분석을 시작합니다.',
-      '분석이 완료되면 알려드리겠습니다.'
+      L('분석을 시작합니다.', 'Analysis started.'),
+      L('분석이 완료되면 알려드리겠습니다.', 'We will notify you when it is complete.')
     );
     window.dispatchEvent(new CustomEvent('analysis:started', {
       detail: {
@@ -552,6 +571,6 @@ async function requestFortune(feature, payload) {
     GlobalLoading.hide();
   } catch (err) {
     GlobalLoading.hide();
-    alert('요청 처리 중 오류가 발생했습니다.');
+    alert(L('요청 처리 중 오류가 발생했습니다.', 'An error occurred while processing your request.'));
   }
 }

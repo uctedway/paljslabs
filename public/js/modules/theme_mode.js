@@ -1,3 +1,21 @@
+function getLocaleTexts() {
+  const locale = String(document?.documentElement?.lang || 'ko').trim().toLowerCase();
+  if (locale.startsWith('en')) {
+    return {
+      light: 'Light',
+      dark: 'Dark',
+      switchToLight: 'Switch to light mode',
+      switchToDark: 'Switch to dark mode',
+    };
+  }
+  return {
+    light: '기본',
+    dark: '다크',
+    switchToLight: '기본 모드로 전환',
+    switchToDark: '다크 모드로 전환',
+  };
+}
+
 function isDarkMode() {
   return document.documentElement.classList.contains('theme-dark');
 }
@@ -13,10 +31,11 @@ function applyTheme(mode) {
 
 function refreshToggleLabels() {
   const dark = isDarkMode();
+  const texts = getLocaleTexts();
   const buttons = document.querySelectorAll('[data-theme-toggle]');
   buttons.forEach((btn) => {
-    btn.textContent = dark ? '다크' : '기본';
-    btn.setAttribute('title', dark ? '기본 모드로 전환' : '다크 모드로 전환');
+    btn.textContent = dark ? texts.dark : texts.light;
+    btn.setAttribute('title', dark ? texts.switchToLight : texts.switchToDark);
   });
 }
 

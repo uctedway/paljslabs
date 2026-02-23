@@ -1,4 +1,5 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', {
     currentMenu: 'token-usage-history',
     consultationHistory: (typeof consultationHistory !== 'undefined' ? consultationHistory : []),
@@ -9,28 +10,28 @@
     <article class="mypage-card data-grid-shell">
       <div class="history-head data-grid-head">
         <div>
-          <h2>토큰 사용내역</h2>
-          <p class="data-grid-desc">충전/차감/환불 흐름과 잔액 변동을 추적할 수 있습니다.</p>
+          <h2><%= L('토큰 사용내역', 'Token Usage History') %></h2>
+          <p class="data-grid-desc"><%= L('충전/차감/환불 흐름과 잔액 변동을 추적할 수 있습니다.', 'Track top-up/usage/refund flow and balance changes.') %></p>
         </div>
-        <a class="data-grid-link" href="/user/billing">토큰 충전으로 이동</a>
+        <a class="data-grid-link" href="/user/billing"><%= L('토큰 충전으로 이동', 'Go to Token Top-up') %></a>
       </div>
 
       <% if (!usages || usages.length === 0) { %>
-        <div class="history-empty data-grid-empty">토큰 내역이 없습니다.</div>
+        <div class="history-empty data-grid-empty"><%= L('토큰 내역이 없습니다.', 'No token history.') %></div>
       <% } else { %>
         <div class="history-table-wrap data-grid-wrap">
           <table class="history-table data-grid-table">
             <thead>
               <tr>
-                <th>원장번호</th>
-                <th>유형</th>
-                <th>변동</th>
-                <th>잔액</th>
+                <th><%= L('원장번호', 'Ledger No.') %></th>
+                <th><%= L('유형', 'Type') %></th>
+                <th><%= L('변동', 'Change') %></th>
+                <th><%= L('잔액', 'Balance') %></th>
                 <th>usage_code</th>
                 <th>event_code</th>
                 <th>reference</th>
-                <th>메모</th>
-                <th>일시</th>
+                <th><%= L('메모', 'Memo') %></th>
+                <th><%= L('일시', 'Created At') %></th>
               </tr>
             </thead>
             <tbody>
@@ -39,28 +40,28 @@
                   const changeTokens = Number(u.change_tokens || 0);
                   const entryTypeRaw = String(u.entry_type || '').trim().toLowerCase();
                   const entryLabelMap = {
-                    payment: '충전',
-                    usage: '사용',
-                    refund: '환불',
-                    adjustment: '조정',
-                    event: '이벤트',
+                    payment: L('충전', 'Top-up'),
+                    usage: L('사용', 'Usage'),
+                    refund: L('환불', 'Refund'),
+                    adjustment: L('조정', 'Adjustment'),
+                    event: L('이벤트', 'Event'),
                   };
                   const entryLabel = entryLabelMap[entryTypeRaw] || (u.entry_type || '-');
                 %>
                 <tr>
-                  <td data-label="원장번호"><span class="data-grid-code">#<%= u.ledger_id %></span></td>
-                  <td data-label="유형"><span class="data-grid-badge entry-<%= entryTypeRaw || 'unknown' %>"><%= entryLabel %></span></td>
-                  <td data-label="변동">
+                  <td data-label="<%= L('원장번호', 'Ledger No.') %>"><span class="data-grid-code">#<%= u.ledger_id %></span></td>
+                  <td data-label="<%= L('유형', 'Type') %>"><span class="data-grid-badge entry-<%= entryTypeRaw || 'unknown' %>"><%= entryLabel %></span></td>
+                  <td data-label="<%= L('변동', 'Change') %>">
                     <span class="data-grid-change <%= changeTokens >= 0 ? 'is-plus' : 'is-minus' %>">
                       <%= changeTokens > 0 ? '+' : '' %><%= changeTokens %>
                     </span>
                   </td>
-                  <td data-label="잔액"><strong><%= Number(u.balance_after || 0).toLocaleString('ko-KR') %></strong></td>
+                  <td data-label="<%= L('잔액', 'Balance') %>"><strong><%= Number(u.balance_after || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %></strong></td>
                   <td data-label="usage_code"><span class="data-grid-code"><%= u.usage_code || '-' %></span></td>
                   <td data-label="event_code"><span class="data-grid-code"><%= u.event_code || '-' %></span></td>
                   <td data-label="reference"><%= (u.reference_type || '-') %>/<%= (u.reference_id || '-') %></td>
-                  <td data-label="메모"><span class="data-grid-muted"><%= u.memo || '-' %></span></td>
-                  <td data-label="일시"><%= u.created_at || '-' %></td>
+                  <td data-label="<%= L('메모', 'Memo') %>"><span class="data-grid-muted"><%= u.memo || '-' %></span></td>
+                  <td data-label="<%= L('일시', 'Created At') %>"><%= u.created_at || '-' %></td>
                 </tr>
               <% }) %>
             </tbody>

@@ -1,4 +1,5 @@
 <section class="mypage-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
   <%- include('./partials/mypage_sidebar', {
     currentMenu: 'purchase-history',
     consultationHistory: (typeof consultationHistory !== 'undefined' ? consultationHistory : []),
@@ -9,27 +10,27 @@
     <article class="mypage-card data-grid-shell">
       <div class="history-head data-grid-head">
         <div>
-          <h2>결제 내역</h2>
-          <p class="data-grid-desc">최근 결제 상태와 승인 여부를 한눈에 확인할 수 있습니다.</p>
+          <h2><%= L('결제 내역', 'Payment History') %></h2>
+          <p class="data-grid-desc"><%= L('최근 결제 상태와 승인 여부를 한눈에 확인할 수 있습니다.', 'Check recent payment status and approvals at a glance.') %></p>
         </div>
-        <a class="data-grid-link" href="/user/token-usage-history">토큰 사용내역 보기</a>
+        <a class="data-grid-link" href="/user/token-usage-history"><%= L('토큰 사용내역 보기', 'View Token Usage') %></a>
       </div>
 
       <% if (!payments || payments.length === 0) { %>
-        <div class="history-empty data-grid-empty">결제 내역이 없습니다.</div>
+        <div class="history-empty data-grid-empty"><%= L('결제 내역이 없습니다.', 'No payment history.') %></div>
       <% } else { %>
         <div class="history-table-wrap data-grid-wrap">
           <table class="history-table data-grid-table">
             <thead>
               <tr>
-                <th>결제번호</th>
-                <th>결제수단</th>
-                <th>상태</th>
-                <th>금액</th>
-                <th>토큰</th>
-                <th>요청일시</th>
-                <th>승인일시</th>
-                <th>사유</th>
+                <th><%= L('결제번호', 'Payment No.') %></th>
+                <th><%= L('결제수단', 'Provider') %></th>
+                <th><%= L('상태', 'Status') %></th>
+                <th><%= L('금액', 'Amount') %></th>
+                <th><%= L('토큰', 'Tokens') %></th>
+                <th><%= L('요청일시', 'Requested At') %></th>
+                <th><%= L('승인일시', 'Approved At') %></th>
+                <th><%= L('사유', 'Reason') %></th>
               </tr>
             </thead>
             <tbody>
@@ -37,26 +38,26 @@
                 <%
                   const statusRaw = String(p.status || '').trim().toLowerCase();
                   const statusLabelMap = {
-                    ready: '요청',
-                    pending: '대기',
-                    approved: '승인',
-                    canceled: '취소',
-                    failed: '실패',
+                    ready: L('요청', 'Requested'),
+                    pending: L('대기', 'Pending'),
+                    approved: L('승인', 'Approved'),
+                    canceled: L('취소', 'Canceled'),
+                    failed: L('실패', 'Failed'),
                   };
                   const statusLabel = statusLabelMap[statusRaw] || (p.status || '-');
                   const reasonText = p.error_message || '-';
                 %>
                 <tr>
-                  <td data-label="결제번호"><span class="data-grid-code">#<%= p.payment_id %></span></td>
-                  <td data-label="결제수단"><%= p.provider || '-' %></td>
-                  <td data-label="상태">
+                  <td data-label="<%= L('결제번호', 'Payment No.') %>"><span class="data-grid-code">#<%= p.payment_id %></span></td>
+                  <td data-label="<%= L('결제수단', 'Provider') %>"><%= p.provider || '-' %></td>
+                  <td data-label="<%= L('상태', 'Status') %>">
                     <span class="data-grid-badge status-<%= statusRaw || 'unknown' %>"><%= statusLabel %></span>
                   </td>
-                  <td data-label="금액"><strong><%= Number(p.amount_krw || 0).toLocaleString('ko-KR') %>원</strong></td>
-                  <td data-label="토큰"><%= Number(p.token_amount || 0).toLocaleString('ko-KR') %></td>
-                  <td data-label="요청일시"><%= p.requested_at || '-' %></td>
-                  <td data-label="승인일시"><%= p.approved_at || '-' %></td>
-                  <td data-label="사유"><span class="data-grid-muted"><%= reasonText %></span></td>
+                  <td data-label="<%= L('금액', 'Amount') %>"><strong><%= Number(p.amount_krw || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %><%= L('원', ' KRW') %></strong></td>
+                  <td data-label="<%= L('토큰', 'Tokens') %>"><%= Number(p.token_amount || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %></td>
+                  <td data-label="<%= L('요청일시', 'Requested At') %>"><%= p.requested_at || '-' %></td>
+                  <td data-label="<%= L('승인일시', 'Approved At') %>"><%= p.approved_at || '-' %></td>
+                  <td data-label="<%= L('사유', 'Reason') %>"><span class="data-grid-muted"><%= reasonText %></span></td>
                 </tr>
               <% }) %>
             </tbody>

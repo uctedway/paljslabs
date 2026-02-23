@@ -7,30 +7,44 @@ const {
 } = require('../api/services/saju_result_store');
 
 const SAJU_SERVICE_OVERVIEW = {
-	title: '사주팔자',
-	subtitle: '사주는 타고난 구조를 읽고, 팔자는 그 구조가 펼쳐지는 흐름을 봅니다.',
-	description:
-		'사주는 태어난 연·월·일·시를 바탕으로 성향과 에너지 구조를 해석하는 동양 명리의 기본 틀입니다. 팔자는 이 구조가 관계, 일, 재정, 건강, 선택의 순간에서 어떻게 드러나는지 시간의 흐름으로 읽어냅니다.',
-	highlights: [
-		{
-			title: '사주란?',
-			text: '태어난 순간의 천간·지지 조합을 통해 기질, 강점, 주의 포인트를 파악합니다.',
-		},
-		{
-			title: '팔자란?',
-			text: '원국(기본 구조)이 대운·세운과 만나며 어떻게 변주되는지 현실 흐름으로 해석합니다.',
-		},
-		{
-			title: '무엇을 볼 수 있나?',
-			text: '관계, 커리어, 금전, 건강 루틴, 의사결정 타이밍까지 실천 가능한 조언으로 정리합니다.',
-		},
-	],
-	notes: [
-		'결정의 정답을 대신 제시하기보다, 선택의 기준과 우선순위를 정리하는 데 초점을 둡니다.',
-		'해외 사용자도 이해할 수 있도록 용어를 풀어서 설명하는 방식으로 확장 가능한 구조입니다.',
-	],
-	ctaLabel: '사주 보기',
+	ko: {
+		title: '사주팔자',
+		subtitle: '사주는 타고난 구조를 읽고, 팔자는 그 구조가 펼쳐지는 흐름을 봅니다.',
+		description:
+			'사주는 태어난 연·월·일·시를 바탕으로 성향과 에너지 구조를 해석하는 동양 명리의 기본 틀입니다. 팔자는 이 구조가 관계, 일, 재정, 건강, 선택의 순간에서 어떻게 드러나는지 시간의 흐름으로 읽어냅니다.',
+		highlights: [
+			{ title: '사주란?', text: '태어난 순간의 천간·지지 조합을 통해 기질, 강점, 주의 포인트를 파악합니다.' },
+			{ title: '팔자란?', text: '원국(기본 구조)이 대운·세운과 만나며 어떻게 변주되는지 현실 흐름으로 해석합니다.' },
+			{ title: '무엇을 볼 수 있나?', text: '관계, 커리어, 금전, 건강 루틴, 의사결정 타이밍까지 실천 가능한 조언으로 정리합니다.' },
+		],
+		notes: [
+			'결정의 정답을 대신 제시하기보다, 선택의 기준과 우선순위를 정리하는 데 초점을 둡니다.',
+			'해외 사용자도 이해할 수 있도록 용어를 풀어서 설명하는 방식으로 확장 가능한 구조입니다.',
+		],
+		ctaLabel: '사주 보기',
+	},
+	en: {
+		title: 'Saju Reading',
+		subtitle: 'Saju reads your innate structure, and fate reads how it unfolds over time.',
+		description:
+			'Saju interprets your temperament and energy structure from your birth year, month, day, and time. Fate explains how that structure appears in relationships, work, money, health, and key decisions through time.',
+		highlights: [
+			{ title: 'What is Saju?', text: 'It identifies temperament, strengths, and caution points from the stem/branch combinations at birth.' },
+			{ title: 'What is Fate?', text: 'It explains how your base chart changes as major and yearly cycles interact in real life.' },
+			{ title: 'What can you get?', text: 'Actionable guidance for relationships, career, money, health routines, and decision timing.' },
+		],
+		notes: [
+			'It focuses on clarifying decision criteria and priorities, not fixed answers.',
+			'The structure is designed to scale for global users with plain-language explanations.',
+		],
+		ctaLabel: 'Start Saju',
+	},
 };
+
+function resolveLocale(req, res) {
+	const raw = String(res?.locals?.locale || req?.query?.lang || req?.session?.locale || getRequestLocale(req) || 'ko').toLowerCase();
+	return raw.startsWith('en') ? 'en' : 'ko';
+}
 
 function normalizeGenderForForm(rawGender) {
 	const v = String(rawGender || '').trim().toLowerCase();
@@ -84,18 +98,18 @@ function normalizeTimeForInput(rawTime, birthTimeUnknown = 0) {
 const index = async (req, res) => {
 	const view = String(req.query?.view || '').trim().toLowerCase();
 	const isFormView = view === 'form';
+	const locale = resolveLocale(req, res);
 
 	if (!isFormView) {
 		return res.render(path.join(__dirname, './pages/index.ejs'), {
 			pageMode: 'intro',
-			serviceOverview: SAJU_SERVICE_OVERVIEW,
+			serviceOverview: SAJU_SERVICE_OVERVIEW[locale] || SAJU_SERVICE_OVERVIEW.ko,
 			sajuTargets: [],
 		});
 	}
 
 	const sessionUser = req.session && req.session.user ? req.session.user : null;
 	const profile = req.session && req.session.mypageProfile ? req.session.mypageProfile : {};
-	const locale = getRequestLocale(req);
 	let relatives = [];
 
 	// 지인 목록은 DB 프로시저(PJ_USP_SELECT_RELATIVES)로 조회합니다.
@@ -125,7 +139,7 @@ const index = async (req, res) => {
 		sajuTargets.push({
 			type: 'self',
 			id: 'self',
-			label: `본인 · ${sessionUser.user_name || sessionUser.login_id || '회원'}`,
+			label: `${locale === 'en' ? 'Me' : '본인'} · ${sessionUser.user_name || sessionUser.login_id || (locale === 'en' ? 'Member' : '회원')}`,
 			name: sessionUser.user_name || '',
 			birthDate: profile.birthDate || '',
 			birthTime: profile.birthTime || '',
@@ -138,7 +152,7 @@ const index = async (req, res) => {
 		sajuTargets.push({
 			type: 'relative',
 			id: relative.relative_id,
-			label: `${relationLabel} · ${relative.relative_name || '이름없음'}`,
+			label: `${relationLabel} · ${relative.relative_name || (locale === 'en' ? 'No Name' : '이름없음')}`,
 			name: relative.relative_name || '',
 			birthDate: normalizeDateForInput(relative.relative_birth_date),
 			birthTime: normalizeTimeForInput(relative.relative_birth_time, relative.birth_time_unknown),
@@ -148,7 +162,7 @@ const index = async (req, res) => {
 
 	res.render(path.join(__dirname, './pages/index.ejs'), {
 		pageMode: 'form',
-		serviceOverview: SAJU_SERVICE_OVERVIEW,
+		serviceOverview: SAJU_SERVICE_OVERVIEW[locale] || SAJU_SERVICE_OVERVIEW.ko,
 		sajuTargets,
 	});
 };

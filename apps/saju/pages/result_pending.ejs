@@ -1,11 +1,12 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <section class="result-container">
   <div class="result-header">
-    <h1>사주 해석을 준비하고 있습니다</h1>
-    <p class="birth-info">결과 ID: <%= resultId %></p>
+    <h1><%= L('사주 해석을 준비하고 있습니다', 'Preparing your Saju result') %></h1>
+    <p class="birth-info"><%= L('결과 ID', 'Result ID') %>: <%= resultId %></p>
   </div>
 
   <div id="pending-message" class="result-content">
-    분석 요청을 접수했습니다. 잠시만 기다려주세요.
+    <%= L('분석 요청을 접수했습니다. 잠시만 기다려주세요.', 'Your request was received. Please wait a moment.') %>
   </div>
 </section>
 
@@ -22,11 +23,11 @@
         const json = await response.json();
 
         if (!response.ok) {
-          messageEl.textContent = json.resp_message || '상태 조회 중 오류가 발생했습니다.';
+          messageEl.textContent = json.resp_message || <%- JSON.stringify(tt('상태 조회 중 오류가 발생했습니다.', 'Failed to fetch status.')) %>;
           return;
         }
 
-        messageEl.textContent = json.progress_message || '처리 상태를 확인 중입니다.';
+        messageEl.textContent = json.progress_message || <%- JSON.stringify(tt('처리 상태를 확인 중입니다.', 'Checking processing status.')) %>;
 
         if (json.status === 'completed') {
           window.location.reload();
@@ -34,13 +35,13 @@
         }
 
         if (json.status === 'failed') {
-          messageEl.textContent = json.error_message || '분석 처리 중 오류가 발생했습니다.';
+          messageEl.textContent = json.error_message || <%- JSON.stringify(tt('분석 처리 중 오류가 발생했습니다.', 'An error occurred while processing analysis.')) %>;
           return;
         }
 
         setTimeout(poll, 1500);
       } catch (err) {
-        messageEl.textContent = '네트워크 상태를 확인 중입니다. 잠시 후 다시 시도합니다.';
+        messageEl.textContent = <%- JSON.stringify(tt('네트워크 상태를 확인 중입니다. 잠시 후 다시 시도합니다.', 'Checking network status. Retrying shortly.')) %>;
         setTimeout(poll, 2000);
       }
     }

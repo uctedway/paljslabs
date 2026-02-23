@@ -1,7 +1,8 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <div class="result-container">
   <div class="result-header">
-    <h1><%= featureTitle %> 결과</h1>
-    <p class="birth-info">결과 ID: <%= resultId %></p>
+    <h1><%= locale === 'en' ? `${featureTitle} Result` : `${featureTitle} 결과` %></h1>
+    <p class="birth-info"><%= L('결과 ID', 'Result ID') %>: <%= resultId %></p>
     <% if (summary) { %>
       <p class="birth-info"><%= summary %></p>
     <% } %>
@@ -10,7 +11,7 @@
   <div id="result-content" class="result-content"></div>
 
   <div class="result-actions">
-    <a href="/fortune" class="btn-home">다른 메뉴 보기</a>
+    <a href="/fortune" class="btn-home"><%= L('다른 메뉴 보기', 'Browse Other Menus') %></a>
   </div>
 </div>
 
@@ -18,7 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 <script>
   const markdown = <%- JSON.stringify(claudeResult) %>;
-  const unsafeHtml = marked.parse(markdown || '결과가 없습니다.');
+  const unsafeHtml = marked.parse(markdown || <%- JSON.stringify(tt('결과가 없습니다.', 'No result available.')) %>);
   const safeHtml = DOMPurify.sanitize(unsafeHtml);
   document.getElementById('result-content').innerHTML = safeHtml;
 </script>

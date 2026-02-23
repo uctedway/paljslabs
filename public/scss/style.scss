@@ -228,6 +228,13 @@ html.theme-dark .header .mobile-theme-toggle-btn {
     color: #e5e7eb;
 }
 
+html.theme-dark .header .desktop-shortcuts .lang-shortcut.is-active,
+html.theme-dark .header .nav .mobile-lang-link.is-active {
+    border-color: #60a5fa;
+    background: #0b2542;
+    color: #bfdbfe;
+}
+
 html.theme-dark .header .nav {
     background: #0f172a;
     border-right-color: #253247;
@@ -700,7 +707,8 @@ html.theme-dark .billing-method-card.active::after {
 
     html.theme-dark .header .mobile-nav-settings,
     html.theme-dark .header .mobile-nav-close,
-    html.theme-dark .header .mobile-theme-toggle-btn {
+    html.theme-dark .header .mobile-theme-toggle-btn,
+    html.theme-dark .header .nav .mobile-lang-link {
         background: transparent;
         border-color: transparent;
         box-shadow: none;
@@ -708,7 +716,8 @@ html.theme-dark .billing-method-card.active::after {
 
     html.theme-dark .header .mobile-nav-settings:hover,
     html.theme-dark .header .mobile-nav-close:hover,
-    html.theme-dark .header .mobile-theme-toggle-btn:hover {
+    html.theme-dark .header .mobile-theme-toggle-btn:hover,
+    html.theme-dark .header .nav .mobile-lang-link:hover {
         background: rgba(148, 163, 184, 0.12);
         border-color: rgba(148, 163, 184, 0.22);
     }

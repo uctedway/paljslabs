@@ -1,13 +1,14 @@
+<% const L = (ko, en) => tt(ko, en); %>
 <% if (pageMode !== 'form') { %>
 <section class="fortune-intro service-intro-saju">
 	<div class="fortune-intro-hero">
 		<p class="fortune-intro-eyebrow">Saju Guide</p>
-		<h1><%= serviceOverview?.title || '사주팔자' %></h1>
+		<h1><%= serviceOverview?.title || L('사주팔자', 'Saju Reading') %></h1>
 		<p class="fortune-intro-subtitle"><%= serviceOverview?.subtitle || '' %></p>
 		<p class="fortune-intro-description"><%= serviceOverview?.description || '' %></p>
 		<div class="fortune-intro-cta-row">
-			<a class="btn-service-primary" href="/saju?view=form"><%= serviceOverview?.ctaLabel || '사주 보기' %></a>
-			<a class="btn-service-secondary" href="/fortune">다른 운세 서비스 보기</a>
+			<a class="btn-service-primary" href="/saju?view=form"><%= serviceOverview?.ctaLabel || L('사주 보기', 'Start Saju') %></a>
+			<a class="btn-service-secondary" href="/fortune"><%= L('다른 운세 서비스 보기', 'Browse Other Services') %></a>
 		</div>
 	</div>
 
@@ -21,7 +22,7 @@
 	</div>
 
 	<aside class="fortune-intro-note">
-		<h4>이렇게 이해하면 쉬워요</h4>
+		<h4><%= L('이렇게 이해하면 쉬워요', 'Quick way to understand') %></h4>
 		<ul>
 			<% (serviceOverview?.notes || []).forEach(function(note) { %>
 				<li><%= note %></li>
@@ -31,22 +32,22 @@
 </section>
 <% } else { %>
 <section class="saju-form-section">
-	<h2>사주풀이</h2>
-	<p class="section-desc">생년월일과 시간을 입력하면 당신의 사주를 분석해드립니다.</p>
+	<h2><%= L('사주풀이', 'Saju Analysis') %></h2>
+	<p class="section-desc"><%= L('생년월일과 시간을 입력하면 당신의 사주를 분석해드립니다.', 'Enter birth date/time to analyze your Saju.') %></p>
 	<%
 		function normalizeTargetLabel(label) {
 			const raw = String(label || '').trim();
 			if (!raw) return raw;
 			const map = {
-				SPOUSE: '배우자',
-				PARENT: '부모',
-				GRANDPARENT: '조부모',
-				SON: '아들',
-				DAUGHTER: '딸',
-				SIBLING: '형제자매',
-				FAMILY: '가족',
-				FRIEND: '친구',
-				OTHER: '기타',
+				SPOUSE: L('배우자', 'Spouse'),
+				PARENT: L('부모', 'Parent'),
+				GRANDPARENT: L('조부모', 'Grandparent'),
+				SON: L('아들', 'Son'),
+				DAUGHTER: L('딸', 'Daughter'),
+				SIBLING: L('형제자매', 'Sibling'),
+				FAMILY: L('가족', 'Family'),
+				FRIEND: L('친구', 'Friend'),
+				OTHER: L('기타', 'Other'),
 			};
 			const parts = raw.split('·');
 			if (parts.length < 2) {
@@ -62,86 +63,86 @@
 
 	<form id="sajuForm" method="POST" data-action="/api/saju/request">
 		<div class="form-group">
-			<label for="sajuTarget">대상 선택</label>
+			<label for="sajuTarget"><%= L('대상 선택', 'Target') %></label>
 			<div class="target-select-row">
 				<select id="sajuTarget" name="sajuTarget">
-					<option value="">새로 보기(직접 입력)</option>
+					<option value=""><%= L('새로 보기(직접 입력)', 'Manual Input') %></option>
 					<% (sajuTargets || []).forEach(function(target) { %>
 						<option value="<%= String(target.id) %>"><%= normalizeTargetLabel(target.label) %></option>
 					<% }); %>
 				</select>
-				<a class="btn-manage-relative" href="<%= user ? '/user/mypage/relatives' : '/user/login' %>">지인관리하기</a>
+				<a class="btn-manage-relative" href="<%= user ? '/user/mypage/relatives' : '/user/login' %>"><%= L('지인관리하기', 'Manage Contacts') %></a>
 			</div>
 		</div>
 
 		<input type="hidden" id="relativeId" name="relative_id" value="0">
 
 		<div class="form-group">
-			<label for="name">이름</label>
-			<input type="text" id="name" name="name" placeholder="이름을 입력하세요" required class="mustInput">
+			<label for="name"><%= L('이름', 'Name') %></label>
+			<input type="text" id="name" name="name" placeholder="<%= L('이름을 입력하세요', 'Enter name') %>" required class="mustInput">
 		</div>
 
 		<div class="form-group">
-			<label for="counselingType">상담유형</label>
+			<label for="counselingType"><%= L('상담유형', 'Counseling Tone') %></label>
 			<select id="counselingType" name="counselingType" required class="mustInput">
-				<option value="soft">부드러운 상담</option>
-				<option value="balanced" selected>균형 상담</option>
-				<option value="insight">통찰 강화</option>
-				<option value="direct">직설 상담</option>
-				<option value="factbomb">팩트폭격</option>
+				<option value="soft"><%= L('부드러운 상담', 'Soft') %></option>
+				<option value="balanced" selected><%= L('균형 상담', 'Balanced') %></option>
+				<option value="insight"><%= L('통찰 강화', 'Insight') %></option>
+				<option value="direct"><%= L('직설 상담', 'Direct') %></option>
+				<option value="factbomb"><%= L('팩트폭격', 'Fact Bomb') %></option>
 			</select>
 		</div>
 
 		<div class="form-group">
-			<label for="birthYear">생년월일</label>
+			<label for="birthYear"><%= L('생년월일', 'Birth Date') %></label>
 			<div class="date-select-group">
 				<select id="birthYear" name="birthYear" required class="mustInput">
-					<option value="">년도</option>
+					<option value=""><%= L('년도', 'Year') %></option>
 				</select>
 				<select id="birthMonth" name="birthMonth" required class="mustInput">
-					<option value="">월</option>
+					<option value=""><%= L('월', 'Month') %></option>
 				</select>
 				<select id="birthDay" name="birthDay" required class="mustInput">
-					<option value="">일</option>
+					<option value=""><%= L('일', 'Day') %></option>
 				</select>
 			</div>
 		</div>
 		
 		<div class="form-group">
-			<label for="birthTime">태어난 시간</label>
+			<label for="birthTime"><%= L('태어난 시간', 'Birth Time') %></label>
 			<select id="birthTime" name="birthTime" required class="mustInput">
-				<option value="">시간 선택</option>
-				<option value="00:30:00">자시 (23:30~01:30)</option>
-				<option value="02:30:00">축시 (01:30~03:30)</option>
-				<option value="04:30:00">인시 (03:30~05:30)</option>
-				<option value="06:30:00">묘시 (05:30~07:30)</option>
-				<option value="08:30:00">진시 (07:30~09:30)</option>
-				<option value="10:30:00">사시 (09:30~11:30)</option>
-				<option value="12:30:00">오시 (11:30~13:30)</option>
-				<option value="14:30:00">미시 (13:30~15:30)</option>
-				<option value="16:30:00">신시 (15:30~17:30)</option>
-				<option value="18:30:00">유시 (17:30~19:30)</option>
-				<option value="20:30:00">술시 (19:30~21:30)</option>
-				<option value="22:30:00">해시 (21:30~23:30)</option>
-				<option value="99:99:99">모름</option>
+				<option value=""><%= L('시간 선택', 'Select Time') %></option>
+				<option value="00:30:00"><%= L('자시', 'Zi') %> (23:30~01:30)</option>
+				<option value="02:30:00"><%= L('축시', 'Chou') %> (01:30~03:30)</option>
+				<option value="04:30:00"><%= L('인시', 'Yin') %> (03:30~05:30)</option>
+				<option value="06:30:00"><%= L('묘시', 'Mao') %> (05:30~07:30)</option>
+				<option value="08:30:00"><%= L('진시', 'Chen') %> (07:30~09:30)</option>
+				<option value="10:30:00"><%= L('사시', 'Si') %> (09:30~11:30)</option>
+				<option value="12:30:00"><%= L('오시', 'Wu') %> (11:30~13:30)</option>
+				<option value="14:30:00"><%= L('미시', 'Wei') %> (13:30~15:30)</option>
+				<option value="16:30:00"><%= L('신시', 'Shen') %> (15:30~17:30)</option>
+				<option value="18:30:00"><%= L('유시', 'You') %> (17:30~19:30)</option>
+				<option value="20:30:00"><%= L('술시', 'Xu') %> (19:30~21:30)</option>
+				<option value="22:30:00"><%= L('해시', 'Hai') %> (21:30~23:30)</option>
+				<option value="99:99:99"><%= L('모름', 'Unknown') %></option>
 			</select>
 		</div>
 		
 		<div class="form-group">
-			<label>성별</label>
+			<label><%= L('성별', 'Gender') %></label>
 			<div class="radio-group">
 				<label class="radio-label">
 					<input type="radio" name="gender" value="male" required class="mustInput">
-					<span>남자</span>
+					<span><%= L('남자', 'Male') %></span>
 				</label>
 				<label class="radio-label">
 					<input type="radio" name="gender" value="female" class="mustInput">
-					<span>여자</span>
+					<span><%= L('여자', 'Female') %></span>
 				</label>
 			</div>
 		</div>
 		
-		<button type="submit" class="btn-submit">사주 보기</button>
+		<button type="submit" class="btn-submit"><%= L('사주 보기', 'Start Saju') %></button>
 	</form>
 </section>
 <script type="module">

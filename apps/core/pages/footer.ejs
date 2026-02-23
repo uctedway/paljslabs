@@ -1,30 +1,30 @@
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-brand">
-      <h2>이상단 주식회사</h2>
+      <h2><%= t('footer.company') %></h2>
       <p>
-        경기도 용인시 기흥구 기흥로 58, 제비동 B122호<br>
-        (구갈동, 기흥아이씨티밸리에스케이브이원)
+        <%= t('footer.addressLine1') %><br>
+        <%= t('footer.addressLine2') %>
       </p>
       <p>
-        이메일:
+        <%= t('footer.emailLabel') %>:
         <a href="mailto:dev@leesangdan.com">dev@leesangdan.com</a>
       </p>
     </div>
 
     <nav class="footer-shortcuts" aria-label="Footer shortcuts">
-      <a href="/saju">사주풀이</a>
-      <a href="/fortune/compatibility">궁합</a>
-      <a href="/fortune/today">오늘의 운세</a>
-      <a href="/fortune/flow">대운·세운</a>
-      <a href="/fortune/naming">작명/개명</a>
-      <a href="/fortune/date-selection">택일</a>
-      <a href="/user/mypage">마이페이지</a>
-      <a href="/user/billing">토큰충전</a>
+      <a href="/saju"><%= t('nav.saju') %></a>
+      <a href="/fortune/compatibility"><%= t('nav.compatibility') %></a>
+      <a href="/fortune/today"><%= t('nav.today') %></a>
+      <a href="/fortune/flow"><%= t('nav.flow') %></a>
+      <a href="/fortune/naming"><%= t('nav.naming') %></a>
+      <a href="/fortune/date-selection"><%= t('nav.dateSelection') %></a>
+      <a href="/user/mypage"><%= t('common.mypage') %></a>
+      <a href="/user/billing"><%= t('common.tokenCharge') %></a>
     </nav>
   </div>
   <div class="footer-legal">
-    <a href="/terms">이용약관</a>
-    <a href="/privacy-policy">개인정보처리방침</a>
+    <a href="/terms"><%= t('common.terms') %></a>
+    <a href="/privacy-policy"><%= t('common.privacy') %></a>
   </div>
 </footer>

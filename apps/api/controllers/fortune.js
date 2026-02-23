@@ -56,6 +56,26 @@ function buildTokenReferenceId(featureKey) {
   return `FORTUNE-${featureKey}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizePromptLocale(rawLocale, req) {
+  const input = String(rawLocale || '').trim().toLowerCase();
+  const header = String(req?.headers?.['accept-language'] || '').trim().toLowerCase();
+  const source = input || header;
+  if (source.startsWith('en')) return 'en';
+  if (source.startsWith('ja')) return 'ja';
+  if (source.startsWith('zh')) return 'zh';
+  return 'ko';
+}
+
+function getLocaleRuleText(locale) {
+  const c = String(locale || 'ko').toLowerCase();
+  const labelMap = { ko: '한국어', en: 'English', ja: '日本語', zh: '中文' };
+  const label = labelMap[c] || labelMap.ko;
+  return `출력 언어 규칙(필수):
+- 응답 본문은 반드시 ${label}(${c})로만 작성한다.
+- JSON 키 이름(summary, body)은 변경하지 않는다.
+- 다른 언어 문장을 섞지 않는다.`;
+}
+
 function getFortuneRequestConfig(featureKey, analysisMode) {
   const mode = normalizeAnalysisMode(analysisMode);
   const isTrial = mode === ANALYSIS_MODE_TRIAL;
@@ -213,7 +233,10 @@ function buildFortuneUserPrompt(featureRaw, payload, extraGuide = '') {
 ${JSON.stringify(featureRaw || {}, null, 2)}
 
 입력:
-${JSON.stringify(payload || {}, null, 2)}${guideBlock}`;
+${JSON.stringify(payload || {}, null, 2)}
+
+언어 강제 규칙:
+${getLocaleRuleText(payload?.locale)}${guideBlock}`;
 }
 
 function extractJsonBlock(rawText) {
@@ -932,6 +955,7 @@ exports.createFortuneRequest = async (req, res) => {
     const payload = {
       featureKey,
       featureLabel: featureMeta.label,
+      locale: normalizePromptLocale(req.body?.locale, req),
       analysis_mode: requestConfig.mode,
       analysis_token_cost: requestConfig.requiredTokens,
       submittedAt: new Date().toISOString(),

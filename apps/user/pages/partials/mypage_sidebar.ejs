@@ -1,13 +1,14 @@
 <aside class="mypage-shortcuts">
-  <h2>마이페이지</h2>
+  <% const L = (ko, en) => tt(ko, en); %>
+  <h2><%= L('마이페이지', 'My Page') %></h2>
 
-  <a href="/user/mypage" class="<%= currentMenu === 'dashboard' ? 'is-active' : '' %>">요약 대시보드</a>
-  <a href="/user/mypage/profile" class="<%= currentMenu === 'profile' ? 'is-active' : '' %>">내 정보수정</a>
-  <a href="/user/mypage/relatives" class="<%= currentMenu === 'relatives' ? 'is-active' : '' %>">지인관리</a>
+  <a href="/user/mypage" class="<%= currentMenu === 'dashboard' ? 'is-active' : '' %>"><%= L('요약 대시보드', 'Dashboard') %></a>
+  <a href="/user/mypage/profile" class="<%= currentMenu === 'profile' ? 'is-active' : '' %>"><%= L('내 정보수정', 'Edit Profile') %></a>
+  <a href="/user/mypage/relatives" class="<%= currentMenu === 'relatives' ? 'is-active' : '' %>"><%= L('지인관리', 'Contacts') %></a>
   <div class="mypage-submenu">
-    <a href="/user/mypage/relatives#relative-create" class="mypage-add-link">+ 지인추가하기</a>
+    <a href="/user/mypage/relatives#relative-create" class="mypage-add-link">+ <%= L('지인추가하기', 'Add Contact') %></a>
     <% if (!relatives || relatives.length === 0) { %>
-      <p class="mypage-submenu-empty">등록된 지인이 없습니다.</p>
+      <p class="mypage-submenu-empty"><%= L('등록된 지인이 없습니다.', 'No contacts registered.') %></p>
     <% } else { %>
       <% relatives.forEach(function(item) { %>
         <a href="/user/mypage/relatives#relative-<%= item.localId %>">
@@ -16,13 +17,13 @@
       <% }); %>
     <% } %>
   </div>
-  <a href="/user/mypage/history" class="<%= currentMenu === 'history' ? 'is-active' : '' %>">내 상담내역</a>
+  <a href="/user/mypage/history" class="<%= currentMenu === 'history' ? 'is-active' : '' %>"><%= L('내 상담내역', 'Consultation History') %></a>
 
   <div class="mypage-nav-group">
-    <a href="/user/billing" class="<%= currentMenu === 'billing' ? 'is-active' : '' %>">토큰충전</a>
-    <a href="/user/purchase-history" class="<%= currentMenu === 'purchase-history' ? 'is-active' : '' %>">결제내역</a>
-    <a href="/user/token-usage-history" class="<%= currentMenu === 'token-usage-history' ? 'is-active' : '' %>">토큰사용내역</a>
-    <a href="/user/mypage/withdraw" class="<%= currentMenu === 'withdraw' ? 'is-active' : '' %>">회원탈퇴</a>
+    <a href="/user/billing" class="<%= currentMenu === 'billing' ? 'is-active' : '' %>"><%= L('토큰충전', 'Token Top-up') %></a>
+    <a href="/user/purchase-history" class="<%= currentMenu === 'purchase-history' ? 'is-active' : '' %>"><%= L('결제내역', 'Payment History') %></a>
+    <a href="/user/token-usage-history" class="<%= currentMenu === 'token-usage-history' ? 'is-active' : '' %>"><%= L('토큰사용내역', 'Token Usage') %></a>
+    <a href="/user/mypage/withdraw" class="<%= currentMenu === 'withdraw' ? 'is-active' : '' %>"><%= L('회원탈퇴', 'Withdraw Account') %></a>
   </div>
 
   <% if (consultationHistory && consultationHistory.length > 0) { %>
@@ -37,16 +38,16 @@
       function buildHistoryTitle(item) {
         const req = item && item.request ? item.request : {};
         if (String(req.featureKey || '').toLowerCase() === 'compatibility') {
-          const p1 = String(req.person1Name || '').trim() || '사람1';
-          const p2 = String(req.person2Name || '').trim() || '사람2';
-          return `${p1}, ${p2} 궁합`;
+          const p1 = String(req.person1Name || '').trim() || L('사람1', 'Person 1');
+          const p2 = String(req.person2Name || '').trim() || L('사람2', 'Person 2');
+          return locale === 'en' ? `${p1}, ${p2} Compatibility` : `${p1}, ${p2} 궁합`;
         }
-        const name = String(req.name || '').trim() || '고객';
-        return `${name} 사주팔자`;
+        const name = String(req.name || '').trim() || L('고객', 'Customer');
+        return locale === 'en' ? `${name} Saju` : `${name} 사주팔자`;
       }
     %>
     <div class="mypage-nav-group">
-      <a href="/user/mypage/history">최근 상담</a>
+      <a href="/user/mypage/history"><%= L('최근 상담', 'Recent Consultations') %></a>
       <div class="mypage-submenu">
         <% consultationHistory.slice(0, 6).forEach(function(item) { %>
           <a href="/user/mypage/history/<%= item.resultId %>">

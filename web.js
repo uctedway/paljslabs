@@ -6,6 +6,7 @@ const fs = require('fs');
 const session = require('express-session');
 const { createClient } = require('redis');
 const { buildSeo } = require('./apps/core/utils/seo');
+const { resolveLocale, t, buildLangUrl, ogLocaleByLocale } = require('./apps/core/utils/i18n');
 let sass = null;
 try {
   // Render production 배포에서는 devDependencies가 설치되지 않을 수 있습니다.
@@ -138,11 +139,30 @@ app.use(
   })
 );
 app.use((req, res, next) => {
+  const isManagePath = String(req.path || '').startsWith('/manage');
+  const locale = resolveLocale(req, { skipSession: isManagePath });
   res.locals.session = req.session;
   res.locals.user = req.session ? req.session.user : null;
   res.locals.manageAdmin = req.session ? req.session.manageAdmin : null;
   res.locals.buildLabel = BUILD_LABEL;
-  res.locals.seo = buildSeo(req);
+  res.locals.locale = locale;
+  res.locals.isEn = locale === 'en';
+  res.locals.tt = (ko, en) => (locale === 'en' ? String(en ?? ko ?? '') : String(ko ?? ''));
+  res.locals.ogLocale = ogLocaleByLocale(locale);
+  res.locals.t = (key, params) => t(locale, key, params);
+  res.locals.langUrls = isManagePath
+    ? null
+    : {
+      ko: buildLangUrl(req, 'ko'),
+      en: buildLangUrl(req, 'en'),
+    };
+  const seoMeta = buildSeo(req);
+  res.locals.seo = seoMeta;
+  if (seoMeta.noindex) {
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  } else {
+    res.set('X-Robots-Tag', 'index, follow');
+  }
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
