@@ -95,7 +95,7 @@ exports.createPayment = async (req, res) => {
       return res.status(400).json({
         resp: 'ERROR',
         resp_message: 'INVALID_PROVIDER',
-        supported_providers: ['KAKAOPAY', 'NAVERPAY', 'PAYPAL'],
+        supported_providers: ['KAKAOPAY', 'NAVERPAY', 'PAYPAL', 'PAYPAL_CARD'],
       });
     }
 

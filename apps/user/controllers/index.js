@@ -102,6 +102,12 @@ function getBillingProviderConfigs() {
       icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/paypal.svg',
       enabled: hasEnv('PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_TOKEN_URL', 'PAYPAL_CREATE_ORDER_URL', 'PAYPAL_CAPTURE_ORDER_URL'),
     },
+    {
+      code: 'PAYPAL_CARD',
+      label: '신용카드',
+      icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/visa.svg',
+      enabled: true,
+    },
   ];
 
   let defaultProvider = providers.find((p) => p.enabled && p.code === 'PAYPAL')?.code || '';

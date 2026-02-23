@@ -466,7 +466,7 @@
 
 .billing-methods {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--spacing-sm);
 }
 
@@ -479,6 +479,8 @@
   gap: 8px;
   cursor: pointer;
   background: #fff;
+  position: relative;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
 }
 
 .billing-method-card input {
@@ -494,11 +496,33 @@
 .billing-method-card span {
   font-size: var(--font-size-xs);
   font-weight: 700;
+  color: #334155;
 }
 
 .billing-method-card.active {
   border-color: #1d4ed8;
   background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2), 0 10px 20px -14px rgba(37, 99, 235, 0.85);
+  transform: translateY(-1px);
+}
+
+.billing-method-card.active::after {
+  content: '선택됨';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: #1d4ed8;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  padding: 3px 6px;
+}
+
+.billing-method-card.active span {
+  color: #1e3a8a;
 }
 
 .billing-method-card.is-disabled {

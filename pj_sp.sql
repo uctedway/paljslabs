@@ -2468,7 +2468,7 @@ BEGIN
 		GOTO return_label;
 	END
 
-	IF (@provider NOT IN ('KAKAOPAY', 'NAVERPAY', 'PAYPAL'))
+	IF (@provider NOT IN ('KAKAOPAY', 'NAVERPAY', 'PAYPAL', 'PAYPAL_CARD'))
 	BEGIN
 		SET @resp_message = N'INVALID PROVIDER';
 		GOTO return_label;

@@ -186,7 +186,7 @@ async function getPayPalAccessToken() {
   return normalizeText(data.access_token);
 }
 
-async function createPayPalReady({ req, paymentId, amountKrw, tokenAmount }) {
+async function createPayPalReady({ req, paymentId, amountKrw, tokenAmount, forceCard = false }) {
   const createUrl = normalizeText(process.env.PAYPAL_CREATE_ORDER_URL);
   if (!createUrl) throw new Error('PAYPAL ENV NOT CONFIGURED');
 
@@ -218,6 +218,7 @@ async function createPayPalReady({ req, paymentId, amountKrw, tokenAmount }) {
       cancel_url: cb.cancelUrl,
       shipping_preference: 'NO_SHIPPING',
       user_action: 'PAY_NOW',
+      landing_page: forceCard ? 'BILLING' : 'LOGIN',
     },
   };
 
@@ -279,6 +280,7 @@ async function createProviderPayment(params) {
   if (provider === 'KAKAOPAY') return createKakaoPayReady(params);
   if (provider === 'NAVERPAY') return createNaverPayReady(params);
   if (provider === 'PAYPAL') return createPayPalReady(params);
+  if (provider === 'PAYPAL_CARD') return createPayPalReady({ ...params, forceCard: true });
   throw new Error('UNSUPPORTED PROVIDER');
 }
 
@@ -286,6 +288,7 @@ async function approveProviderPayment({ payment, query }) {
   if (payment.provider === 'KAKAOPAY') return approveKakaoPay({ payment, query });
   if (payment.provider === 'NAVERPAY') return approveNaverPay({ payment, query });
   if (payment.provider === 'PAYPAL') return approvePayPal({ payment, query });
+  if (payment.provider === 'PAYPAL_CARD') return approvePayPal({ payment, query });
   throw new Error('UNSUPPORTED PROVIDER');
 }
 

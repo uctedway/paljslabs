@@ -1,6 +1,6 @@
 const { TOKEN_PACKAGES } = require('./token_constants');
 
-const ALLOWED_PAYMENT_PROVIDERS = ['KAKAOPAY', 'NAVERPAY', 'PAYPAL'];
+const ALLOWED_PAYMENT_PROVIDERS = ['KAKAOPAY', 'NAVERPAY', 'PAYPAL', 'PAYPAL_CARD'];
 
 function normalizeProvider(value) {
   const provider = String(value || '').trim().toUpperCase();

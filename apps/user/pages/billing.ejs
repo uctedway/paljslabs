@@ -25,7 +25,12 @@
             <%= provider.code === defaultPaymentProvider && provider.enabled ? 'checked' : '' %>
             <%= provider.enabled ? '' : 'disabled' %>>
           <img src="<%= provider.icon %>" alt="<%= provider.label %>">
-          <span><%= provider.label %><%= provider.enabled ? '' : ' (준비중)' %></span>
+          <span>
+            <%= provider.label %><%= provider.enabled ? '' : ' (준비중)' %>
+            <% if (provider.code === 'PAYPAL_CARD') { %>
+              <small style="display:block;font-size:11px;opacity:.72;">PayPal 계정 없이 카드 결제</small>
+            <% } %>
+          </span>
         </label>
       <% }); %>
     </fieldset>
