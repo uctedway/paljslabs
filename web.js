@@ -6,7 +6,7 @@ const fs = require('fs');
 const session = require('express-session');
 const { createClient } = require('redis');
 const { buildSeo } = require('./apps/core/utils/seo');
-const { resolveLocale, t, buildLangUrl, ogLocaleByLocale } = require('./apps/core/utils/i18n');
+const { resolveLocale, t, buildLangUrl, ogLocaleByLocale, normalizeLocale, stripLocalePrefix } = require('./apps/core/utils/i18n');
 let sass = null;
 try {
   // Render production 배포에서는 devDependencies가 설치되지 않을 수 있습니다.
@@ -83,6 +83,23 @@ app.use(expressLayouts);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Locale URL policy:
+// - Korean default: /path
+// - English: /en/path
+// - Legacy ?lang=xx is redirected to canonical locale path.
+app.use((req, res, next) => {
+  const originalPath = String(req.path || '/');
+  const split = stripLocalePrefix(originalPath);
+  if (split.localeFromPath === 'en') {
+    req._forcedLocale = 'en';
+    const suffix = req.url.slice(originalPath.length);
+    req.url = `${split.pathname}${suffix}`;
+  } else {
+    req._forcedLocale = '';
+  }
+  next();
+});
+
 // 요청마다 SASS를 컴파일하면 응답 지연이 커질 수 있어 제거합니다.
 // 개발 중 실시간 반영은 `npm run sass` 워치 모드를 사용합니다.
 
@@ -140,7 +157,28 @@ app.use(
 );
 app.use((req, res, next) => {
   const isManagePath = String(req.path || '').startsWith('/manage');
+  const isApiPath = String(req.path || '').startsWith('/api') || String(req.path || '').startsWith('/_session');
+  const method = String(req.method || 'GET').toUpperCase();
+  const queryLang = normalizeLocale(req.query?.lang);
   const locale = resolveLocale(req, { skipSession: isManagePath });
+  req.locale = locale;
+  const originalPath = String(req.originalUrl || '').split('?')[0] || '/';
+  const isStaticAsset = /\.[a-z0-9]+$/i.test(String(req.path || ''));
+  if (!isManagePath && !isApiPath && !isStaticAsset && (method === 'GET' || method === 'HEAD')) {
+    if (queryLang) {
+      const qs = new URLSearchParams(req.query || {});
+      qs.delete('lang');
+      const suffixQs = qs.toString();
+      const targetBase = locale === 'en'
+        ? (req.path === '/' ? '/en' : `/en${req.path}`)
+        : req.path;
+      const targetWithQs = suffixQs ? `${targetBase}?${suffixQs}` : targetBase;
+      return res.redirect(302, targetWithQs);
+    }
+    if (locale === 'en' && !(originalPath === '/en' || originalPath.startsWith('/en/'))) {
+      return res.redirect(302, buildLangUrl(req, 'en'));
+    }
+  }
   res.locals.session = req.session;
   res.locals.user = req.session ? req.session.user : null;
   res.locals.manageAdmin = req.session ? req.session.manageAdmin : null;
@@ -199,11 +237,14 @@ app.use('/manage', manageRoutes);
 // Error handling
 // ============================================
 app.use((req, res, next) => {
+    const isEn = String(res.locals?.locale || '').toLowerCase() === 'en';
     res.status(404).render('home/pages/not_found', {
-      title: '404 - 페이지를 찾을 수 없습니다',
+      title: isEn ? '404 - Page Not Found' : '404 - 페이지를 찾을 수 없습니다',
       seo: buildSeo(req, {
-        title: '404 - 페이지를 찾을 수 없습니다 | 48LAB',
-        description: '요청하신 페이지를 찾을 수 없습니다. 48LAB 홈에서 다시 탐색해 주세요.',
+        title: isEn ? '404 - Page Not Found | 48LAB' : '404 - 페이지를 찾을 수 없습니다 | 48LAB',
+        description: isEn
+          ? 'The requested page could not be found. Please navigate again from 48LAB home.'
+          : '요청하신 페이지를 찾을 수 없습니다. 48LAB 홈에서 다시 탐색해 주세요.',
         noindex: true,
       }),
     });

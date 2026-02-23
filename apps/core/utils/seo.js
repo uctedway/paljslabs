@@ -20,23 +20,35 @@ function normalizePath(pathname) {
   return p.startsWith('/') ? p : `/${p}`;
 }
 
+function stripLocalePrefix(pathname) {
+  const p = normalizePath(pathname);
+  if (p === '/en') return { locale: 'en', path: '/' };
+  if (p.startsWith('/en/')) return { locale: 'en', path: p.slice(3) || '/' };
+  return { locale: 'ko', path: p };
+}
+
 function buildCanonicalUrl(req, pathOnly) {
   const origin = getSiteOrigin(req);
   const path = normalizePath(pathOnly || req?.originalUrl || req?.path || '/');
   return `${stripTrailingSlash(origin)}${path}`;
 }
 
-function getSeoByPath(pathname) {
+function getSeoByPath(pathname, locale = 'ko') {
   const path = normalizePath(pathname);
+  const isEn = String(locale || 'ko').toLowerCase() === 'en';
   const defaults = {
-    title: '48LAB | 사주 · 운세 분석 플랫폼',
-    description: '48LAB에서 사주, 궁합, 오늘의 운세, 대운·세운, 작명/개명, 택일 분석을 확인하세요.',
-    keywords: '48LAB, 사주, 운세, 궁합, 오늘의 운세, 대운, 세운, 작명, 개명, 택일',
+    title: isEn ? '48LAB | Saju & Fortune Analysis Platform' : '48LAB | 사주 · 운세 분석 플랫폼',
+    description: isEn
+      ? 'Explore Saju, compatibility, today fortune, luck flow, naming, and date selection on 48LAB.'
+      : '48LAB에서 사주, 궁합, 오늘의 운세, 대운·세운, 작명/개명, 택일 분석을 확인하세요.',
+    keywords: isEn
+      ? '48LAB, saju, fortune, compatibility, today fortune, luck flow, naming, date selection'
+      : '48LAB, 사주, 운세, 궁합, 오늘의 운세, 대운, 세운, 작명, 개명, 택일',
     noindex: false,
     ogType: 'website',
   };
 
-  const map = {
+  const mapKo = {
     '/': {
       title: '48LAB | 사주 · 운세 분석 플랫폼',
       description: '사주와 운세를 기반으로 오늘의 선택을 도와주는 48LAB 서비스입니다.',
@@ -83,8 +95,55 @@ function getSeoByPath(pathname) {
       noindex: true,
     },
   };
+  const mapEn = {
+    '/': {
+      title: '48LAB | Saju & Fortune Analysis Platform',
+      description: '48LAB helps your daily decisions with Saju and fortune insights.',
+    },
+    '/saju': {
+      title: 'Saju Reading | 48LAB',
+      description: 'Check key points for temperament, relationships, career, and money from your Saju chart.',
+    },
+    '/fortune': {
+      title: 'Fortune Services | 48LAB',
+      description: 'Use compatibility, today fortune, luck flow, naming, and date selection in one place.',
+    },
+    '/fortune/compatibility': {
+      title: 'Compatibility Analysis | 48LAB',
+      description: 'Analyze relationship rhythm, conflict points, and synergies between two people.',
+    },
+    '/fortune/today': {
+      title: 'Today Fortune | 48LAB',
+      description: 'Get daily focus points and practical action guidance.',
+    },
+    '/fortune/flow': {
+      title: 'Luck Flow Analysis | 48LAB',
+      description: 'Review mid-to-long-term timing and strategy points.',
+    },
+    '/fortune/naming': {
+      title: 'Naming Support | 48LAB',
+      description: 'Compare name candidates by chart-balance direction and practical usability.',
+    },
+    '/fortune/date-selection': {
+      title: 'Date Selection Analysis | 48LAB',
+      description: 'Compare date/time candidates by event purpose such as moving, contracts, and opening.',
+    },
+    '/terms': {
+      title: 'Terms of Service | 48LAB',
+      description: '48LAB terms of service page.',
+    },
+    '/privacy-policy': {
+      title: 'Privacy Policy | 48LAB',
+      description: '48LAB privacy policy page.',
+    },
+    '/system-maintenance': {
+      title: 'System Maintenance Notice | 48LAB',
+      description: '48LAB maintenance and outage notice page.',
+      noindex: true,
+    },
+  };
 
-  const matched = map[path] || {};
+  const matched = (isEn ? mapEn : mapKo)[path] || {};
   const seo = { ...defaults, ...matched };
 
   if (
@@ -101,7 +160,9 @@ function getSeoByPath(pathname) {
   return seo;
 }
 
-function buildStructuredData(req, seo) {
+function buildStructuredData(req, seo, locale = 'ko') {
+  const isEn = String(locale || 'ko').toLowerCase() === 'en';
+  const langCode = isEn ? 'en-US' : 'ko-KR';
   const origin = getSiteOrigin(req);
   const canonical = buildCanonicalUrl(req);
   const siteName = '48LAB';
@@ -120,7 +181,7 @@ function buildStructuredData(req, seo) {
     '@type': 'WebSite',
     name: siteName,
     url: origin,
-    inLanguage: 'ko-KR',
+    inLanguage: langCode,
   });
 
   items.push({
@@ -129,7 +190,7 @@ function buildStructuredData(req, seo) {
     name: seo.title,
     description: seo.description,
     url: canonical,
-    inLanguage: 'ko-KR',
+    inLanguage: langCode,
   });
 
   if (normalizePath(req?.path) === '/') {
@@ -139,18 +200,22 @@ function buildStructuredData(req, seo) {
       mainEntity: [
         {
           '@type': 'Question',
-          name: '48LAB에서 어떤 운세 서비스를 제공하나요?',
+          name: isEn ? 'What fortune services does 48LAB provide?' : '48LAB에서 어떤 운세 서비스를 제공하나요?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: '사주풀이, 궁합, 오늘의 운세, 대운·세운, 작명/개명 보조, 택일 서비스를 제공합니다.',
+            text: isEn
+              ? 'We provide Saju reading, compatibility, today fortune, luck flow, naming support, and date selection.'
+              : '사주풀이, 궁합, 오늘의 운세, 대운·세운, 작명/개명 보조, 택일 서비스를 제공합니다.',
           },
         },
         {
           '@type': 'Question',
-          name: '결과는 어떻게 활용하면 좋나요?',
+          name: isEn ? 'How should I use the results?' : '결과는 어떻게 활용하면 좋나요?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: '결정의 정답을 대신하기보다, 선택 기준과 우선순위를 정리하는 참고 자료로 활용할 수 있습니다.',
+            text: isEn
+              ? 'Use the results as practical reference for clarifying decision criteria and priorities.'
+              : '결정의 정답을 대신하기보다, 선택 기준과 우선순위를 정리하는 참고 자료로 활용할 수 있습니다.',
           },
         },
       ],
@@ -161,18 +226,35 @@ function buildStructuredData(req, seo) {
 }
 
 function buildSeo(req, overrides = {}) {
-  const byPath = getSeoByPath(req?.path);
+  const originalPath = String(req?.originalUrl || req?.path || '/').split('?')[0];
+  const localeFromUrl = stripLocalePrefix(originalPath).locale;
+  const locale = String(req?.locale || req?._forcedLocale || localeFromUrl || 'ko').toLowerCase().startsWith('en') ? 'en' : 'ko';
+  const rawPath = normalizePath(req?.path);
+  const canonicalPath = locale === 'en'
+    ? (rawPath === '/' ? '/en' : `/en${rawPath}`)
+    : rawPath;
+  const byPath = getSeoByPath(rawPath, locale);
   const seo = {
     ...byPath,
     ...overrides,
   };
+  const origin = getSiteOrigin(req);
+  const koCanonical = buildCanonicalUrl(req, rawPath);
+  const enCanonical = buildCanonicalUrl(req, rawPath === '/' ? '/en' : `/en${rawPath}`);
   seo.title = normalizeText(seo.title) || byPath.title;
   seo.description = normalizeText(seo.description) || byPath.description;
   seo.keywords = normalizeText(seo.keywords) || byPath.keywords;
-  seo.canonical = normalizeText(seo.canonical) || buildCanonicalUrl(req);
+  seo.canonical = normalizeText(seo.canonical) || buildCanonicalUrl(req, canonicalPath);
   seo.image = normalizeText(seo.image) || `${getSiteOrigin(req)}/images/main_logo.png`;
   seo.robots = seo.noindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large';
-  seo.structuredData = Array.isArray(seo.structuredData) ? seo.structuredData : buildStructuredData(req, seo);
+  seo.alternates = {
+    ko: koCanonical,
+    en: enCanonical,
+    'x-default': koCanonical,
+  };
+  seo.structuredData = Array.isArray(seo.structuredData) ? seo.structuredData : buildStructuredData(req, seo, locale);
+  seo.locale = locale;
+  seo.siteOrigin = origin;
   return seo;
 }
 

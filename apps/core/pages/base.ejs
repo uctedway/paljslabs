@@ -12,12 +12,18 @@
 		const pageRobots = String(pageSeo.robots || 'index, follow');
 		const pageImage = String(pageSeo.image || '');
 		const pageStructuredData = Array.isArray(pageSeo.structuredData) ? pageSeo.structuredData : [];
+		const pageAlternates = (pageSeo.alternates && typeof pageSeo.alternates === 'object') ? pageSeo.alternates : null;
 	%>
 	<title><%= pageTitle %></title>
 	<meta name="description" content="<%= pageDescription %>">
 	<% if (pageKeywords) { %><meta name="keywords" content="<%= pageKeywords %>"><% } %>
 	<meta name="robots" content="<%= pageRobots %>">
 	<meta property="og:locale" content="<%= String(ogLocale || 'ko_KR') %>">
+	<% if (String(locale || 'ko') === 'ko') { %>
+	<meta property="og:locale:alternate" content="en_US">
+	<% } else { %>
+	<meta property="og:locale:alternate" content="ko_KR">
+	<% } %>
 	<meta property="og:type" content="<%= String(pageSeo.ogType || 'website') %>">
 	<meta property="og:site_name" content="48LAB">
 	<meta property="og:title" content="<%= pageTitle %>">
@@ -25,6 +31,11 @@
 	<% if (pageCanonical) { %>
 	<link rel="canonical" href="<%= pageCanonical %>">
 	<meta property="og:url" content="<%= pageCanonical %>">
+	<% } %>
+	<% if (pageAlternates) { %>
+		<% if (pageAlternates.ko) { %><link rel="alternate" hreflang="ko-KR" href="<%= pageAlternates.ko %>"><% } %>
+		<% if (pageAlternates.en) { %><link rel="alternate" hreflang="en-US" href="<%= pageAlternates.en %>"><% } %>
+		<% if (pageAlternates['x-default']) { %><link rel="alternate" hreflang="x-default" href="<%= pageAlternates['x-default'] %>"><% } %>
 	<% } %>
 	<% if (pageImage) { %>
 	<meta property="og:image" content="<%= pageImage %>">

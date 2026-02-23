@@ -119,7 +119,24 @@ function normalizeLocale(raw) {
   return '';
 }
 
+function stripLocalePrefix(pathname) {
+  const path = String(pathname || '').trim() || '/';
+  if (path === '/en' || path.startsWith('/en/')) {
+    const stripped = path.slice(3) || '/';
+    return {
+      localeFromPath: 'en',
+      pathname: stripped.startsWith('/') ? stripped : `/${stripped}`,
+    };
+  }
+  return { localeFromPath: '', pathname: path };
+}
+
 function resolveLocale(req, { skipSession = false } = {}) {
+  const forced = normalizeLocale(req?._forcedLocale || req?.locals?._forcedLocale);
+  if (forced) {
+    if (!skipSession && req?.session) req.session.locale = forced;
+    return forced;
+  }
   const q = normalizeLocale(req?.query?.lang);
   if (q && !skipSession && req?.session) {
     req.session.locale = q;
@@ -146,12 +163,23 @@ function t(locale, key, params = null) {
 
 function buildLangUrl(req, targetLocale) {
   const loc = SUPPORTED_LOCALES.includes(targetLocale) ? targetLocale : DEFAULT_LOCALE;
-  const original = String(req?.originalUrl || '/');
-  const [path, queryRaw] = original.split('?');
+  const original = String(req?.originalUrl || req?.url || '/');
+  const [rawPath, queryRaw] = original.split('?');
+  const stripped = stripLocalePrefix(rawPath);
+  const path = stripped.pathname || '/';
   const query = new URLSearchParams(queryRaw || '');
-  query.set('lang', loc);
+  query.delete('lang');
   const qs = query.toString();
-  return qs ? `${path}?${qs}` : path;
+  const prefixed = loc === 'en'
+    ? (path === '/' ? '/en' : `/en${path}`)
+    : path;
+  // Switching from /en/* to Korean default needs one explicit signal to clear EN session locale.
+  if (loc === 'ko' && stripped.localeFromPath === 'en') {
+    query.set('lang', 'ko');
+    const forceKoQs = query.toString();
+    return forceKoQs ? `${path}?${forceKoQs}` : path;
+  }
+  return qs ? `${prefixed}?${qs}` : prefixed;
 }
 
 function ogLocaleByLocale(locale) {
@@ -163,6 +191,7 @@ module.exports = {
   normalizeLocale,
   t,
   buildLangUrl,
+  stripLocalePrefix,
   ogLocaleByLocale,
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
