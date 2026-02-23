@@ -1,0 +1,61 @@
+<svg width="1920" height="900" viewBox="0 0 1920 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07101F"/>
+      <stop offset="0.55" stop-color="#12243A"/>
+      <stop offset="1" stop-color="#1A3046"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1450 220) rotate(90) scale(280)">
+      <stop stop-color="#F3D49D" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#F3D49D" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="paper" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.55" fill="#F4E6C9" fill-opacity="0.12"/>
+      <circle cx="9" cy="6" r="0.45" fill="#F4E6C9" fill-opacity="0.09"/>
+      <circle cx="12" cy="12" r="0.5" fill="#F4E6C9" fill-opacity="0.1"/>
+    </pattern>
+    <linearGradient id="ground" x1="0" y1="0" x2="1920" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D65443" stop-opacity="0.44"/>
+      <stop offset="0.5" stop-color="#E7C989" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#2D6B7C" stop-opacity="0.44"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="900" fill="url(#bg)"/>
+  <rect width="1920" height="900" fill="url(#paper)"/>
+  <circle cx="1450" cy="220" r="280" fill="url(#moon)"/>
+
+  <!-- Taegeuk motif -->
+  <g transform="translate(320 250)">
+    <circle cx="0" cy="0" r="130" stroke="#E9CC92" stroke-width="3" stroke-opacity="0.8"/>
+    <path d="M0 -94C52 -94 94 -52 94 0C94 52 52 94 0 94C-52 94 -94 52 -94 0C-94 -52 -52 -94 0 -94Z" fill="#D85844" fill-opacity="0.46"/>
+    <path d="M0 -94C52 -94 94 -52 94 0C94 52 52 94 0 94C31 94 56 69 56 38C56 7 31 -18 0 -18C-31 -18 -56 -43 -56 -74C-56 -85 -53 -90 -48 -94H0Z" fill="#2D6B7C" fill-opacity="0.54"/>
+  </g>
+
+  <!-- Trigram-like bars -->
+  <g opacity="0.38" stroke="#E8C98E" stroke-width="6" stroke-linecap="round">
+    <path d="M160 110H250"/>
+    <path d="M160 136H196"/>
+    <path d="M214 136H250"/>
+    <path d="M160 162H250"/>
+
+    <path d="M1620 110H1710"/>
+    <path d="M1620 136H1656"/>
+    <path d="M1674 136H1710"/>
+    <path d="M1620 162H1710"/>
+  </g>
+
+  <!-- Hanok roof silhouettes -->
+  <g fill="#0A1628" fill-opacity="0.82">
+    <path d="M40 640C150 620 220 560 280 520C340 560 410 620 520 640V700H40V640Z"/>
+    <path d="M100 612C170 600 225 560 280 510C335 560 390 600 460 612C394 640 340 670 280 670C220 670 166 640 100 612Z" fill="#10233A"/>
+
+    <path d="M560 660C710 630 820 560 960 480C1100 560 1210 630 1360 660V740H560V660Z"/>
+    <path d="M620 630C750 610 845 540 960 460C1075 540 1170 610 1300 630C1185 665 1080 705 960 705C840 705 735 665 620 630Z" fill="#11253C"/>
+
+    <path d="M1400 640C1510 620 1580 560 1640 520C1700 560 1770 620 1880 640V700H1400V640Z"/>
+    <path d="M1460 612C1530 600 1585 560 1640 510C1695 560 1750 600 1820 612C1754 640 1700 670 1640 670C1580 670 1526 640 1460 612Z" fill="#10233A"/>
+  </g>
+
+  <path d="M-80 740C180 670 370 800 620 760C860 722 1040 640 1300 700C1520 752 1700 700 2000 760V930H-80V740Z" fill="url(#ground)"/>
+</svg>

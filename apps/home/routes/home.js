@@ -11,6 +11,7 @@ router.get('/sitemap-ko.xml', indexController.sitemapKoXml);
 router.get('/sitemap-en.xml', indexController.sitemapEnXml);
 router.get('/terms', indexController.terms);
 router.get('/privacy-policy', indexController.privacyPolicy);
+router.get('/about', indexController.about);
 router.get('/system-maintenance', indexController.systemMaintenance);
 
 module.exports = router;

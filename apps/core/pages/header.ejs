@@ -1,3 +1,16 @@
+<%
+	const pathNow = String(currentPath || '/');
+	const isNavActive = (key) => {
+		if (key === 'about') return pathNow === '/about';
+		if (key === 'saju') return pathNow === '/saju' || pathNow.startsWith('/saju/');
+		if (key === 'compatibility') return pathNow === '/fortune/compatibility' || pathNow.startsWith('/fortune/compatibility/');
+		if (key === 'today') return pathNow === '/fortune/today' || pathNow.startsWith('/fortune/today/');
+		if (key === 'flow') return pathNow === '/fortune/flow' || pathNow.startsWith('/fortune/flow/');
+		if (key === 'naming') return pathNow === '/fortune/naming' || pathNow.startsWith('/fortune/naming/');
+		if (key === 'dateSelection') return pathNow === '/fortune/date-selection' || pathNow.startsWith('/fortune/date-selection/');
+		return false;
+	};
+%>
 <header class="header">
 	<button
 		type="button"
@@ -62,12 +75,15 @@
 				<button type="button" class="mobile-nav-close" id="mobileNavClose" aria-label="<%= t('aria.closeMenu') %>">×</button>
 			</div>
 		</div>
-		<a href="/saju"><img class="mi-icon" src="/images/icons/material/auto_awesome.svg" alt=""><%= t('nav.saju') %></a>
-		<a href="/fortune/compatibility"><img class="mi-icon" src="/images/icons/material/favorite.svg" alt=""><%= t('nav.compatibility') %></a>
-		<a href="/fortune/today"><img class="mi-icon" src="/images/icons/material/today.svg" alt=""><%= t('nav.today') %></a>
-		<a href="/fortune/flow"><img class="mi-icon" src="/images/icons/material/timeline.svg" alt=""><%= t('nav.flow') %></a>
-		<a href="/fortune/naming"><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt=""><%= t('nav.naming') %></a>
-		<a href="/fortune/date-selection"><img class="mi-icon" src="/images/icons/material/date_range.svg" alt=""><%= t('nav.dateSelection') %></a>
+		<% if (locale === 'en') { %>
+		<a class="<%= isNavActive('about') ? 'is-current' : '' %>" href="/about"><img class="mi-icon" src="/images/icons/material/auto_awesome.svg" alt=""><%= t('nav.about') %></a>
+		<% } %>
+		<a class="<%= isNavActive('saju') ? 'is-current' : '' %>" href="/saju"><img class="mi-icon" src="/images/icons/material/auto_awesome.svg" alt=""><%= t('nav.saju') %></a>
+		<a class="<%= isNavActive('compatibility') ? 'is-current' : '' %>" href="/fortune/compatibility"><img class="mi-icon" src="/images/icons/material/favorite.svg" alt=""><%= t('nav.compatibility') %></a>
+		<a class="<%= isNavActive('today') ? 'is-current' : '' %>" href="/fortune/today"><img class="mi-icon" src="/images/icons/material/today.svg" alt=""><%= t('nav.today') %></a>
+		<a class="<%= isNavActive('flow') ? 'is-current' : '' %>" href="/fortune/flow"><img class="mi-icon" src="/images/icons/material/timeline.svg" alt=""><%= t('nav.flow') %></a>
+		<a class="<%= isNavActive('naming') ? 'is-current' : '' %>" href="/fortune/naming"><img class="mi-icon" src="/images/icons/material/edit_note.svg" alt=""><%= t('nav.naming') %></a>
+		<a class="<%= isNavActive('dateSelection') ? 'is-current' : '' %>" href="/fortune/date-selection"><img class="mi-icon" src="/images/icons/material/date_range.svg" alt=""><%= t('nav.dateSelection') %></a>
 		<% if (user) { %>
 		<span class="user-greeting mobile-only-nav"><img class="mi-icon" src="/images/icons/material/account_circle.svg" alt=""><%= String(user.user_name || t('common.member')) %><%= t('common.honorific') %></span>
 		<div class="nav-item has-submenu mobile-only-nav">
@@ -235,7 +251,7 @@
 		try {
 			const n = new Notification(String(title || '48LAB'), {
 				body: String(body || ''),
-				icon: '/images/main_logo.png',
+				icon: '/images/logo_48_black.png',
 				tag: '48lab-analysis-status',
 			});
 			n.onclick = () => {

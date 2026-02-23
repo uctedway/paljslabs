@@ -188,6 +188,7 @@ app.use((req, res, next) => {
   res.locals.tt = (ko, en) => (locale === 'en' ? String(en ?? ko ?? '') : String(ko ?? ''));
   res.locals.ogLocale = ogLocaleByLocale(locale);
   res.locals.t = (key, params) => t(locale, key, params);
+  res.locals.currentPath = String(req.path || '/');
   res.locals.langUrls = isManagePath
     ? null
     : {

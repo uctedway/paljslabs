@@ -20,6 +20,14 @@ function normalizePath(pathname) {
   return p.startsWith('/') ? p : `/${p}`;
 }
 
+function getPathLocaleAvailability(pathname) {
+  const path = normalizePath(pathname);
+  if (path === '/about') {
+    return { ko: false, en: true, xDefault: 'en' };
+  }
+  return { ko: true, en: true, xDefault: 'ko' };
+}
+
 function stripLocalePrefix(pathname) {
   const p = normalizePath(pathname);
   if (p === '/en') return { locale: 'en', path: '/' };
@@ -136,6 +144,10 @@ function getSeoByPath(pathname, locale = 'ko') {
       title: 'Privacy Policy | 48LAB',
       description: '48LAB privacy policy page.',
     },
+    '/about': {
+      title: 'About Saju & 48LAB | 48LAB',
+      description: 'Learn what Saju means, how each fortune service works, and how to read results in practical context.',
+    },
     '/system-maintenance': {
       title: 'System Maintenance Notice | 48LAB',
       description: '48LAB maintenance and outage notice page.',
@@ -173,7 +185,7 @@ function buildStructuredData(req, seo, locale = 'ko') {
     '@type': 'Organization',
     name: siteName,
     url: origin,
-    logo: `${origin}/images/main_logo.png`,
+    logo: `${origin}/images/logo_48_black.png`,
   });
 
   items.push({
@@ -239,18 +251,19 @@ function buildSeo(req, overrides = {}) {
     ...overrides,
   };
   const origin = getSiteOrigin(req);
-  const koCanonical = buildCanonicalUrl(req, rawPath);
-  const enCanonical = buildCanonicalUrl(req, rawPath === '/' ? '/en' : `/en${rawPath}`);
+  const localeAvailability = getPathLocaleAvailability(rawPath);
+  const koCanonical = localeAvailability.ko ? buildCanonicalUrl(req, rawPath) : '';
+  const enCanonical = localeAvailability.en ? buildCanonicalUrl(req, rawPath === '/' ? '/en' : `/en${rawPath}`) : '';
   seo.title = normalizeText(seo.title) || byPath.title;
   seo.description = normalizeText(seo.description) || byPath.description;
   seo.keywords = normalizeText(seo.keywords) || byPath.keywords;
   seo.canonical = normalizeText(seo.canonical) || buildCanonicalUrl(req, canonicalPath);
-  seo.image = normalizeText(seo.image) || `${getSiteOrigin(req)}/images/main_logo.png`;
+  seo.image = normalizeText(seo.image) || `${getSiteOrigin(req)}/images/logo_48_black.png`;
   seo.robots = seo.noindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large';
   seo.alternates = {
-    ko: koCanonical,
-    en: enCanonical,
-    'x-default': koCanonical,
+    ko: koCanonical || '',
+    en: enCanonical || '',
+    'x-default': localeAvailability.xDefault === 'en' ? (enCanonical || '') : (koCanonical || ''),
   };
   seo.structuredData = Array.isArray(seo.structuredData) ? seo.structuredData : buildStructuredData(req, seo, locale);
   seo.locale = locale;

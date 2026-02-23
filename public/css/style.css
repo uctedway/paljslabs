@@ -231,11 +231,26 @@
   font-weight: 500;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
+  position: relative;
   transition: all 0.3s ease;
 }
 .header .nav a:hover {
   color: var(--color-primary);
   background: var(--color-bg-light);
+}
+.header .nav a.is-current {
+  font-weight: 700;
+  color: #0f172a;
+}
+.header .nav a.is-current::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: #2563eb;
 }
 @media (max-width: 768px) {
   .header {
@@ -2132,6 +2147,335 @@
   margin-left: 18px;
 }
 
+.about-hero-banner {
+  position: relative;
+  width: 100%;
+  min-height: clamp(320px, 42vw, 560px);
+  overflow: hidden;
+}
+
+.about-hero-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg, rgba(2, 6, 23, 0.34) 0%, rgba(2, 6, 23, 0.72) 100%), url("/images/hero/hero-about-korea-photo.jpg");
+  background-size: cover;
+  background-position: center 56%;
+  transform: scale(1.01);
+}
+
+.about-hero-banner-overlay {
+  position: relative;
+  z-index: 1;
+  min-height: clamp(320px, 42vw, 560px);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 36px 18px;
+  color: #ffffff;
+}
+
+.about-hero-banner-kicker {
+  display: inline-block;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.26);
+  backdrop-filter: blur(4px);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.about-hero-banner-overlay h1 {
+  margin-top: 14px;
+  font-size: clamp(30px, 4.7vw, 62px);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  text-shadow: 0 12px 28px rgba(2, 6, 23, 0.48);
+}
+
+.about-hero-banner-overlay p {
+  margin-top: 12px;
+  max-width: 860px;
+  font-size: clamp(16px, 1.7vw, 22px);
+  line-height: 1.62;
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.about-page {
+  width: min(1200px, 100% - 24px);
+  margin: 20px auto 64px;
+  color: #111827;
+}
+
+.about-hero {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: linear-gradient(140deg, #f8fafc 0%, #ffffff 56%, #eef2ff 100%);
+  padding: clamp(24px, 3.6vw, 44px);
+}
+
+.about-kicker {
+  display: inline-block;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.about-hero h1,
+.about-hero h2 {
+  margin-top: 12px;
+  font-size: clamp(30px, 4.3vw, 52px);
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.about-hero p {
+  margin-top: 14px;
+  color: #475569;
+  font-size: clamp(16px, 1.6vw, 20px);
+  line-height: 1.65;
+  max-width: 940px;
+}
+
+.about-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.about-card h2 {
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.about-card p {
+  margin-top: 10px;
+  color: #475569;
+  line-height: 1.66;
+  font-size: 15px;
+}
+
+.about-section {
+  margin-top: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.about-section h2 {
+  font-size: clamp(24px, 3.2vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.about-lead {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.about-service-list {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-service-list article {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 14px 16px;
+}
+
+.about-service-list h3 {
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+
+.about-service-list p {
+  margin-top: 7px;
+  color: #475569;
+  line-height: 1.58;
+}
+
+.about-section-alt {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.about-steps {
+  margin-top: 14px;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.about-steps li {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.about-steps strong {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.about-steps p {
+  margin-top: 7px;
+  color: #475569;
+  line-height: 1.58;
+}
+
+.about-faq {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-faq article {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px 16px;
+}
+
+.about-faq h3 {
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.about-faq p {
+  margin-top: 7px;
+  color: #475569;
+  line-height: 1.58;
+}
+
+.about-final {
+  margin-top: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 54%, #ecfeff 100%);
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.about-final h2 {
+  font-size: clamp(24px, 3.2vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.about-final p {
+  margin-top: 10px;
+  color: #334155;
+  line-height: 1.65;
+}
+
+.about-final-actions {
+  margin-top: 14px;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.about-final-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.about-final-actions a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.09);
+}
+
+@media (max-width: 1024px) {
+  .about-grid,
+  .about-service-list,
+  .about-faq {
+    grid-template-columns: 1fr;
+  }
+}
+html.theme-dark .about-page {
+  color: #e5e7eb;
+}
+
+html.theme-dark .about-hero-banner-bg {
+  background-image: linear-gradient(180deg, rgba(2, 6, 23, 0.48) 0%, rgba(2, 6, 23, 0.8) 100%), url("/images/hero/hero-about-korea-photo.jpg");
+}
+
+html.theme-dark .about-hero {
+  border-color: #334155;
+  background: linear-gradient(140deg, #0f172a 0%, #111827 56%, #0b1220 100%);
+}
+
+html.theme-dark .about-kicker {
+  background: #1f2937;
+  color: #cbd5e1;
+}
+
+html.theme-dark .about-hero p,
+html.theme-dark .about-card p,
+html.theme-dark .about-lead,
+html.theme-dark .about-service-list p,
+html.theme-dark .about-steps p,
+html.theme-dark .about-faq p,
+html.theme-dark .about-final p {
+  color: #cbd5e1;
+}
+
+html.theme-dark .about-card,
+html.theme-dark .about-section,
+html.theme-dark .about-service-list article,
+html.theme-dark .about-steps li,
+html.theme-dark .about-faq article {
+  border-color: #334155;
+  background: #111827;
+}
+
+html.theme-dark .about-section-alt {
+  background: linear-gradient(145deg, #0f172a 0%, #111827 100%);
+}
+
+html.theme-dark .about-final {
+  border-color: #334155;
+  background: linear-gradient(135deg, #0b1220 0%, #111827 60%, #132235 100%);
+}
+
+html.theme-dark .about-final-actions a {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+html.theme-dark .about-final-actions a:hover {
+  box-shadow: 0 8px 16px rgba(2, 6, 23, 0.45);
+}
+
 .login-page {
   min-height: calc(100vh - 170px);
   padding: var(--spacing-2xl) var(--spacing-md);
@@ -3728,6 +4072,14 @@ html.theme-dark .header .nav a {
 html.theme-dark .header .nav a:hover {
   background: #111827;
   color: #93c5fd;
+}
+
+html.theme-dark .header .nav a.is-current {
+  color: #e5e7eb;
+}
+
+html.theme-dark .header .nav a.is-current::after {
+  background: #93c5fd;
 }
 
 html.theme-dark .header .mobile-nav-head {
