@@ -1,0 +1,39 @@
+<section class="billing-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
+  <article class="billing-card">
+    <div class="billing-head">
+      <h3><%= L('주문/결제 확인', 'Order Confirmation') %></h3>
+      <a href="/terms"><%= L('이용약관 보기', 'View Terms') %></a>
+    </div>
+
+    <div style="display:grid;gap:18px;">
+      <section>
+        <h4 style="margin:0 0 8px;"><%= L('상품 정보', 'Product') %></h4>
+        <p style="margin:0;"><strong>48LAB <%= reviewPack.label %></strong></p>
+        <p style="margin:6px 0 0;"><%= L('결제금액', 'Amount') %>: <strong><%= Number(reviewPack.amountKrw || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %>원</strong></p>
+        <p style="margin:6px 0 0;"><%= L('지급 토큰', 'Granted Tokens') %>: <strong><%= reviewPack.tokens %> TOKENS</strong></p>
+      </section>
+
+      <section>
+        <h4 style="margin:0 0 8px;"><%= L('구매자 정보', 'Buyer') %></h4>
+        <p style="margin:0;"><%= L('이름', 'Name') %>: <strong><%= reviewUserName %></strong></p>
+        <p style="margin:6px 0 0;"><%= L('이메일', 'Email') %>: <strong><%= reviewUserEmail %></strong></p>
+        <p style="margin:6px 0 0;"><%= L('결제수단', 'Payment Method') %>: <strong>카카오페이</strong></p>
+      </section>
+
+      <section>
+        <h4 style="margin:0 0 8px;"><%= L('결제 전 확인사항', 'Before Payment') %></h4>
+        <ul style="margin:0;padding-left:18px;">
+          <li><%= L('결제 완료 후 토큰이 즉시 충전됩니다.', 'Tokens are credited immediately after payment.') %></li>
+          <li><%= L('토큰은 사주/운세 프리미엄 분석에 사용됩니다.', 'Tokens are used for premium analysis features.') %></li>
+          <li><%= L('환불 기준은 이용약관 및 관계 법령에 따릅니다.', 'Refund rules follow the Terms and applicable laws.') %></li>
+        </ul>
+      </section>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+      <a class="billing-submit" style="text-decoration:none;display:inline-flex;justify-content:center;align-items:center;" href="/user/billing/review/gateway?amount_krw=<%= reviewPack.amountKrw %>"><%= L('카카오페이 결제창 열기', 'Open KakaoPay Window') %></a>
+      <a class="billing-result-btn" href="/user/billing/review"><%= L('상품 다시 선택', 'Change Package') %></a>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,55 @@
+<section class="billing-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
+  <article class="billing-card billing-balance">
+    <p class="billing-label"><%= L('카카오페이 심사 목업', 'KakaoPay Review Mock') %></p>
+    <h2><span><%= Number(currentTokens || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %></span> TOKENS</h2>
+    <p class="billing-help"><%= L('심사용 계정으로 결제 흐름과 충전 후 사용 화면을 확인할 수 있습니다.', 'This review account shows the purchase and token usage flow.') %></p>
+  </article>
+
+  <article class="billing-card">
+    <div class="billing-head">
+      <h3><%= L('토큰 충전', 'Token Top-up') %></h3>
+      <a href="/user/purchase-history"><%= L('결제 내역 보기', 'View Payments') %></a>
+    </div>
+
+    <fieldset class="billing-methods">
+      <legend><%= L('결제 수단', 'Payment Method') %></legend>
+      <label class="billing-method-card active" data-provider="KAKAOPAY">
+        <input type="radio" name="paymentProvider" value="KAKAOPAY" checked>
+        <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/kakaotalk.svg" alt="카카오페이">
+        <span>카카오페이<small style="display:block;font-size:11px;opacity:.72;"><%= L('심사 제출용 목업 흐름', 'Review submission mock flow') %></small></span>
+      </label>
+    </fieldset>
+
+    <div class="billing-packages" id="billingPackages">
+      <button type="button" class="billing-pack" data-amount="1000"><strong>₩1,000 · 10토큰</strong><span class="billing-pack-note"><%= L('기본가', 'Base price') %></span></button>
+      <button type="button" class="billing-pack" data-amount="3000"><strong>₩3,000 · 30토큰</strong><span class="billing-pack-note"><%= L('기본가', 'Base price') %></span></button>
+      <button type="button" class="billing-pack" data-amount="5000"><strong>₩5,000 · 50토큰</strong><span class="billing-pack-note"><%= L('기본가', 'Base price') %></span></button>
+      <button type="button" class="billing-pack active" data-amount="10000"><strong>₩10,000 · 110토큰</strong><span class="billing-pack-note"><%= L('기본 100토큰 +10보너스', 'Base 100 +10 bonus') %></span></button>
+      <button type="button" class="billing-pack best" data-amount="100000"><em class="billing-best-badge">BEST VALUE</em><strong>₩100,000 · 1200토큰</strong><span class="billing-pack-note"><%= L('기본 1000토큰 +200보너스', 'Base 1000 +200 bonus') %></span></button>
+    </div>
+
+    <button id="reviewProceedBtn" class="billing-submit"><%= L('카카오페이 결제 진행', 'Proceed with KakaoPay') %></button>
+    <p class="billing-help"><%= L('선택한 상품을 기준으로 심사용 결제 확인 화면으로 이동합니다.', 'Moves to the review checkout confirmation screen for the selected package.') %></p>
+  </article>
+</section>
+
+<script>
+(function () {
+  const packagesWrap = document.getElementById('billingPackages');
+  const button = document.getElementById('reviewProceedBtn');
+  let selectedAmount = <%= Number(reviewPack?.amountKrw || 10000) %>;
+
+  packagesWrap.addEventListener('click', (e) => {
+    const target = e.target.closest('.billing-pack');
+    if (!target) return;
+    packagesWrap.querySelectorAll('.billing-pack').forEach((el) => el.classList.remove('active'));
+    target.classList.add('active');
+    selectedAmount = Number(target.dataset.amount || 10000);
+  });
+
+  button.addEventListener('click', () => {
+    window.location.href = `/user/billing/review/checkout?amount_krw=${selectedAmount}`;
+  });
+})();
+</script>

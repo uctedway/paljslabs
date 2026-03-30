@@ -1,0 +1,21 @@
+<section class="billing-shell">
+  <% const L = (ko, en) => tt(ko, en); %>
+  <article class="billing-card" style="max-width:520px;margin:0 auto;">
+    <p class="billing-label">KAKAOPAY MOCK</p>
+    <h2 style="margin-top:0;"><%= L('카카오페이 결제창 목업', 'KakaoPay Payment Mock') %></h2>
+    <p class="billing-help"><%= L('심사 제출을 위한 목업 화면입니다. 실제 승인 API를 호출하지 않습니다.', 'This is a review mock and does not call the live approval API.') %></p>
+
+    <div style="border:1px solid #111;border-radius:18px;padding:20px;display:grid;gap:14px;">
+      <p style="margin:0;"><strong><%= reviewUserName %></strong><%= L('님 결제를 진행합니다.', ', continue payment.') %></p>
+      <p style="margin:0;"><%= L('가맹점', 'Merchant') %>: <strong>48LAB</strong></p>
+      <p style="margin:0;"><%= L('상품명', 'Product') %>: <strong><%= reviewPack.label %></strong></p>
+      <p style="margin:0;"><%= L('결제금액', 'Amount') %>: <strong><%= Number(reviewPack.amountKrw || 0).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR') %>원</strong></p>
+      <p style="margin:0;"><%= L('결제수단', 'Method') %>: <strong>카카오페이</strong></p>
+    </div>
+
+    <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+      <a class="billing-submit" style="text-decoration:none;display:inline-flex;justify-content:center;align-items:center;" href="/user/billing/review/complete"><%= L('결제 승인 완료', 'Complete Approval') %></a>
+      <a class="billing-result-btn" href="/user/billing/review/checkout?amount_krw=<%= reviewPack.amountKrw %>"><%= L('이전 화면', 'Back') %></a>
+    </div>
+  </article>
+</section>

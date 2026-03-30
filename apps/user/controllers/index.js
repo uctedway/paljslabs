@@ -118,6 +118,18 @@ function getBillingProviderConfigs() {
   return { providers, defaultProvider };
 }
 
+function findReviewPack(amountKrw) {
+  const amount = Number(amountKrw || 0);
+  const packs = [
+    { amountKrw: 1000, tokens: 10, label: '토큰 10개' },
+    { amountKrw: 3000, tokens: 30, label: '토큰 30개' },
+    { amountKrw: 5000, tokens: 50, label: '토큰 50개' },
+    { amountKrw: 10000, tokens: 110, label: '토큰 110개' },
+    { amountKrw: 100000, tokens: 1200, label: '토큰 1200개' },
+  ];
+  return packs.find((pack) => pack.amountKrw === amount) || packs[3];
+}
+
 /**
  * 유저 인덱스 페이지
  */
@@ -250,6 +262,77 @@ const billing = (req, res) => {
   });
 };
 
+const billingReview = async (req, res) => {
+  if (!requireLoginOrRedirect(req, res)) return;
+
+  let currentTokens = 0;
+  try {
+    const summaryQuery = `
+      EXEC dbo.PJ_USP_GET_TOKEN_SUMMARY
+        @login_id = '${db.convertQ(getSessionLoginId(req))}'
+    `;
+    const rs = await db.query(summaryQuery);
+    const row = rs && rs[0] ? rs[0] : {};
+    if (String(row.resp || '').toUpperCase() === 'OK') {
+      currentTokens = Number(row.current_tokens || 0);
+    }
+  } catch (err) {
+    console.error('[BILLING REVIEW TOKEN ERROR]', err.message);
+  }
+
+  return res.render('user/pages/billing_review', {
+    title: '카카오페이 심사 목업',
+    currentTokens,
+    reviewPack: findReviewPack(req.query?.amount_krw),
+  });
+};
+
+const billingReviewCheckout = async (req, res) => {
+  if (!requireLoginOrRedirect(req, res)) return;
+
+  const reviewPack = findReviewPack(req.query?.amount_krw);
+  return res.render('user/pages/billing_review_checkout', {
+    title: '카카오페이 결제 확인',
+    reviewPack,
+    reviewUserEmail: String(req.session?.user?.email || req.session?.user?.login_id || ''),
+    reviewUserName: String(req.session?.user?.user_name || '테스터'),
+  });
+};
+
+const billingReviewGateway = async (req, res) => {
+  if (!requireLoginOrRedirect(req, res)) return;
+
+  const reviewPack = findReviewPack(req.query?.amount_krw);
+  return res.render('user/pages/billing_review_gateway', {
+    title: '카카오페이 결제창 목업',
+    reviewPack,
+    reviewUserName: String(req.session?.user?.user_name || '테스터'),
+  });
+};
+
+const billingReviewComplete = async (req, res) => {
+  if (!requireLoginOrRedirect(req, res)) return;
+
+  const loginId = db.convertQ(getSessionLoginId(req));
+  let paymentId = 0;
+  try {
+    const query = `
+      SELECT TOP 1 payment_id
+      FROM dbo.PJ_TB_PAYMENTS WITH (NOLOCK)
+      WHERE login_id = '${loginId}'
+        AND provider = 'KAKAOPAY'
+        AND status = 'SUCCESS'
+      ORDER BY payment_id DESC
+    `;
+    const rs = await db.query(query);
+    paymentId = Number(rs?.[0]?.payment_id || 0);
+  } catch (err) {
+    console.error('[BILLING REVIEW COMPLETE ERROR]', err.message);
+  }
+
+  return res.redirect(paymentId > 0 ? `/user/billing/success?payment_id=${paymentId}` : '/user/billing/success');
+};
+
 /**
  * 결제 히스토리 페이지
  */
@@ -371,6 +454,10 @@ module.exports = {
   emailRegister,
   welcome,
   billing,
+  billingReview,
+  billingReviewCheckout,
+  billingReviewGateway,
+  billingReviewComplete,
   purchaseHistory,
   tokenUsageHistory,
   billingSuccess,
