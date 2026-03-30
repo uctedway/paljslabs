@@ -2,11 +2,15 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <h2><%= t('footer.company') %></h2>
+      <p><%= t('footer.ceoLabel') %>: <%= t('footer.ceoName') %></p>
+      <p><%= t('footer.businessNumberLabel') %>: <%= t('footer.businessNumber') %></p>
       <p>
         <%= t('footer.addressLine1') %><br>
         <%= t('footer.addressLine2') %>
       </p>
       <p>
+        <%= t('footer.phoneLabel') %>:
+        <a href="tel:01066926737"><%= t('footer.phone') %></a><br>
         <%= t('footer.emailLabel') %>:
         <a href="mailto:dev@leesangdan.com">dev@leesangdan.com</a>
       </p>
